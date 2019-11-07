@@ -1,0 +1,2 @@
+1) before applying ar operations on a node, all the nodes its connected to from the back
+and the front have been preprocessed
