@@ -51,8 +51,6 @@ class Node:
         self.index_in_table = index_in_table
         self.location_can_not_be_changed = False
 
-
-
     def set_in_stone(self):
         """
         removes the ability to change the node layer, table and index in the table
