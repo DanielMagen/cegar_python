@@ -1,27 +1,7 @@
 class Node:
     """
-    this class would represent a node that would work under the following assumptions:
-    1) each layer containing the nodes would be segmented into a consecutive list of tables, and the number of such
-    tables per layer would be known and unchanging by the time this node is created.
-
-    2) the node can not be moved to another layer
-
-    3) nodes are not connected to other nodes in the same layer
-
-    4) the tables of each layer would be of 2 kinds:
-    a) tables in which nodes can never be deleted from
-    b) tables in which nodes can be deleted from
-
-    we will assume that the tables will be ordered such that all tables of type a occur before tables of type b
-    (the tables are ordered by assumption (1))
-
-    the node would be told how many tables support deletion in the layers its connected to
-
-    5) nodes that are added to tables of type a will be added at the bottom of the table and
-    will never move or be deleted once added. as such for the nodes that reside in those tables,
-    the nodes index_in_table would serve as an absolute unchanging id
-
-
+    this class would represent a node that would work under the assumptions detailed in
+    the ASSUMPTIONS file
     """
 
     def __init__(self,
@@ -34,6 +14,8 @@ class Node:
 
         note that from assumption (3) we do need to care about tables in the current layer
         since we have no connections to nodes in the current layer
+
+        the following arguments given are explained in assumption (4)
 
         :param number_of_tables_the_previous_layer_is_segmented_to:
         :param number_of_tables_the_next_layer_is_segmented_to:

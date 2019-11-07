@@ -1,2 +1,45 @@
-1) before applying ar operations on a node, all the nodes its connected to from the back
+
+Abstraction Refinement assumptions:
+1)
+before applying ar operations on a node, all the nodes its connected to from the back
 and the front have been preprocessed
+
+Layer assumptions:
+1)
+each layer containing the nodes would be segmented into a consecutive ordered list of tables, and the number of such
+tables per layer would be known and unchanging by the time this node is created.
+
+
+Node assumptions:
+1)
+-> Layer assumptions (1)
+
+2)
+the node can not be moved to another layer
+
+3)
+nodes are not connected to other nodes in the same layer
+
+4)
+the tables of each layer would be of 2 kinds:
+a) tables in which nodes can never be deleted from
+b) tables in which nodes can be deleted from
+
+we will assume that the tables will be ordered such that all tables of type a occur before tables of type b
+(the tables are ordered by assumption (1))
+
+the node would be told how many tables support deletion in the layers its connected to
+
+
+
+NodeEdges assumptions:
+1)
+-> Layer assumptions (1)
+
+2)
+-> Node assumptions (4)
+
+3)
+nodes that are added to tables of type a will be added at the bottom of the table and
+will never move or be deleted once added. as such for the nodes that reside in those tables,
+the nodes index_in_table would serve as an absolute unchanging id
