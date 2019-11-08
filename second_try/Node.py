@@ -1,8 +1,13 @@
+from second_try.NodeEdges import *
+
+
 class Node:
     """
     this class would represent a node that would work under the assumptions detailed in
     the ASSUMPTIONS file
     """
+    INCOMING_EDGE_DIRECTION = -1
+    OUTGOING_EDGE_DIRECTION = 1
 
     def __init__(self,
                  number_of_tables_the_previous_layer_is_segmented_to,
@@ -33,9 +38,17 @@ class Node:
         self.index_in_table = index_in_table
         self.location_can_not_be_changed = False
 
+        self.incoming_edges_manager = NodeEdgesForNonDeletionTables(
+            number_of_tables_the_previous_layer_is_segmented_to,
+            number_of_tables_that_support_deletion_in_previous_layer)
+
+        self.outgoing_edges_manager = NodeEdgesForNonDeletionTables(
+            number_of_tables_the_next_layer_is_segmented_to,
+            number_of_tables_that_support_deletion_in_next_layer)
+
     def set_in_stone(self):
         """
-        removes the ability to change the node layer, table and index in the table
+        removes the ability to change the node location
         """
         self.location_can_not_be_changed = True
 
@@ -47,7 +60,7 @@ class Node:
         # in the id. hence the node id is unique only in the preview of the layer its in
         return [self.table_number, self.index_in_table]
 
-    def _check_location_can_be_changed(self):
+    def _check_if_location_can_be_changed(self):
         """
         if the node location can not be changed it raises an error
         otherwise it does nothing
@@ -55,19 +68,63 @@ class Node:
         if self.location_can_not_be_changed:
             raise Exception("the node location cannot be changed")
 
-    def notify_all_neighbors_that_location_changed(self, previous_location):
+    def get_notified_that_neighbor_location_changed(self, direction_of_connection, previous_location, new_location):
+        """
+
+        :param direction_of_connection: if direction_of_connection == Node.INCOMING_EDGE_DIRECTION it means that
+        for us this node is an incoming connection, i.e. its in the self.incoming_edges_manager. exactly the same
+        for Node.OUTGOING_EDGE_DIRECTION
+
+        :param previous_location: the previous location of the node that was changed
+
+        :param new_location: the new location of the node that was changed
+        :return:
+        """
+        if direction_of_connection == Node.INCOMING_EDGE_DIRECTION:
+            edges_manager_to_work_with = self.incoming_edges_manager
+        elif direction_of_connection == Node.OUTGOING_EDGE_DIRECTION:
+            edges_manager_to_work_with = self.outgoing_edges_manager
+        else:
+            raise Exception("invalid direction_of_connection")
+
+        previous_table_number = previous_location[0]
+        previous_index_in_table = previous_location[1]
+        new_table_number = new_location[0]
+        new_index_in_table = new_location[1]
+
+        edges_manager_to_work_with.move_connection(previous_table_number, previous_index_in_table, new_table_number,
+                                                   new_index_in_table)
+
+    def _notify_all_neighbors_that_my_location_changed(self, previous_location):
         """
         :param previous_location:
         goes over all neighbors of the node and notifies them that this node has been moved to another location
         within the layer (using assumption (2))
         """
-        pass
+        new_location = self.get_location()
 
-    def set_table_and_index_in_table(self, table_number, index_in_table):
-        self._check_location_can_be_changed()
+        # first go over all incoming edges
+        # if an node is connected to us by an edge that is incoming to us it means that for him we are
+        # an outgoing connection
+        direction_of_connection = Node.OUTGOING_EDGE_DIRECTION
+        for connection_data in self.incoming_edges_manager.iterate_over_connections():
+            reference_to_node_connected_to = connection_data[3]
+            reference_to_node_connected_to.get_notified_that_neighbor_location_changed(direction_of_connection,
+                                                                                       previous_location,
+                                                                                       new_location)
 
-        previous_id = self.get_location()
+        direction_of_connection = Node.INCOMING_EDGE_DIRECTION
+        for connection_data in self.outgoing_edges_manager.iterate_over_connections():
+            reference_to_node_connected_to = connection_data[3]
+            reference_to_node_connected_to.get_notified_that_neighbor_location_changed(direction_of_connection,
+                                                                                       previous_location,
+                                                                                       new_location)
+
+    def change_location(self, table_number, index_in_table):
+        self._check_if_location_can_be_changed()
+
+        previous_location = self.get_location()
         self.table_number = table_number
         self.index_in_table = index_in_table
 
-        self.notify_all_neighbors_that_location_changed(previous_id)
+        self._notify_all_neighbors_that_my_location_changed(previous_location)

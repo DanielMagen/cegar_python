@@ -9,36 +9,70 @@ class NodeEdges:
     i.e. it will only hold either outgoing or incoming edges
     it would work under the assumptions detailed in the ASSUMPTIONS file
     """
+    LOCATION_OF_WEIGHT_IN_MAP = 0
+    LOCATION_OF_REFERENCE_IN_MAP = 1
 
     def __init__(self, number_of_tables_in_layer_connected_to):
         self.number_of_tables_in_layer_connected_to = number_of_tables_in_layer_connected_to
 
         # for tables which support deletion, we will use a list of unordered maps
-        # such that map[index_in_table] = weight of edge
+        # such that map[index_in_table] = (weight of edge, reference to the node connected to)
         self.list_of_tables = [{} for _ in range(number_of_tables_in_layer_connected_to)]
 
     def _check_valid_table_number(self, table_number):
         if not 0 <= table_number < self.number_of_tables_in_layer_connected_to:
             raise Exception("there is no such table")
 
-    def add_connection(self, table_number, index_in_table, weight):
+    def add_connection(self, table_number, index_in_table, weight, node_connected_to):
         self._check_valid_table_number(table_number)
 
-        self.list_of_tables[table_number][index_in_table] = weight
+        self.list_of_tables[table_number][index_in_table] = (weight, node_connected_to)
 
     def find_weight_of_connection(self, table_number, index_in_table):
         self._check_valid_table_number(table_number)
 
-        return self.list_of_tables[table_number][index_in_table]
+        return self.list_of_tables[table_number][index_in_table][0]
 
     def delete_connection(self, table_number, index_in_table):
+        """
+        :param table_number:
+        :param index_in_table:
+        :return: the (weight, node_connected_to) of the connection deleted
+        """
+        weight, node_connected_to = self.list_of_tables[table_number][index_in_table]
         del self.list_of_tables[table_number][index_in_table]
+        return weight, node_connected_to
+
+    def move_connection(self, previous_table_number, previous_index_in_table, new_table_number, new_index_in_table):
+        """
+
+        :param previous_table_number:
+        :param previous_index_in_table:
+        :param new_table_number:
+        :param new_index_in_table:
+        """
+        weight, node_connected_to = self.delete_connection(previous_table_number, previous_index_in_table)
+        self.add_connection(new_table_number, new_index_in_table, weight, node_connected_to)
+
+    def iterate_over_connections(self):
+        """
+        :return: an iterator of the form
+        [table_number, index_in_table, weight, reference_to_node_connected_to]
+
+        the iterator guarantees order in increasing table_number but does not guarantee order in index_in_table
+        """
+        for current_table_number in range(len(self.list_of_tables)):
+            for index_in_table, data in self.list_of_tables[current_table_number].items():
+                weight = data[NodeEdges.LOCATION_OF_WEIGHT_IN_MAP]
+                reference_to_node_connected_to = data[NodeEdges.LOCATION_OF_REFERENCE_IN_MAP]
+                yield [current_table_number, index_in_table, weight, reference_to_node_connected_to]
+
 
 
 class NodeEdgesForNonDeletionTables(NodeEdges):
     """
     this class is an extension of the NodeEdges class to include a case where assumption (2) holds and
-    that there are more than 0 tables which do not support deletion
+    that there are more than 0 tables which do not support deletion (or moving which needs deletion to occur).
 
     the idea behind this class is that a list is preferred to a map in the more restrictive case due to caching
     we will access the unchanging nodes quite a lot during the abstraction refinement process and as such
@@ -46,9 +80,11 @@ class NodeEdgesForNonDeletionTables(NodeEdges):
     """
 
     # this is the general form of the connection data that would be saved for any node
-    FORM_OF_CONNECTION_DATA = ['index in table its in', 'weight of connection']  # not used, simply for visualization
+    # not used, simply for visualization
+    FORM_OF_CONNECTION_DATA = ['index in table its in', 'weight of connection', 'reference to the node connected to']
     LOCATION_OF_INDEX_IN_TABLE = 0
-    LOCATION_OF_WEIGHT = 1
+    LOCATION_OF_WEIGHT_IN_TABLE = 1
+    LOCATION_OF_REFERENCE_IN_TABLE = 2
 
     def __init__(self, number_of_tables_in_layer_connected_to, number_of_tables_that_support_deletion):
         """
@@ -68,7 +104,7 @@ class NodeEdgesForNonDeletionTables(NodeEdges):
         # 2) for each node we will save both its index in the table its in and the weight of the connection
         # for example if we will search for the weight of the connection between this node and the node
         # in table 5 in index 3 in the adjacent layer, we will go list_of_tables_that_do_not_support_deletion[5],
-        # search there for a pair of the form (3, weight) and return the weight if found
+        # search there for a triplet of the form (3, weight, node_reference) and return the weight if found
         self.list_of_tables_that_do_not_support_deletion = [[] for _ in
                                                             range(self.number_of_tables_that_do_not_support_deletion)]
 
@@ -78,33 +114,34 @@ class NodeEdgesForNonDeletionTables(NodeEdges):
 
     def translate_table_number_to_manager_for_tables_that_support_deletion(self, table_number):
         """
+        :param table_number:
+        :return:
         for example if we have 7 tables and the last 3 support deletion, then if we want to access table number 5
         we will need to access table 2 in the manager_for_tables_that_support_deletion
         this function converts the 7 to 2
-        :param table_number:
-        :return:
         """
         return table_number - self.number_of_tables_that_do_not_support_deletion
 
-    def add_connection(self, table_number, index_in_table, weight):
+    def translate_from_table_number_of_manager_to_real_table_number(self, table_number_from_manager):
         """
-
-        :param table_number:
-        :param index_in_table:
-        :param weight:
+        the exact opposite of the translate_table_number_to_manager_for_tables_that_support_deletion function
+        :param table_number_from_manager:
         :return:
         """
+        return table_number_from_manager + self.number_of_tables_that_do_not_support_deletion
+
+    def add_connection(self, table_number, index_in_table, weight, node_connected_to):
         self._check_valid_table_number(table_number)
 
         if table_number < self.number_of_tables_that_do_not_support_deletion:
             # use assumption (3), nodes that are added, are added at the end of the table
-            data_to_add = [index_in_table, weight]
+            data_to_add = [index_in_table, weight, node_connected_to]
             self.list_of_tables_that_do_not_support_deletion[table_number].append(data_to_add)
 
         else:
             super().add_connection(
                 self.translate_table_number_to_manager_for_tables_that_support_deletion(table_number), index_in_table,
-                weight)
+                weight, node_connected_to)
 
     def find_weight_of_connection(self, table_number, index_in_table):
         self._check_valid_table_number(table_number)
@@ -114,12 +151,12 @@ class NodeEdgesForNonDeletionTables(NodeEdges):
             if len(current_table) > index_in_table and \
                     current_table[index_in_table][
                         NodeEdgesForNonDeletionTables.LOCATION_OF_INDEX_IN_TABLE] == index_in_table:
-                return current_table[index_in_table][NodeEdgesForNonDeletionTables.LOCATION_OF_WEIGHT]
+                return current_table[index_in_table][NodeEdgesForNonDeletionTables.LOCATION_OF_WEIGHT_IN_TABLE]
             # the guess did not work, use binary search to search to find the relevant index
             # for simplicity I only implemented linear search here
             for i in range(len(current_table)):
                 if current_table[i][NodeEdgesForNonDeletionTables.LOCATION_OF_INDEX_IN_TABLE] == index_in_table:
-                    return current_table[index_in_table][NodeEdgesForNonDeletionTables.LOCATION_OF_WEIGHT]
+                    return current_table[index_in_table][NodeEdgesForNonDeletionTables.LOCATION_OF_WEIGHT_IN_TABLE]
         else:
             return super().find_weight_of_connection(
                 self.translate_table_number_to_manager_for_tables_that_support_deletion(table_number), index_in_table)
@@ -129,7 +166,7 @@ class NodeEdgesForNonDeletionTables(NodeEdges):
                self.number_of_tables_in_layer_connected_to:
             raise Exception("there is no such table which supports deletion")
 
-        super().delete_connection(table_number, index_in_table)
+        return super().delete_connection(table_number, index_in_table)
 
     def get_copy_which_supports_deletion_in_all_tables(self):
         """
@@ -139,10 +176,34 @@ class NodeEdgesForNonDeletionTables(NodeEdges):
         for table_number, table in enumerate(self.list_of_tables_that_do_not_support_deletion):
             for entry in table:
                 index_in_table = entry[NodeEdgesForNonDeletionTables.LOCATION_OF_INDEX_IN_TABLE]
-                weight = entry[NodeEdgesForNonDeletionTables.LOCATION_OF_WEIGHT]
-                to_return.add_connection(table_number, index_in_table, weight)
+                weight = entry[NodeEdgesForNonDeletionTables.LOCATION_OF_WEIGHT_IN_TABLE]
+                node_connected_to = entry[NodeEdgesForNonDeletionTables.LOCATION_OF_REFERENCE_IN_TABLE]
+                to_return.add_connection(table_number, index_in_table, weight, node_connected_to)
 
         for i in range(self.number_of_tables_that_do_not_support_deletion, self.number_of_tables_in_layer_connected_to):
             to_return.list_of_tables[i] = deepcopy(super().list_of_tables[i])
 
         return to_return
+
+    def iterate_over_connections(self):
+        """
+        :return: an iterator of the form
+        [table_number, index_in_table, weight, reference_to_node_connected_to]
+
+        the iterator guarantees order in increasing table_number but does not guarantee order in index_in_table
+        """
+        # using assumption (2) the tables which support deletion come first
+
+        for i in range(self.number_of_tables_that_do_not_support_deletion):
+            for current_table_number, data in enumerate(self.list_of_tables_that_do_not_support_deletion):
+                index_in_table = data[NodeEdgesForNonDeletionTables.LOCATION_OF_INDEX_IN_TABLE]
+                weight = data[NodeEdgesForNonDeletionTables.LOCATION_OF_WEIGHT_IN_TABLE]
+                reference_to_node_connected_to = data[NodeEdgesForNonDeletionTables.LOCATION_OF_REFERENCE_IN_TABLE]
+                yield [current_table_number, index_in_table, weight, reference_to_node_connected_to]
+
+        iterator_for_delete_supporting_tables = super().iterate_over_connections()
+        for data in iterator_for_delete_supporting_tables:
+            # add self.number_of_tables_that_do_not_support_deletion to align the table numbers accordingly
+            data[0] += self.translate_from_table_number_of_manager_to_real_table_number(data[0])
+            yield data
+
