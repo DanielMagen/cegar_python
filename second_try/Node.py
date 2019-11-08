@@ -9,6 +9,8 @@ class Node:
     INCOMING_EDGE_DIRECTION = -1
     OUTGOING_EDGE_DIRECTION = 1
 
+    NO_AR_NODE_CONTAINER = None
+
     def __init__(self,
                  number_of_tables_the_previous_layer_is_segmented_to,
                  number_of_tables_the_next_layer_is_segmented_to,
@@ -37,6 +39,7 @@ class Node:
         self.table_number = table_number
         self.index_in_table = index_in_table
         self.location_can_not_be_changed = False
+        self.location_of_ar_node_nested_in = Node.NO_AR_NODE_CONTAINER
 
         self.incoming_edges_manager = NodeEdgesForNonDeletionTables(
             number_of_tables_the_previous_layer_is_segmented_to,
@@ -46,11 +49,23 @@ class Node:
             number_of_tables_the_next_layer_is_segmented_to,
             number_of_tables_that_support_deletion_in_next_layer)
 
+    def set_location_of_ar_node_nested_in(self, ar_node_location):
+        self.location_of_ar_node_nested_in = ar_node_location
+
+    def get_location_of_ar_node_nested_in(self):
+        return self.location_of_ar_node_nested_in
+
+    def is_nested_in_ar_node(self):
+        return self.location_of_ar_node_nested_in is not Node.NO_AR_NODE_CONTAINER
+
     def set_in_stone(self):
         """
         removes the ability to change the node location
         """
         self.location_can_not_be_changed = True
+
+    def is_the_node_set_in_stone(self):
+        return self.location_can_not_be_changed
 
     def get_location(self):
         """
@@ -128,3 +143,6 @@ class Node:
         self.index_in_table = index_in_table
 
         self._notify_all_neighbors_that_my_location_changed(previous_location)
+
+
+class ARNode:
