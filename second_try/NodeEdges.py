@@ -59,7 +59,7 @@ class NodeEdges:
         weight, node_connected_to = self.delete_connection(previous_table_number, previous_index_in_table)
         self.add_connection(new_table_number, new_index_in_table, weight, node_connected_to)
 
-    def iterate_over_connections(self):
+    def get_iterator_over_connections(self):
         """
         :return: an iterator of the form
         [table_number, index_in_table, weight, reference_to_node_connected_to]
@@ -197,7 +197,7 @@ class NodeEdgesForNonDeletionTables(NodeEdges):
 
         return to_return
 
-    def iterate_over_connections(self):
+    def get_iterator_over_connections(self):
         """
         :return: an iterator of the form
         [table_number, index_in_table, weight, reference_to_node_connected_to]
@@ -213,7 +213,7 @@ class NodeEdgesForNonDeletionTables(NodeEdges):
                 reference_to_node_connected_to = data[NodeEdgesForNonDeletionTables.LOCATION_OF_REFERENCE_IN_TABLE]
                 yield [current_table_number, index_in_table, weight, reference_to_node_connected_to]
 
-        iterator_for_delete_supporting_tables = super().iterate_over_connections()
+        iterator_for_delete_supporting_tables = super().get_iterator_over_connections()
         for data in iterator_for_delete_supporting_tables:
             # add self.number_of_tables_that_do_not_support_deletion to align the table numbers accordingly
             data[0] += self._translate_from_table_number_of_manager_to_real_table_number(data[0])

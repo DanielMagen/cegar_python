@@ -39,7 +39,9 @@ class Node:
         self.table_number = table_number
         self.index_in_table = index_in_table
         self.location_can_not_be_changed = False
-        self.location_of_ar_node_nested_in = Node.NO_AR_NODE_CONTAINER
+
+        # when you implement this is cpp have this be a void* pointer to avoid circular dependencies
+        self.pointer_to_ar_node_nested_in = Node.NO_AR_NODE_CONTAINER
 
         if number_of_tables_in_previous_layer_that_support_deletion < number_of_tables_in_previous_layer:
             self.incoming_edges_manager = NodeEdgesForNonDeletionTables(
@@ -61,20 +63,22 @@ class Node:
     def get_number_of_tables_in_next_layer(self):
         return self.outgoing_edges_manager.get_number_of_tables_in_layer_connected_to()
 
-    def get_location_of_ar_node_nested_in(self):
-        return self.location_of_ar_node_nested_in
+    def get_pointer_to_ar_node_nested_in(self):
+        return self.pointer_to_ar_node_nested_in
 
+    # when you implement this in cpp have another way to check if the pointer is valid. I remember we saw some way to
+    # have the pointer be null or 0 in cpp
     def reset_ar_node_nested_in(self):
-        self.location_of_ar_node_nested_in = Node.NO_AR_NODE_CONTAINER
+        self.pointer_to_ar_node_nested_in = Node.NO_AR_NODE_CONTAINER
 
-    def set_location_of_ar_node_nested_in(self, ar_node_location):
+    def set_pointer_to_ar_node_nested_in(self, ar_node_location):
         if self.is_nested_in_ar_node():
             raise Exception("node is already nested in another ar_node. call reset_ar_node_nested_in before"
                             " calling this method")
-        self.location_of_ar_node_nested_in = ar_node_location
+        self.pointer_to_ar_node_nested_in = ar_node_location
 
     def is_nested_in_ar_node(self):
-        return self.location_of_ar_node_nested_in is not Node.NO_AR_NODE_CONTAINER
+        return self.pointer_to_ar_node_nested_in is not Node.NO_AR_NODE_CONTAINER
 
     def set_in_stone(self):
         """
@@ -82,7 +86,7 @@ class Node:
         """
         self.location_can_not_be_changed = True
 
-    def is_the_node_set_in_stone(self):
+    def check_if_location_can_be_changed(self):
         return self.location_can_not_be_changed
 
     def get_location(self):
@@ -93,13 +97,19 @@ class Node:
         # in the id. hence the node id is unique only in the preview of the layer its in
         return [self.table_number, self.index_in_table]
 
-    def _check_if_location_can_be_changed(self):
+    def _check_if_location_can_be_changed_and_raise_error_if_not(self):
         """
         if the node location can not be changed it raises an error
         otherwise it does nothing
         """
         if self.location_can_not_be_changed:
             raise Exception("the node location cannot be changed")
+
+    def get_iterator_for_incoming_edges_data(self):
+        return self.incoming_edges_manager.get_iterator_over_connections()
+
+    def get_iterator_for_outgoing_edges_data(self):
+        return self.outgoing_edges_manager.get_iterator_over_connections()
 
     def add_neighbor(self, direction_of_connection, weight, node, add_this_node_to_given_node_neighbors=False):
         """
@@ -186,21 +196,21 @@ class Node:
         # if an node is connected to us by an edge that is incoming to us it means that for him we are
         # an outgoing connection
         direction_of_connection = Node.OUTGOING_EDGE_DIRECTION
-        for connection_data in self.incoming_edges_manager.iterate_over_connections():
+        for connection_data in self.incoming_edges_manager.get_iterator_over_connections():
             reference_to_node_connected_to = connection_data[3]
             reference_to_node_connected_to.get_notified_that_neighbor_location_changed(direction_of_connection,
                                                                                        previous_location,
                                                                                        new_location)
 
         direction_of_connection = Node.INCOMING_EDGE_DIRECTION
-        for connection_data in self.outgoing_edges_manager.iterate_over_connections():
+        for connection_data in self.outgoing_edges_manager.get_iterator_over_connections():
             reference_to_node_connected_to = connection_data[3]
             reference_to_node_connected_to.get_notified_that_neighbor_location_changed(direction_of_connection,
                                                                                        previous_location,
                                                                                        new_location)
 
     def change_location(self, table_number, index_in_table):
-        self._check_if_location_can_be_changed()
+        self._check_if_location_can_be_changed_and_raise_error_if_not()
 
         previous_location = self.get_location()
         self.table_number = table_number
@@ -214,6 +224,17 @@ class ARNode(Node):
     this class would represent a ARNode that would work under the assumptions detailed in
     the ASSUMPTIONS file.
     """
+    # I want to first create the different arnodes and only after finishing creating them activating them
+    # this is required to preserve assumption (1) because first I will link all nodes to the ar nodes containing
+    # them and only after finishing.
+    # in addition to that I want to be able to only partially convert the network into an arnode form. this partial
+    # transformation only makes sense if we transform the network into an arnode form from the end backwards.
+    # an arnode of which its incoming edges are not from arnodes can not logically support abstraction or refinement.
+    # as such we set another activation status of ONLY_FORWARD_ACTIVATED_STATUS to indicate that this node and the nodes
+    # that are in front of him are of type arnode, but not its incoming edges nodes
+    NOT_ACTIVATED_STATUS = 0
+    ONLY_FORWARD_ACTIVATED_STATUS = 1
+    FULLY_ACTIVATED_STATUS = 1
 
     def __init__(self,
                  starting_node,
@@ -241,21 +262,21 @@ class ARNode(Node):
 
         self.location_of_ar_node_nested_in = self.get_location()
 
+        if not starting_node.check_if_location_can_be_changed():
+            # assumption (2) is violated
+            raise Exception("arnodes can only contain nodes which can not change their location")
         self.inner_nodes = {starting_node}
-        starting_node.set_location_of_ar_node_nested_in(self.get_location())
+        starting_node.set_pointer_to_ar_node_nested_in(self.get_location())
 
         self.function_to_calculate_merger_of_incoming_edges = function_to_calculate_merger_of_incoming_edges
         self.function_to_calculate_merger_of_outgoing_edges = function_to_calculate_merger_of_outgoing_edges
 
-        # I want to first create the different arnodes and only after finishing creating them activating them
-        # this is required to preserve assumption (1) because first I will link all nodes to the ar nodes containing
-        # them and only after finishing
-        self.is_active = False
+        self.activation_status = ARNode.NOT_ACTIVATED_STATUS
 
-    def set_location_of_ar_node_nested_in(self, ar_node_location):
+    def set_pointer_to_ar_node_nested_in(self, ar_node_location):
         raise NotImplementedError("can not change")
 
-    def get_location_of_ar_node_nested_in(self):
+    def get_pointer_to_ar_node_nested_in(self):
         return self.get_location()
 
     def is_nested_in_ar_node(self):
@@ -265,5 +286,99 @@ class ARNode(Node):
         # from assumption (3)
         raise NotImplementedError("can not set arnode location in stone")
 
-    def is_the_node_set_in_stone(self):
+    def check_if_location_can_be_changed(self):
         return False
+
+    def forward_activate_arnode(self, add_this_node_to_given_node_neighbors=False):
+        """
+        this method partially activates the arnode.
+        it connects this arnode to all the arnodes containing all the nodes which are connected to the starting_node
+        via an outgoing edge.
+
+        :param add_this_node_to_given_node_neighbors: when we add a new arnode neighbor to this node we might want to
+        notify this neighbor to have him add us as his neighbor.
+        if true, it will set the add_this_node_to_given_node_neighbors in the add_neighbor function to true.
+
+        """
+        if self.activation_status == ARNode.FULLY_ACTIVATED_STATUS:
+            # from assumptions (6)
+            raise Exception("can not demote in activation status")
+
+        if self.activation_status == ARNode.ONLY_FORWARD_ACTIVATED_STATUS:
+            return
+
+        # else self.activation_status == ARNode.NOT_ACTIVATED_STATUS from assumption (5)
+        self.activation_status = ARNode.ONLY_FORWARD_ACTIVATED_STATUS
+
+        # since before calling this function self.activation_status == ARNode.NOT_ACTIVATED_STATUS
+        # from assumptions (4) we conclude that the arnode only contains 1 node - the starting_node it received
+        # simply replace the starting_node outgoing edges to nodes they are connected to with outgoing edges to
+        # the arnodes which contain them
+
+        direction_of_connection = ARNode.OUTGOING_EDGE_DIRECTION
+
+        starting_node = None
+        # this would only iterate once
+        for node in self.inner_nodes:
+            starting_node = node
+
+###########################################################################################################################################################
+        ###################################################################################### add support for merging edges
+        iterator_for_outgoing_edges = starting_node.get_iterator_for_outgoing_edges_data()
+        for data in iterator_for_outgoing_edges:
+            _, _, weight, node_connected_to = data
+            if not node_connected_to.is_nested_in_ar_node():
+                # assumption (1) is violated
+                raise Exception("the arnode needs all of its outgoing edges to be connected to only arnodes")
+            arnode_containing_node = node_connected_to.get_pointer_to_ar_node_nested_in()
+            self.add_neighbor(direction_of_connection,
+                              weight,
+                              arnode_containing_node,
+                              add_this_node_to_given_node_neighbors)
+
+    def fully_activate_arnode(self, add_this_node_to_given_node_neighbors=False):
+        """
+        this method fully activates the arnode.
+        it connects this arnode to all the arnodes containing all the nodes which are connected to the starting_node
+        via an outgoing or an incoming edge.
+
+        :param add_this_node_to_given_node_neighbors: when we add a new arnode neighbor to this node we might want to
+        notify this neighbor to have him add us as his neighbor.
+        if true, it will set the add_this_node_to_given_node_neighbors in the add_neighbor function to true.
+        """
+        if self.activation_status == ARNode.FULLY_ACTIVATED_STATUS:
+            return
+
+        if self.activation_status == ARNode.NOT_ACTIVATED_STATUS:
+            self.forward_activate_arnode(add_this_node_to_given_node_neighbors)
+
+        # now from assumption (5) we get self.activation_status = ARNode.ONLY_FORWARD_ACTIVATED_STATUS
+
+        self.activation_status = ARNode.FULLY_ACTIVATED_STATUS
+
+        # all the outgoing edges were added using the forward_activate_arnode function
+        # simply add all the incoming edges
+
+        # since before calling this function self.activation_status == ARNode.ONLY_FORWARD_ACTIVATED_STATUS maximally
+        # from assumptions (4) we conclude that the arnode only contains 1 node - the starting_node it received
+        # simply replace the starting_node outgoing edges to nodes they are connected to with outgoing edges to
+        # the arnodes which contain them
+
+        direction_of_connection = ARNode.INCOMING_EDGE_DIRECTION
+
+        starting_node = None
+        # this would only iterate once
+        for node in self.inner_nodes:
+            starting_node = node
+
+        iterator_for_incoming_edges = starting_node.get_iterator_for_incoming_edges_data()
+        for data in iterator_for_incoming_edges:
+            _, _, weight, node_connected_to = data
+            if not node_connected_to.is_nested_in_ar_node():
+                # assumption (1) is violated
+                raise Exception("the arnode needs all of its outgoing edges to be connected to only arnodes")
+            arnode_containing_node = node_connected_to.get_pointer_to_ar_node_nested_in()
+            self.add_neighbor(direction_of_connection,
+                              weight,
+                              arnode_containing_node,
+                              add_this_node_to_given_node_neighbors)
