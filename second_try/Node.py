@@ -55,11 +55,23 @@ class Node:
         else:
             self.outgoing_edges_manager = NodeEdges(number_of_tables_in_next_layer)
 
-    def set_location_of_ar_node_nested_in(self, ar_node_location):
-        self.location_of_ar_node_nested_in = ar_node_location
+    def get_number_of_tables_in_previous_layer(self):
+        return self.incoming_edges_manager.get_number_of_tables_in_layer_connected_to()
+
+    def get_number_of_tables_in_next_layer(self):
+        return self.outgoing_edges_manager.get_number_of_tables_in_layer_connected_to()
 
     def get_location_of_ar_node_nested_in(self):
         return self.location_of_ar_node_nested_in
+
+    def reset_ar_node_nested_in(self):
+        self.location_of_ar_node_nested_in = Node.NO_AR_NODE_CONTAINER
+
+    def set_location_of_ar_node_nested_in(self, ar_node_location):
+        if self.is_nested_in_ar_node():
+            raise Exception("node is already nested in another ar_node. call reset_ar_node_nested_in before"
+                            " calling this method")
+        self.location_of_ar_node_nested_in = ar_node_location
 
     def is_nested_in_ar_node(self):
         return self.location_of_ar_node_nested_in is not Node.NO_AR_NODE_CONTAINER
@@ -204,9 +216,22 @@ class ARNode(Node):
     """
 
     def __init__(self,
-                 number_of_tables_in_previous_layer,
-                 number_of_tables_in_next_layer,
-                 layer_number, table_number, index_in_table):
+                 starting_node,
+                 table_number,
+                 index_in_table,
+                 function_to_calculate_merger_of_incoming_edges,
+                 function_to_calculate_merger_of_outgoing_edges):
+        """
+        :param starting_node:
+        :param table_number:
+        :param index_in_table:
+        :param function_to_calculate_merger_of_incoming_edges:
+        :param function_to_calculate_merger_of_outgoing_edges:
+        """
+        number_of_tables_in_previous_layer = starting_node.get_number_of_tables_in_previous_layer()
+        number_of_tables_in_next_layer = starting_node.get_number_of_tables_in_next_layer()
+        layer_number = starting_node.get_layer_number()
+
         super().__init__(
             number_of_tables_in_previous_layer,
             number_of_tables_in_next_layer,
@@ -216,7 +241,16 @@ class ARNode(Node):
 
         self.location_of_ar_node_nested_in = self.get_location()
 
-        self.inner_nodes = set([])
+        self.inner_nodes = {starting_node}
+        starting_node.set_location_of_ar_node_nested_in(self.get_location())
+
+        self.function_to_calculate_merger_of_incoming_edges = function_to_calculate_merger_of_incoming_edges
+        self.function_to_calculate_merger_of_outgoing_edges = function_to_calculate_merger_of_outgoing_edges
+
+        # I want to first create the different arnodes and only after finishing creating them activating them
+        # this is required to preserve assumption (1) because first I will link all nodes to the ar nodes containing
+        # them and only after finishing
+        self.is_active = False
 
     def set_location_of_ar_node_nested_in(self, ar_node_location):
         raise NotImplementedError("can not change")

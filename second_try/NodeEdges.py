@@ -19,6 +19,9 @@ class NodeEdges:
         # such that map[index_in_table] = (weight of edge, reference to the node connected to)
         self.list_of_tables = [{} for _ in range(number_of_tables_in_layer_connected_to)]
 
+    def get_number_of_tables_in_layer_connected_to(self):
+        return self.number_of_tables_in_layer_connected_to
+
     def _check_valid_table_number(self, table_number):
         if not 0 <= table_number < self.number_of_tables_in_layer_connected_to:
             raise Exception("there is no such table")
@@ -154,17 +157,18 @@ class NodeEdgesForNonDeletionTables(NodeEdges):
     def find_weight_of_connection(self, table_number, index_in_table):
         self._check_valid_table_number(table_number)
         if table_number < self.number_of_tables_that_do_not_support_deletion:
-            # first guess that the connection is at the location given
+            # the requested node must be in the index given
+            # proof:
+            # assume towards contradiction it is not in the index it is saved in
+            # if its actual index is bigger, it means that either
+            # a) the node was given false information about its location - in contradiction to the program instructions
+            # b) a node was inserted between this node and the start of the table - in contradiction to assumption (3)
+            # if the actual index is smaller, it means that either
+            # a) the node was given false information about its location - in contradiction to the program instructions
+            # b) a node that lies between this node and the start of the table was deleted from the table - in
+            # contradiction to the fact that this table does not support deletion
             current_table = self.list_of_tables_that_do_not_support_deletion[table_number]
-            if len(current_table) > index_in_table and \
-                    current_table[index_in_table][
-                        NodeEdgesForNonDeletionTables.LOCATION_OF_INDEX_IN_TABLE] == index_in_table:
-                return current_table[index_in_table][NodeEdgesForNonDeletionTables.LOCATION_OF_WEIGHT_IN_TABLE]
-            # the guess did not work, use binary search to search to find the relevant index
-            # for simplicity I only implemented linear search here
-            for i in range(len(current_table)):
-                if current_table[i][NodeEdgesForNonDeletionTables.LOCATION_OF_INDEX_IN_TABLE] == index_in_table:
-                    return current_table[index_in_table][NodeEdgesForNonDeletionTables.LOCATION_OF_WEIGHT_IN_TABLE]
+            return current_table[index_in_table][NodeEdgesForNonDeletionTables.LOCATION_OF_WEIGHT_IN_TABLE]
         else:
             return super().find_weight_of_connection(
                 self._translate_table_number_to_manager_for_tables_that_support_deletion(table_number), index_in_table)
