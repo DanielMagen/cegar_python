@@ -12,10 +12,10 @@ class Node:
     NO_AR_NODE_CONTAINER = None
 
     def __init__(self,
-                 number_of_tables_the_previous_layer_is_segmented_to,
-                 number_of_tables_the_next_layer_is_segmented_to,
-                 number_of_tables_that_support_deletion_in_previous_layer,
-                 number_of_tables_that_support_deletion_in_next_layer,
+                 number_of_tables_in_previous_layer,
+                 number_of_tables_in_next_layer,
+                 number_of_tables_in_previous_layer_that_support_deletion,
+                 number_of_tables_in_next_layer_that_support_deletion,
                  layer_number, table_number, index_in_table):
         """
 
@@ -24,10 +24,10 @@ class Node:
 
         the following arguments given are explained in assumption (4)
 
-        :param number_of_tables_the_previous_layer_is_segmented_to:
-        :param number_of_tables_the_next_layer_is_segmented_to:
-        :param number_of_tables_that_support_deletion_in_previous_layer:
-        :param number_of_tables_that_support_deletion_in_next_layer:
+        :param number_of_tables_in_previous_layer:
+        :param number_of_tables_in_next_layer:
+        :param number_of_tables_in_previous_layer_that_support_deletion:
+        :param number_of_tables_in_next_layer_that_support_deletion:
 
 
         :param layer_number:
@@ -41,13 +41,19 @@ class Node:
         self.location_can_not_be_changed = False
         self.location_of_ar_node_nested_in = Node.NO_AR_NODE_CONTAINER
 
-        self.incoming_edges_manager = NodeEdgesForNonDeletionTables(
-            number_of_tables_the_previous_layer_is_segmented_to,
-            number_of_tables_that_support_deletion_in_previous_layer)
+        if number_of_tables_in_previous_layer_that_support_deletion < number_of_tables_in_previous_layer:
+            self.incoming_edges_manager = NodeEdgesForNonDeletionTables(
+                number_of_tables_in_previous_layer,
+                number_of_tables_in_previous_layer_that_support_deletion)
+        else:
+            self.incoming_edges_manager = NodeEdges(number_of_tables_in_previous_layer)
 
-        self.outgoing_edges_manager = NodeEdgesForNonDeletionTables(
-            number_of_tables_the_next_layer_is_segmented_to,
-            number_of_tables_that_support_deletion_in_next_layer)
+        if number_of_tables_in_next_layer_that_support_deletion < number_of_tables_in_next_layer:
+            self.outgoing_edges_manager = NodeEdgesForNonDeletionTables(
+                number_of_tables_in_next_layer,
+                number_of_tables_in_next_layer_that_support_deletion)
+        else:
+            self.outgoing_edges_manager = NodeEdges(number_of_tables_in_next_layer)
 
     def set_location_of_ar_node_nested_in(self, ar_node_location):
         self.location_of_ar_node_nested_in = ar_node_location
@@ -82,6 +88,52 @@ class Node:
         """
         if self.location_can_not_be_changed:
             raise Exception("the node location cannot be changed")
+
+    def add_neighbor(self, direction_of_connection, weight, node, add_this_node_to_given_node_neighbors=False):
+        """
+
+        :param direction_of_connection:
+        :param weight:
+        :param node:
+        :param add_this_node_to_given_node_neighbors: if true would add this node to the given node neighbors
+        (from the right direction of course)
+        :return:
+        """
+        if direction_of_connection == Node.INCOMING_EDGE_DIRECTION:
+            edges_manager_to_work_with = self.incoming_edges_manager
+        elif direction_of_connection == Node.OUTGOING_EDGE_DIRECTION:
+            edges_manager_to_work_with = self.outgoing_edges_manager
+        else:
+            raise Exception("invalid direction_of_connection")
+
+        table_number, index_in_table = node.get_location()
+        edges_manager_to_work_with.add_connection(table_number, index_in_table, weight, node)
+
+        if add_this_node_to_given_node_neighbors:
+            node.add_neighbor(-direction_of_connection, weight, self, add_this_node_to_given_node_neighbors=False)
+
+    def delete_neighbor(self, direction_of_connection, neighbor_location_data,
+                        delete_this_node_to_given_node_neighbors=False):
+        """
+        :param direction_of_connection:
+        :param neighbor_location_data:
+        :param delete_this_node_to_given_node_neighbors: if true would delete this node from the given node neighbors
+        (from the right direction of course)
+        :return:
+        """
+        if direction_of_connection == Node.INCOMING_EDGE_DIRECTION:
+            edges_manager_to_work_with = self.incoming_edges_manager
+        elif direction_of_connection == Node.OUTGOING_EDGE_DIRECTION:
+            edges_manager_to_work_with = self.outgoing_edges_manager
+        else:
+            raise Exception("invalid direction_of_connection")
+
+        table_number, index_in_table = neighbor_location_data
+        _, node_connected_to = edges_manager_to_work_with.delete_connection(table_number, index_in_table)
+
+        if delete_this_node_to_given_node_neighbors:
+            node_connected_to.delete_neighbor(-direction_of_connection, self.get_location(),
+                                              delete_this_node_to_given_node_neighbors=False)
 
     def get_notified_that_neighbor_location_changed(self, direction_of_connection, previous_location, new_location):
         """
@@ -145,4 +197,39 @@ class Node:
         self._notify_all_neighbors_that_my_location_changed(previous_location)
 
 
-class ARNode:
+class ARNode(Node):
+    """
+    this class would represent a ARNode that would work under the assumptions detailed in
+    the ASSUMPTIONS file.
+    """
+
+    def __init__(self,
+                 number_of_tables_in_previous_layer,
+                 number_of_tables_in_next_layer,
+                 layer_number, table_number, index_in_table):
+        super().__init__(
+            number_of_tables_in_previous_layer,
+            number_of_tables_in_next_layer,
+            number_of_tables_in_previous_layer,
+            number_of_tables_in_next_layer,
+            layer_number, table_number, index_in_table)
+
+        self.location_of_ar_node_nested_in = self.get_location()
+
+        self.inner_nodes = set([])
+
+    def set_location_of_ar_node_nested_in(self, ar_node_location):
+        raise NotImplementedError("can not change")
+
+    def get_location_of_ar_node_nested_in(self):
+        return self.get_location()
+
+    def is_nested_in_ar_node(self):
+        return True
+
+    def set_in_stone(self):
+        # from assumption (3)
+        raise NotImplementedError("can not set arnode location in stone")
+
+    def is_the_node_set_in_stone(self):
+        return False

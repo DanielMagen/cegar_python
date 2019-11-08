@@ -30,6 +30,16 @@ we will assume that the tables will be ordered such that all tables of type a oc
 
 the node would be told how many tables support deletion in the layers its connected to
 
+ARNode assumptions:
+1)
+ARNodes are only connected to other ARNode
+
+2)
+ARNodes would contain only nodes which are set in stone and have the nodes that are connected to them set in stone
+
+3)
+ARNodes can merge with other ARNode, split and change location
+
 
 
 NodeEdges assumptions:

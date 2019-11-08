@@ -23,6 +23,8 @@ class NodeEdges:
         if not 0 <= table_number < self.number_of_tables_in_layer_connected_to:
             raise Exception("there is no such table")
 
+    # when translating this function to cpp, have the node_connected_to be void* or Node to enable it to contain
+    # both arnodes and nodes
     def add_connection(self, table_number, index_in_table, weight, node_connected_to):
         self._check_valid_table_number(table_number)
 
@@ -67,6 +69,12 @@ class NodeEdges:
                 reference_to_node_connected_to = data[NodeEdges.LOCATION_OF_REFERENCE_IN_MAP]
                 yield [current_table_number, index_in_table, weight, reference_to_node_connected_to]
 
+    def get_copy_which_supports_deletion_in_all_tables(self):
+        """
+        :return: a copy of the current edges for a layer which supports deletion in all tables
+        for this class, this is simply a copy of the object
+        """
+        return deepcopy(self)
 
 
 class NodeEdgesForNonDeletionTables(NodeEdges):
@@ -112,7 +120,7 @@ class NodeEdgesForNonDeletionTables(NodeEdges):
         if not 0 <= table_number < self.number_of_tables_in_layer_connected_to:
             raise Exception("there is no such table")
 
-    def translate_table_number_to_manager_for_tables_that_support_deletion(self, table_number):
+    def _translate_table_number_to_manager_for_tables_that_support_deletion(self, table_number):
         """
         :param table_number:
         :return:
@@ -122,9 +130,9 @@ class NodeEdgesForNonDeletionTables(NodeEdges):
         """
         return table_number - self.number_of_tables_that_do_not_support_deletion
 
-    def translate_from_table_number_of_manager_to_real_table_number(self, table_number_from_manager):
+    def _translate_from_table_number_of_manager_to_real_table_number(self, table_number_from_manager):
         """
-        the exact opposite of the translate_table_number_to_manager_for_tables_that_support_deletion function
+        the exact opposite of the _translate_table_number_to_manager_for_tables_that_support_deletion function
         :param table_number_from_manager:
         :return:
         """
@@ -140,7 +148,7 @@ class NodeEdgesForNonDeletionTables(NodeEdges):
 
         else:
             super().add_connection(
-                self.translate_table_number_to_manager_for_tables_that_support_deletion(table_number), index_in_table,
+                self._translate_table_number_to_manager_for_tables_that_support_deletion(table_number), index_in_table,
                 weight, node_connected_to)
 
     def find_weight_of_connection(self, table_number, index_in_table):
@@ -159,7 +167,7 @@ class NodeEdgesForNonDeletionTables(NodeEdges):
                     return current_table[index_in_table][NodeEdgesForNonDeletionTables.LOCATION_OF_WEIGHT_IN_TABLE]
         else:
             return super().find_weight_of_connection(
-                self.translate_table_number_to_manager_for_tables_that_support_deletion(table_number), index_in_table)
+                self._translate_table_number_to_manager_for_tables_that_support_deletion(table_number), index_in_table)
 
     def delete_connection(self, table_number, index_in_table):
         if not self.number_of_tables_that_do_not_support_deletion <= table_number < \
@@ -204,6 +212,5 @@ class NodeEdgesForNonDeletionTables(NodeEdges):
         iterator_for_delete_supporting_tables = super().iterate_over_connections()
         for data in iterator_for_delete_supporting_tables:
             # add self.number_of_tables_that_do_not_support_deletion to align the table numbers accordingly
-            data[0] += self.translate_from_table_number_of_manager_to_real_table_number(data[0])
+            data[0] += self._translate_from_table_number_of_manager_to_real_table_number(data[0])
             yield data
-
