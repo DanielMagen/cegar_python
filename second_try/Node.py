@@ -224,14 +224,15 @@ class ARNode(Node):
     this class would represent a ARNode that would work under the assumptions detailed in
     the ASSUMPTIONS file.
     """
-    # I want to first create the different arnodes and only after finishing creating them activating them
-    # this is required to preserve assumption (1) because first I will link all nodes to the ar nodes containing
-    # them and only after finishing.
+    # I want to first create the different arnodes and only after finishing creating them, activating them.
+    # this is required to preserve assumption (1) because arnodes can not be created another way which still preserves
+    # it.
     # in addition to that I want to be able to only partially convert the network into an arnode form. this partial
     # transformation only makes sense if we transform the network into an arnode form from the end backwards.
     # an arnode of which its incoming edges are not from arnodes can not logically support abstraction or refinement.
-    # as such we set another activation status of ONLY_FORWARD_ACTIVATED_STATUS to indicate that this node and the nodes
-    # that are in front of him are of type arnode, but not its incoming edges nodes
+    # as such we use the ONLY_FORWARD_ACTIVATED_STATUS to indicate that from this arnode backwards we can not guarantee
+    # that the network has been converted into an arnode form.
+    # further assumptions about he different activation status can be found in the ASSUMPTIONS file
     NOT_ACTIVATED_STATUS = 0
     ONLY_FORWARD_ACTIVATED_STATUS = 1
     FULLY_ACTIVATED_STATUS = 1
@@ -354,6 +355,8 @@ class ARNode(Node):
 
         # now from assumption (5) we get self.activation_status = ARNode.ONLY_FORWARD_ACTIVATED_STATUS
 
+        #################################################### check that assumption (5) holds and that we are forward connected only to fully activated nodes
+
         self.activation_status = ARNode.FULLY_ACTIVATED_STATUS
 
         # all the outgoing edges were added using the forward_activate_arnode function
@@ -371,12 +374,18 @@ class ARNode(Node):
         for node in self.inner_nodes:
             starting_node = node
 
+        # from assumptions (5) we conclude that the incoming edges arnodes could not have been fully activated since it
+        # would entail us to have been fully activated first, but we are only now entering the fully activated status
+        # and from assumption (6) this must be the first time (and from assumption (5) the only time) we are entering
+        # this status. as such from assumption (4) the arnodes we are connected to could not have merge or split and as
+        # such these are arnodes that only contain a single node.
         iterator_for_incoming_edges = starting_node.get_iterator_for_incoming_edges_data()
         for data in iterator_for_incoming_edges:
             _, _, weight, node_connected_to = data
             if not node_connected_to.is_nested_in_ar_node():
                 # assumption (1) is violated
                 raise Exception("the arnode needs all of its outgoing edges to be connected to only arnodes")
+            ############################################################################################################################# check this is a forward activated node
             arnode_containing_node = node_connected_to.get_pointer_to_ar_node_nested_in()
             self.add_neighbor(direction_of_connection,
                               weight,
