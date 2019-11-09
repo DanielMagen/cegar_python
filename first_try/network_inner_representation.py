@@ -204,13 +204,13 @@ class ARTable:
         if remove_node_from_its_neighbors:
             ar_node_to_remove.remove_node_from_all_of_its_neighbors()
 
-        index_in_table = ar_node_to_remove.get_index_in_table()
-        del self.ar_nodes[index_in_table]
+        key_in_table = ar_node_to_remove.get_key_in_table()
+        del self.ar_nodes[key_in_table]
 
-        # the index_in_table of all the nodes that came after the node that was removed has changed
+        # the key_in_table of all the nodes that came after the node that was removed has changed
         # so change them accordingly
-        for i in range(index_in_table, len(self.ar_nodes)):
-            self.ar_nodes[i].set_index_in_table(i)
+        for i in range(key_in_table, len(self.ar_nodes)):
+            self.ar_nodes[i].set_key_in_table(i)
 
         # now check if the table is empty again and if so set table_starting_index accordingly
         if len(self.ar_nodes) == 0:
@@ -238,8 +238,8 @@ class ARNode():
     ID_INDEX_OF_TABLE_NUMBER = 1
     ID_INDEX_OF_INDEX_IN_TABLE = 2
 
-    def __init__(self, layer_number, table_number, index_in_table):
-        self.location_data = [layer_number, table_number, index_in_table]
+    def __init__(self, layer_number, table_number, key_in_table):
+        self.location_data = [layer_number, table_number, key_in_table]
 
         ############################################## how should I represent the neighbors lists in a way that would
         ################################ enable efficient manipulation?
@@ -251,16 +251,16 @@ class ARNode():
     def get_table_number(self):
         return self.location_data[ARNode.ID_INDEX_OF_TABLE_NUMBER]
 
-    def get_index_in_table(self):
+    def get_key_in_table(self):
         return self.location_data[ARNode.ID_INDEX_OF_INDEX_IN_TABLE]
 
-    def set_table(self, table_number, index_in_table):
+    def set_table(self, table_number, key_in_table):
         self.location_data[ARNode.ID_INDEX_OF_TABLE_NUMBER] = table_number
-        self.location_data[ARNode.ID_INDEX_OF_INDEX_IN_TABLE] = index_in_table
+        self.location_data[ARNode.ID_INDEX_OF_INDEX_IN_TABLE] = key_in_table
         self.notify_all_neighbors_that_id_changed()
 
-    def set_index_in_table(self, index_in_table):
-        self.location_data[ARNode.ID_INDEX_OF_INDEX_IN_TABLE] = index_in_table
+    def set_key_in_table(self, key_in_table):
+        self.location_data[ARNode.ID_INDEX_OF_INDEX_IN_TABLE] = key_in_table
         self.notify_all_neighbors_that_id_changed()
 
     def notify_all_neighbors_that_id_changed(self, ):

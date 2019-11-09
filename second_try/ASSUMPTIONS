@@ -73,5 +73,5 @@ NodeEdges assumptions:
 3)
 nodes that are added to tables of type a will be added at the bottom of the table and
 will never move or be deleted once added. as such for the nodes that reside in those tables,
-the nodes index_in_table would serve as an absolute unchanging id
+the nodes key_in_table would serve as an absolute unchanging id
 ----------------------------------------------------------------

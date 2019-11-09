@@ -17,7 +17,7 @@ class Node:
                  number_of_tables_in_next_layer,
                  number_of_tables_in_previous_layer_that_support_deletion,
                  number_of_tables_in_next_layer_that_support_deletion,
-                 table_number, index_in_table):
+                 table_number, key_in_table):
         """
 
         note that from assumption (3) we do need to care about tables in the current layer
@@ -33,12 +33,12 @@ class Node:
 
 
         :param table_number:
-        :param index_in_table:
+        :param key_in_table:
         """
 
         self.table_manager = table_manager_reference
         self.table_number = table_number
-        self.index_in_table = index_in_table
+        self.key_in_table = key_in_table
         self.location_can_not_be_changed = False
 
         if number_of_tables_in_previous_layer_that_support_deletion < number_of_tables_in_previous_layer:
@@ -71,11 +71,11 @@ class Node:
         it then remove the node from its residing table
         """
 
-        self.table_manager.notify_node_was_destroyed(self.index_in_table)
+        self.table_manager.notify_node_was_destroyed(self.key_in_table)
 
         def remove_from_node_by_direction_and_data(direction_of_connection, connection_data):
-            table_number, index_in_table, weight, neighbor = connection_data
-            neighbor_location_data = [table_number, index_in_table]
+            table_number, key_in_table, weight, neighbor = connection_data
+            neighbor_location_data = [table_number, key_in_table]
             neighbor.remove_neighbor_from_neighbors_list(direction_of_connection,
                                                          neighbor_location_data,
                                                          remove_this_node_from_given_node_neighbors_list=False)
@@ -134,13 +134,13 @@ class Node:
 
     def get_location(self):
         """
-        :return: a tuple of (table_number, index_in_table)
+        :return: a tuple of (table_number, key_in_table)
         """
         self._check_if_killed_and_raise_error_if_is()
 
         # using assumption (2), since the node can not be moved to another layer we do not include the layer number
         # in the id. hence the node id is unique only in the preview of the layer its in
-        return (self.table_number, self.index_in_table)
+        return (self.table_number, self.key_in_table)
 
     def _check_if_location_can_be_changed_and_raise_error_if_not(self):
         """
@@ -185,8 +185,8 @@ class Node:
         else:
             raise Exception("invalid direction_of_connection")
 
-        table_number, index_in_table = node.get_location()
-        edges_manager_to_work_with.add_connection(table_number, index_in_table, weight, node)
+        table_number, key_in_table = node.get_location()
+        edges_manager_to_work_with.add_connection(table_number, key_in_table, weight, node)
 
         if add_this_node_to_given_node_neighbors:
             node.add_neighbor(-direction_of_connection, weight, self, add_this_node_to_given_node_neighbors=False)
@@ -209,8 +209,8 @@ class Node:
         else:
             raise Exception("invalid direction_of_connection")
 
-        table_number, index_in_table = neighbor_location_data
-        _, node_connected_to = edges_manager_to_work_with.delete_connection(table_number, index_in_table)
+        table_number, key_in_table = neighbor_location_data
+        _, node_connected_to = edges_manager_to_work_with.delete_connection(table_number, key_in_table)
 
         if remove_this_node_from_given_node_neighbors_list:
             node_connected_to.remove_neighbor_from_neighbors_list(-direction_of_connection, self.get_location(),
@@ -238,12 +238,12 @@ class Node:
             raise Exception("invalid direction_of_connection")
 
         previous_table_number = previous_location[0]
-        previous_index_in_table = previous_location[1]
+        previous_key_in_table = previous_location[1]
         new_table_number = new_location[0]
-        new_index_in_table = new_location[1]
+        new_key_in_table = new_location[1]
 
-        edges_manager_to_work_with.move_connection(previous_table_number, previous_index_in_table, new_table_number,
-                                                   new_index_in_table)
+        edges_manager_to_work_with.move_connection(previous_table_number, previous_key_in_table, new_table_number,
+                                                   new_key_in_table)
 
     def _notify_all_neighbors_that_my_location_changed(self, previous_location):
         """
@@ -272,13 +272,13 @@ class Node:
                                                                                        previous_location,
                                                                                        new_location)
 
-    def change_location(self, table_number, index_in_table):
+    def change_location(self, table_number, key_in_table):
         self._check_if_location_can_be_changed_and_raise_error_if_not()
         self._check_if_killed_and_raise_error_if_is()
 
         previous_location = self.get_location()
         self.table_number = table_number
-        self.index_in_table = index_in_table
+        self.key_in_table = key_in_table
 
         self._notify_all_neighbors_that_my_location_changed(previous_location)
 
@@ -304,11 +304,21 @@ class ARNode(Node):
 
     def __init__(self,
                  table_manager_reference,
-                 starting_node,
+                 starting_nodes,
                  table_number,
-                 index_in_table):
-        number_of_tables_in_previous_layer = starting_node.get_number_of_tables_in_previous_layer()
-        number_of_tables_in_next_layer = starting_node.get_number_of_tables_in_next_layer()
+                 key_in_table):
+
+        if len(starting_nodes) == 0:
+            raise Exception("ar node must have at least one starting node")
+
+        first_node_in_starting_nodes = None
+        for node in starting_nodes:
+            first_node_in_starting_nodes = node
+            break
+
+        # from assumption (2) all nodes would be in the same table and would have the same values
+        number_of_tables_in_previous_layer = first_node_in_starting_nodes.get_number_of_tables_in_previous_layer()
+        number_of_tables_in_next_layer = first_node_in_starting_nodes.get_number_of_tables_in_next_layer()
 
         super().__init__(
             table_manager_reference,
@@ -316,20 +326,29 @@ class ARNode(Node):
             number_of_tables_in_next_layer,
             number_of_tables_in_previous_layer,
             number_of_tables_in_next_layer,
-            table_number, index_in_table)
+            table_number, key_in_table)
 
         self.location_of_ar_node_nested_in = self.get_location()
 
-        if not starting_node.check_if_location_can_be_changed():
-            # assumption (2) is violated
-            raise Exception("arnodes can only contain nodes which can not change their location")
+        for node in starting_nodes:
+            if not node.check_if_location_can_be_changed():
+                # assumption (2) is violated
+                raise Exception("arnodes can only contain nodes which can not change their location")
 
         # this list should be kept ordered by the nodes indices.
         # from assumption (2) all the nodes in the inner nodes list would be in the same table
-        self.inner_nodes = [starting_node]
-        starting_node.set_pointer_to_ar_node_nested_in(self.get_location())
+        self.inner_nodes = set(starting_nodes)
+        for node in starting_nodes:
+            node.set_pointer_to_ar_node_nested_in(self.get_location())
 
         self.activation_status = ARNode.NOT_ACTIVATED_STATUS
+
+    def destructor(self):
+        # first go over the list of nodes got and reset their arnode owner
+        for node in self.inner_nodes:
+            node.reset_ar_node_nested_in()
+
+        super().destructor()
 
     def set_pointer_to_ar_node_nested_in(self, ar_node_location):
         raise NotImplementedError("can not change")
@@ -499,7 +518,7 @@ class ARNode(Node):
         self._insert_edges_for_the_first_time(Node.OUTGOING_EDGE_DIRECTION,
                                               function_to_calculate_merger_of_outgoing_edges,
                                               function_to_verify_arnode_neighbors_with=lambda
-                                              node: node.get_activation_status() != ARNode.NOT_ACTIVATED_STATUS,
+                                                  node: node.get_activation_status() != ARNode.NOT_ACTIVATED_STATUS,
                                               add_this_node_to_given_node_neighbors=
                                               add_this_node_to_given_node_neighbors
                                               )
@@ -532,17 +551,12 @@ class ARNode(Node):
 
         table_manager = arnodes_to_split.get_table_manager()
 
-        # now go over the list of nodes got and reset their arnode owner
-        for node_list in partition_of_arnode_inner_nodes:
-            for node in node_list:
-                node.reset_ar_node_nested_in()
-
         # before continuing, delete the arnode that needs to be split
+        # this would also reset the nodes owner arnode
         arnodes_to_split.destructor()
 
         for node_list in partition_of_arnode_inner_nodes:
-            starting_node = node_list[0]
-            new_arnode = table_manager.create_new_arnode(starting_node)
+            new_arnode = table_manager.create_new_arnode(node_list)
             for i in range(1, len(node_list)):
                 new_arnode.inner_node.append(node_list[i])
 
@@ -550,12 +564,9 @@ class ARNode(Node):
                                              function_to_calculate_merger_of_outgoing_edges,
                                              add_this_node_to_given_node_neighbors=True)
 
-    # get the index number by inserting a new arnode using the table_manager
-
     @staticmethod
     def merge_two_arnodes(arnode1,
                           arnode2,
-                          layer_number, table_number, index_in_table,
                           function_to_calculate_merger_of_incoming_edges,
                           function_to_calculate_merger_of_outgoing_edges):
         """
@@ -569,12 +580,27 @@ class ARNode(Node):
         :param arnode1: a fully activated arnode
         :param arnode2: a fully activated arnode
 
-        data required for the creation of the new arnode:
-        :param layer_number:
-        :param table_number:
-        :param index_in_table:
+        those functions would be used to calculate the edges of each resulting arnode
         :param function_to_calculate_merger_of_incoming_edges:
         :param function_to_calculate_merger_of_outgoing_edges:
         :return: the new merged arnode
         """
-        pass
+        for arnode in [arnode1, arnode2]:
+            if arnode.get_activation_status() != ARNode.FULLY_ACTIVATED_STATUS:
+                raise Exception("can not split a non fully activated arnode")
+
+        # from assumption (2) both arnodes have the same table_manager
+        table_manager = arnode1.get_table_manager()
+        inner_nodes_for_new_arnode = arnode1.inner_nodes.union(arnode2.inner_nodes)
+
+        # before continuing, delete the arnodes that needs to be merged
+        # this would also reset the nodes owner arnode
+        arnode1.destructor()
+        arnode2.destructor()
+
+        new_arnode = table_manager.create_new_arnode(inner_nodes_for_new_arnode)
+
+        new_arnode.fully_activate_arnode(function_to_calculate_merger_of_incoming_edges,
+                                         function_to_calculate_merger_of_outgoing_edges,
+                                         add_this_node_to_given_node_neighbors=True)
+
