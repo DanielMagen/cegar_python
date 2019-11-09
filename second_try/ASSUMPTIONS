@@ -3,7 +3,9 @@ Abstraction Refinement assumptions:
 1)
 before applying an operations on a node, all the nodes its connected to from the back
 and the front have been preprocessed
+----------------------------------------------------------------
 
+----------------------------------------------------------------
 Layer assumptions:
 1)
 each layer containing the nodes would be segmented into a consecutive ordered list of tables, and the number of such
