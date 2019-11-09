@@ -219,6 +219,7 @@ class Node:
         self._notify_all_neighbors_that_my_location_changed(previous_location)
 
 
+# use the decorator pattern
 class ARNode(Node):
     """
     this class would represent a ARNode that would work under the assumptions detailed in
@@ -290,6 +291,9 @@ class ARNode(Node):
     def check_if_location_can_be_changed(self):
         return False
 
+    def get_status(self):
+        return self.activation_status
+
     def forward_activate_arnode(self, add_this_node_to_given_node_neighbors=False):
         """
         this method partially activates the arnode.
@@ -323,8 +327,13 @@ class ARNode(Node):
         for node in self.inner_nodes:
             starting_node = node
 
-###########################################################################################################################################################
-        ###################################################################################### add support for merging edges
+        # from assumption (5) we conclude that all the nodes that we are connected to by an outgoing edge can not
+        # be fully activated yet as full activation requires this node to be forward activated
+        # and from assumption (6) this must be the first time (and from assumption (5) the only time) we are entering
+        # this status. as such from assumption (4) the arnodes we are connected to could not have merge or split and as
+        # such these arnodes only contain a single node.
+        # i.e. we do not need to care about nodes that were merged before calling this function, simply go over the
+        # starting node connection and translate them to connections to arnodes
         iterator_for_outgoing_edges = starting_node.get_iterator_for_outgoing_edges_data()
         for data in iterator_for_outgoing_edges:
             _, _, weight, node_connected_to = data
@@ -350,16 +359,19 @@ class ARNode(Node):
         if self.activation_status == ARNode.FULLY_ACTIVATED_STATUS:
             return
 
-        if self.activation_status == ARNode.NOT_ACTIVATED_STATUS:
-            self.forward_activate_arnode(add_this_node_to_given_node_neighbors)
+        # from assumption (5) for our node to be fully activated entails all the nodes we are connected to by
+        # an outgoing edge to be fully activated beforehand. if this node was not forward activated then by
+        # assumption (6) it means this node is not activated at all. as such by assumption (5) the nodes we are
+        # connected to could not be fully activated.
+        # i.e. assumptions (5) and (6) imply that the activation process must be gradual.
+        if self.activation_status != ARNode.ONLY_FORWARD_ACTIVATED_STATUS:
+            raise Exception("the nodes we are connected to by an outgoing edge must be fully activated")
 
         # now from assumption (5) we get self.activation_status = ARNode.ONLY_FORWARD_ACTIVATED_STATUS
 
-        #################################################### check that assumption (5) holds and that we are forward connected only to fully activated nodes
-
         self.activation_status = ARNode.FULLY_ACTIVATED_STATUS
 
-        # all the outgoing edges were added using the forward_activate_arnode function
+        # all the outgoing edges were already added using the forward_activate_arnode function
         # simply add all the incoming edges
 
         # since before calling this function self.activation_status == ARNode.ONLY_FORWARD_ACTIVATED_STATUS maximally
@@ -375,18 +387,25 @@ class ARNode(Node):
             starting_node = node
 
         # from assumptions (5) we conclude that the incoming edges arnodes could not have been fully activated since it
-        # would entail us to have been fully activated first, but we are only now entering the fully activated status
+        # would entail us to have been fully activated first, but we are only now entering the fully activated status.
         # and from assumption (6) this must be the first time (and from assumption (5) the only time) we are entering
         # this status. as such from assumption (4) the arnodes we are connected to could not have merge or split and as
-        # such these are arnodes that only contain a single node.
+        # such these arnodes only contain a single node.
+        # however these nodes can by in a non-activated status and they could not connect to us as it would contradict
+        # assumptions (5), so we will check for such nodes.
         iterator_for_incoming_edges = starting_node.get_iterator_for_incoming_edges_data()
         for data in iterator_for_incoming_edges:
             _, _, weight, node_connected_to = data
             if not node_connected_to.is_nested_in_ar_node():
                 # assumption (1) is violated
                 raise Exception("the arnode needs all of its outgoing edges to be connected to only arnodes")
-            ############################################################################################################################# check this is a forward activated node
+
             arnode_containing_node = node_connected_to.get_pointer_to_ar_node_nested_in()
+
+            if arnode_containing_node.get_status() != ARNode.ONLY_FORWARD_ACTIVATED_STATUS:
+                raise Exception("the arnode could not be fully activated before fully activating all the arnodes its"
+                                "connected to by a outgoing edge")
+
             self.add_neighbor(direction_of_connection,
                               weight,
                               arnode_containing_node,
