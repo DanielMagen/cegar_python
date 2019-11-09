@@ -40,17 +40,19 @@ ARNode assumptions:
 ARNodes are only connected to other ARNode
 
 2)
-ARNodes would contain only nodes which are set in stone and have the nodes that are connected to them set in stone
+ARNodes would contain only nodes from the same table, which are set in stone and have
+the nodes that are connected to them set in stone
 
 3)
 ARNodes can merge with other ARNode, split and change location
 
 4)
-ARNodes would not split or merge unless they are fully activated, i.e. connected to ar nodes from both sides
+ARNodes would not split or merge unless they are fully activated
 
 5) nodes have only three activation status: activated, partially (forward) activated, fully activated
-fully activated entails that the arnodes that have incoming connections to this node be forward activated and the
-arnodes that we are connected to by outgoing connections will be fully activated.
+fully activated entails that
+a) the arnodes that have outgoing connections (which are incoming) to this node must be forward activated
+b) the arnodes that we are connected to by outgoing connections will be fully activated
 
 6) nodes activation status can only increase, i.e. they can only go not activated -> partially activated ->
 fully activated, but not go in reverse.
