@@ -352,7 +352,8 @@ class ARNode(Node):
 
     def _insert_edges_for_the_first_time(self, direction_of_connection,
                                          function_to_calculate_merger_of_edges,
-                                         function_to_verify_arnode_neighbors_with=lambda x: True):
+                                         function_to_verify_arnode_neighbors_with=lambda x: True,
+                                         add_this_node_to_given_node_neighbors=False):
         """
         this function would be used to connect this arnode to other arnodes that may have an incoming or an outgoing
         connection with us.
@@ -408,12 +409,10 @@ class ARNode(Node):
 
             # if an node is connected to us by an edge that is outgoing from us it means that for him we are
             # an incoming connection,m and vice versa
-            # also set add_this_node_to_given_node_neighbors to True to make sure that we also
-            # add the node as a neighbor
             reference_to_arnode.add_neighbor(-direction_of_connection,
                                              weight_to_connect_to_arnode_with,
                                              self,
-                                             add_this_node_to_given_node_neighbors=True)
+                                             add_this_node_to_given_node_neighbors)
 
     def forward_activate_arnode(self, function_to_calculate_merger_of_outgoing_edges,
                                 add_this_node_to_given_node_neighbors=False):
@@ -452,7 +451,9 @@ class ARNode(Node):
         # 1) this arnode might contain multiple nodes in its inner nodes list
         # 2) the arnodes we need to connect to might have merged
         self._insert_edges_for_the_first_time(Node.OUTGOING_EDGE_DIRECTION,
-                                              function_to_calculate_merger_of_outgoing_edges)
+                                              function_to_calculate_merger_of_outgoing_edges,
+                                              add_this_node_to_given_node_neighbors=
+                                              add_this_node_to_given_node_neighbors)
 
         # finally, set the right activation status
         self.activation_status = ARNode.ONLY_FORWARD_ACTIVATED_STATUS
@@ -489,7 +490,8 @@ class ARNode(Node):
             return
 
         if self.activation_status == ARNode.NOT_ACTIVATED_STATUS:
-            self.forward_activate_arnode(add_this_node_to_given_node_neighbors)
+            self.forward_activate_arnode(function_to_calculate_merger_of_incoming_edges,
+                                         add_this_node_to_given_node_neighbors=add_this_node_to_given_node_neighbors)
 
         # when connecting incoming edges make sure that the nodes we are connected to are at least forward activated
         # to preserve assumption (5). using assumption (5) its enough to check that their
@@ -497,7 +499,10 @@ class ARNode(Node):
         self._insert_edges_for_the_first_time(Node.OUTGOING_EDGE_DIRECTION,
                                               function_to_calculate_merger_of_outgoing_edges,
                                               function_to_verify_arnode_neighbors_with=lambda
-                                                  node: node.get_activation_status() != ARNode.NOT_ACTIVATED_STATUS)
+                                              node: node.get_activation_status() != ARNode.NOT_ACTIVATED_STATUS,
+                                              add_this_node_to_given_node_neighbors=
+                                              add_this_node_to_given_node_neighbors
+                                              )
 
         # finally, set the right activation status
         self.activation_status = ARNode.FULLY_ACTIVATED_STATUS
@@ -525,7 +530,6 @@ class ARNode(Node):
         if arnodes_to_split.get_activation_status() != ARNode.FULLY_ACTIVATED_STATUS:
             raise Exception("can not split a non fully activated arnode")
 
-        table_number = arnodes_to_split.get_location()[0]
         table_manager = arnodes_to_split.get_table_manager()
 
         # now go over the list of nodes got and reset their arnode owner
@@ -537,6 +541,14 @@ class ARNode(Node):
         arnodes_to_split.destructor()
 
         for node_list in partition_of_arnode_inner_nodes:
+            starting_node = node_list[0]
+            new_arnode = table_manager.create_new_arnode(starting_node)
+            for i in range(1, len(node_list)):
+                new_arnode.inner_node.append(node_list[i])
+
+            new_arnode.fully_activate_arnode(function_to_calculate_merger_of_incoming_edges,
+                                             function_to_calculate_merger_of_outgoing_edges,
+                                             add_this_node_to_given_node_neighbors=True)
 
     # get the index number by inserting a new arnode using the table_manager
 
