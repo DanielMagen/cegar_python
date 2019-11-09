@@ -32,6 +32,10 @@ we will assume that the tables will be ordered such that all tables of type a oc
 (the tables are ordered by assumption (1))
 
 the node would be told how many tables support deletion in the layers its connected to
+
+5)
+all the nodes outgoing edges connect to nodes which all reside in the same layer
+all the nodes incoming edges connect to nodes which all reside in the same layer
 ----------------------------------------------------------------
 
 ----------------------------------------------------------------
@@ -54,8 +58,8 @@ fully activated entails that
 a) the arnodes that have outgoing connections (which are incoming) to this node must be forward activated
 b) the arnodes that we are connected to by outgoing connections will be fully activated
 
-6) nodes activation status can only increase, i.e. they can only go not activated -> partially activated ->
-fully activated, but not go in reverse.
+6)
+-> Node assumptions (5)
 ----------------------------------------------------------------
 
 ----------------------------------------------------------------

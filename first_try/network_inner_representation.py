@@ -233,7 +233,7 @@ class ARTable:
         pass
 
 
-class ARNode:
+class ARNode():
     ID_INDEX_OF_LAYER_NUMBER = 0
     ID_INDEX_OF_TABLE_NUMBER = 1
     ID_INDEX_OF_INDEX_IN_TABLE = 2
