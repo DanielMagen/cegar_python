@@ -12,6 +12,7 @@ class Node:
     NO_AR_NODE_CONTAINER = None
 
     def __init__(self,
+                 table_manager_reference,
                  number_of_tables_in_previous_layer,
                  number_of_tables_in_next_layer,
                  number_of_tables_in_previous_layer_that_support_deletion,
@@ -24,6 +25,7 @@ class Node:
 
         the following arguments given are explained in assumption (4)
 
+        :param table_manager_reference: a reference to the table object that node is saved in
         :param number_of_tables_in_previous_layer:
         :param number_of_tables_in_next_layer:
         :param number_of_tables_in_previous_layer_that_support_deletion:
@@ -35,6 +37,7 @@ class Node:
         :param index_in_table:
         """
 
+        self.table_manager = table_manager_reference
         self.layer_number = layer_number  # use assumption (2) and do not create a set_layer_number function
         self.table_number = table_number
         self.index_in_table = index_in_table
@@ -67,8 +70,10 @@ class Node:
         removes the node from all of its neighbors,
         and sets the node finished_lifetime to True
 
-        it does not remove the node from its residing table, its up to the table to do so.
+        it then remove the node from its residing table
         """
+
+        self.table_manager.notify_node_was_destroyed(self.index_in_table)
 
         def remove_from_node_by_direction_and_data(direction_of_connection, connection_data):
             table_number, index_in_table, weight, neighbor = connection_data
@@ -316,6 +321,8 @@ class ARNode(Node):
             # assumption (2) is violated
             raise Exception("arnodes can only contain nodes which can not change their location")
 
+        # this list should be kept ordered by the nodes indices.
+        # from assumption (2) all the nodes in the inner nodes list would be in the same table
         self.inner_nodes = [starting_node]
         starting_node.set_pointer_to_ar_node_nested_in(self.get_location())
 
@@ -458,7 +465,22 @@ class ARNode(Node):
             # finally, set the right activation status
             self.activation_status = ARNode.FULLY_ACTIVATED_STATUS
 
-    def split(self, partition_of_arnode_inner_nodes):
+    @staticmethod
+    def split(arnodes_to_split, partition_of_arnode_inner_nodes,
+              function_to_calculate_merger_of_incoming_edges,
+              function_to_calculate_merger_of_outgoing_edges
+              ):
+        """
+        :param arnodes_to_split:
+        :param partition_of_arnode_inner_nodes: a list of lists which would be a valid partition of the
+        arnode inner nodes
+
+        those functions would be used to calculate the edges of each resulting arnode
+        :param function_to_calculate_merger_of_incoming_edges:
+        :param function_to_calculate_merger_of_outgoing_edges:
+
+        removes the arnode from the table its in and inserts the new arnodes created
+        """
         pass
 
     @staticmethod
