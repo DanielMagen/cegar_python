@@ -39,7 +39,7 @@ class Node:
         self.table_manager = table_manager_reference
         self.table_number = table_number
         self.key_in_table = key_in_table
-        self.location_can_not_be_changed = False
+        self.location_can_not_be_changed = False  ## maybe remove it.
 
         if number_of_tables_in_previous_layer_that_support_deletion < number_of_tables_in_previous_layer:
             self.incoming_edges_manager = NodeEdgesForNonDeletionTables(
@@ -71,7 +71,7 @@ class Node:
         it then remove the node from its residing table
         """
 
-        self.table_manager.notify_node_was_destroyed(self.key_in_table)
+        self.table_manager.get_notified_node_wants_to_remove_itself_from_table(self.key_in_table)
 
         def remove_from_node_by_direction_and_data(direction_of_connection, connection_data):
             table_number, key_in_table, weight, neighbor = connection_data
@@ -90,15 +90,28 @@ class Node:
 
         self.finished_lifetime = True
 
+    def _check_if_killed_and_raise_error_if_is(self):
+        if self.finished_lifetime:
+            raise Exception("this node is dead and can not support any function")
+
+    def set_new_table_without_checking(self, new_table_manager, new_table_number, new_key_in_table):
+        self.table_manager = new_table_manager
+        self.table_number = new_table_number
+        self.key_in_table = new_key_in_table
+
+    def move_node_to_new_table(self, new_table_manager):
+        self._check_if_killed_and_raise_error_if_is()
+        self._check_if_location_can_be_changed_and_raise_error_if_not()
+
+        previous_location = self.get_location()
+
+        # the new table_manager would make sure to tell our current table_manager that we need to be removed from it
+        new_table_manager.claim_node_as_your_own(self)
+
+        self._notify_all_neighbors_that_my_location_changed(previous_location)
+
     def get_table_manager(self):
         return self.table_manager
-
-    def check_if_killed(self):
-        return self.finished_lifetime
-
-    def _check_if_killed_and_raise_error_if_is(self):
-        if self.check_if_killed():
-            raise Exception("this arnode is dead and can not support any function")
 
     def get_number_of_tables_in_previous_layer(self):
         return self.incoming_edges_manager.get_number_of_tables_in_layer_connected_to()
@@ -272,15 +285,6 @@ class Node:
                                                                                        previous_location,
                                                                                        new_location)
 
-    def change_location(self, table_number, key_in_table):
-        self._check_if_location_can_be_changed_and_raise_error_if_not()
-        self._check_if_killed_and_raise_error_if_is()
-
-        previous_location = self.get_location()
-        self.table_number = table_number
-        self.key_in_table = key_in_table
-
-        self._notify_all_neighbors_that_my_location_changed(previous_location)
 
 
 # use the decorator pattern
