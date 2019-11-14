@@ -4,9 +4,6 @@ class Node:
 def weight(edge):
     return 0
 
-
-table_of
-
 ############### how to keep track on who is positive and who is negative??????????????
 def split_single_node_to_pos_neg(network, layer_node_is_in, node_number):
     ##################### not good. if the original node does not have any negative edges it will create a neg_node
