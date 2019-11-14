@@ -1,3 +1,11 @@
+"""
+to avoid circular dependencies when implementing in cpp
+have the nodes holding TableAbstract objects
+and set all the methods that get direct pointers to nodes in the abstract table to receive void* pointers
+the actual tables would know both about the nodes and about the abstract table
+"""
+
+
 class TableAbstract:
     # the table_starting_index that should be given if there are no nodes in table
     INDEX_OF_START_IF_NO_NODES_IN_TABLE = -1

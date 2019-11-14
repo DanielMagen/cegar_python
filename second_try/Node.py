@@ -1,5 +1,9 @@
 from second_try.NodeEdges import *
 
+"""
+to avoid circular dependencies when implementing in cpp 
+have the nodes holding TableAbstract pointers 
+"""
 
 class Node:
     """
