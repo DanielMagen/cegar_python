@@ -1,0 +1,4 @@
+Layer assumptions:
+1)
+each layer containing the nodes would be segmented into a consecutive ordered list of tables, and the number of such
+tables per layer would be known and unchanging by the time this node is created.

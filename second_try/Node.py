@@ -587,7 +587,7 @@ class ARNode(Node):
         """
         for arnode in [arnode1, arnode2]:
             if arnode.get_activation_status() != ARNode.FULLY_ACTIVATED_STATUS:
-                raise Exception("can not split a non fully activated arnode")
+                raise Exception("can not merge a non fully activated arnode")
 
         # from assumption (2) both arnodes have the same table_manager
         table_manager = arnode1.get_table_manager()

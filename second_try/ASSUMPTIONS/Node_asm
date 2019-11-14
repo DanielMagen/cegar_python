@@ -1,0 +1,23 @@
+Node assumptions:
+1)
+-> Layer assumptions (1)
+
+2)
+the node can not be moved to another layer
+
+3)
+nodes are not connected to other nodes in the same layer
+
+4)
+the tables of each layer would be of 2 kinds:
+a) tables in which nodes can never be deleted from
+b) tables in which nodes can be deleted from
+
+we will assume that the tables will be ordered such that all tables of type a occur before tables of type b
+(the tables are ordered by assumption (1))
+
+the node would be told how many tables support deletion in the layers its connected to
+
+5)
+all the nodes outgoing edges connect to nodes which all reside in the same layer
+all the nodes incoming edges connect to nodes which all reside in the same layer
