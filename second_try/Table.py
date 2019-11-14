@@ -1,9 +1,4 @@
-"""
-each table object would contain the nodes in the network in a corresponding order to the one in the network.
-also each table would contain the index in the layer of its starting node.
-the tables in the same layer would be connected by their index values
-such that changing the amount of nodes in a table would change the starting index of all the tables below it.
-"""
+
 
 """
 to avoid circular dependencies when implementing in cpp
