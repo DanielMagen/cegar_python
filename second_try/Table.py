@@ -1,8 +1,18 @@
 """
+each table object would contain the nodes in the network in a corresponding order to the one in the network.
+also each table would contain the index in the layer of its starting node.
+the tables in the same layer would be connected by their index values
+such that changing the amount of nodes in a table would change the starting index of all the tables below it.
+"""
+
+"""
 to avoid circular dependencies when implementing in cpp
 have the nodes holding TableAbstract objects
 and set all the methods that get direct pointers to nodes in the abstract table to receive void* pointers
 the actual tables would know both about the nodes and about the abstract table
+
+maybe add another class called nodeTablesAbstract that would wrap the abstract table and would know about nodes
+and add functions that would support the returning and accepting of nodes in functions
 """
 
 
