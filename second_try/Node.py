@@ -5,6 +5,7 @@ to avoid circular dependencies when implementing in cpp
 have the nodes holding TableAbstract pointers 
 """
 
+
 class Node:
     """
     this class would represent a node that would work under the assumptions detailed in
@@ -43,7 +44,7 @@ class Node:
         self.table_manager = table_manager_reference
         self.table_number = table_number
         self.key_in_table = key_in_table
-        self.location_can_not_be_changed = False  ## maybe remove it.
+        self.location_can_not_be_changed = False  ## maybe remove it, maybe only the table manager should care
 
         if number_of_tables_in_previous_layer_that_support_deletion < number_of_tables_in_previous_layer:
             self.incoming_edges_manager = NodeEdgesForNonDeletionTables(
@@ -290,7 +291,6 @@ class Node:
                                                                                        new_location)
 
 
-
 # use the decorator pattern
 class ARNode(Node):
     """
@@ -345,7 +345,7 @@ class ARNode(Node):
 
         # this list should be kept ordered by the nodes indices.
         # from assumption (2) all the nodes in the inner nodes list would be in the same table
-        self.inner_nodes = set(starting_nodes)
+        self.inner_nodes = [starting_nodes[i] for i in range(len(starting_nodes))]  # copy is really slow
         for node in starting_nodes:
             node.set_pointer_to_ar_node_nested_in(self.get_location())
 
@@ -536,6 +536,7 @@ class ARNode(Node):
 
     @staticmethod
     def split(arnodes_to_split, partition_of_arnode_inner_nodes,
+              code_for_no_table_manager,
               function_to_calculate_merger_of_incoming_edges,
               function_to_calculate_merger_of_outgoing_edges
               ):
@@ -545,6 +546,9 @@ class ARNode(Node):
         arnode inner nodes.
         each sub list would contain a list of nodes references all of which are currently owned by
         the given arnodes_to_split
+
+        :param code_for_no_table_manager: we will use this code and set it as the node table manager.
+
 
         those functions would be used to calculate the edges of each resulting arnode
         :param function_to_calculate_merger_of_incoming_edges:
@@ -564,9 +568,15 @@ class ARNode(Node):
         arnodes_to_split.destructor()
 
         for node_list in partition_of_arnode_inner_nodes:
-            new_arnode = table_manager.create_new_arnode(node_list)
+            # start node with bogus arguments and then add it to the table_manager which would give the node
+            # real arguments
+            new_arnode = ARNode(table_manager,
+                                node_list,
+                                -1,
+                                -1)
+            table_manager.add_node_to_table(new_arnode)
             for i in range(1, len(node_list)):
-                new_arnode.inner_node.append(node_list[i])
+                new_arnode.inner_nodes.append(node_list[i])
 
             new_arnode.fully_activate_arnode(function_to_calculate_merger_of_incoming_edges,
                                              function_to_calculate_merger_of_outgoing_edges,
@@ -611,4 +621,3 @@ class ARNode(Node):
         new_arnode.fully_activate_arnode(function_to_calculate_merger_of_incoming_edges,
                                          function_to_calculate_merger_of_outgoing_edges,
                                          add_this_node_to_given_node_neighbors=True)
-

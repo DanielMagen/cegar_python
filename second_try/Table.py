@@ -190,7 +190,7 @@ class TableAbstract:
     def claim_node_as_your_own(self, node_object):
         """
         notifies the current table manager of the node that the node should be removed from it
-        and adds the node to itself
+        and adds the node to itself.
         :param node_object:
         """
         current_node_table_manager = node_object.get_table_manager()
