@@ -97,6 +97,9 @@ class Node:
         self.table_number = new_table_number
         self.key_in_table = new_key_in_table
 
+    def get_key_in_table(self):
+        return self.key_in_table
+
     def get_number_of_tables_in_previous_layer(self):
         return self.incoming_edges_manager.get_number_of_tables_in_layer_connected_to()
 

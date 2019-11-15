@@ -5,6 +5,8 @@ class TableAbstract:
     NO_NEXT_TABLE = None
     NO_PREVIOUS_TABLE = None
 
+    NO_NODE_IS_CURRENTLY_BEING_REMOVED = None
+
     def __init__(self, table_number, previous_table, next_table):
         """
 
@@ -22,6 +24,10 @@ class TableAbstract:
 
         self.previous_table = previous_table
         self.next_table = next_table
+
+        # this would help us make sure that moving nodes between tables would never be done without notifying the
+        # current parent table
+        self.key_of_node_currently_being_removed_from_table = TableAbstract.NO_NODE_IS_CURRENTLY_BEING_REMOVED
 
     def create_table_below_of_same_type(self):
         raise NotImplemented("this is an abstract class")
@@ -90,6 +96,36 @@ class TableAbstract:
             self.table_starting_index = \
                 self.previous_table.get_number_of_nodes_after_table_ends()
 
+    def get_node_by_key(self, node_key):
+        raise NotImplemented("this is an abstract class")
+
+    def _reset_key_of_node_currently_being_removed_from_table(self):
+        self.key_of_node_currently_being_removed_from_table = TableAbstract.NO_NODE_IS_CURRENTLY_BEING_REMOVED
+
+    def get_notified_node_is_being_removed_from_table(self, node_key):
+        """
+        notifies this table that the given node is currently being removed from it
+        :param node_key:
+        """
+        if self.key_of_node_currently_being_removed_from_table == node_key:
+            # we are aware that this node is currently being removed
+            return
+
+        # else simply remove the node from the table. the one who changes the node values should take responsibility
+        # for cleaning after the node.
+        self._remove_node_from_table_without_affecting_the_node(node_key)
+
+    def _remove_node_from_table_without_affecting_the_node(self, node_key):
+        """
+        removes the node from table without affecting the node at all
+        notifies lower tables that this table size has changed.
+        :param node_key:
+        """
+        raise NotImplemented("this is an abstract class")
+
+    def remove_node_from_table_and_relocate_to_other_table(self, node_key, new_table_manager):
+        raise NotImplemented("this is an abstract class")
+
     def _add_node_to_table_helper(self, node):
         """
         this helper function would be implemented by the subclasses
@@ -99,7 +135,15 @@ class TableAbstract:
         """
         raise NotImplemented("this is an abstract class")
 
-    def add_existing_node_to_table(self, node):
+    def add_existing_node_to_table(self, previous_table_manager, node):
+        """
+        notifies te current
+        :param previous_table_manager: the current table manager of the given node
+        :param node:
+        :return:
+        """
+        previous_table_manager.get_notified_node_is_being_removed_from_table(node.get_key_in_table())
+
         if self.get_number_of_nodes_in_table() == 0:
             # the table is currently empty, use the initialize_table_starting_index_based_on_previous_tables to
             # initialize its table_starting_index
@@ -117,20 +161,6 @@ class TableAbstract:
         # now notify all bottom tables that their table_starting_index has increased
         if self.next_table is not TableAbstract.NO_NEXT_TABLE:
             self.next_table.increase_starting_node_index()
-
-    def get_node_by_key(self, node_key):
-        raise NotImplemented("this is an abstract class")
-
-    def _remove_node_from_table_without_affecting_the_node(self, node_key):
-        """
-        removes the node from table without affecting the node at all
-        notifies lower tables that this table size has changed.
-        :param node_key:
-        """
-        raise NotImplemented("this is an abstract class")
-
-    def remove_node_from_table_and_relocate_to_other_table(self, node_key, new_table_manager):
-        raise NotImplemented("this is an abstract class")
 
     def delete_node(self, node_key):
         # check that the node belongs to this table
@@ -208,5 +238,9 @@ class TableSupportsDeletion(TableAbstract):
         node_to_relocate = self.get_node_by_key(node_key)
         node_to_relocate.check_if_killed_and_raise_error_if_is()
 
+        self.key_of_node_currently_being_removed_from_table = node_key
+
         self._remove_node_from_table_without_affecting_the_node(node_key)
         new_table_manager.add_existing_node_to_table(node_to_relocate)
+
+        self._reset_key_of_node_currently_being_removed_from_table()
