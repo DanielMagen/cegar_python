@@ -185,20 +185,14 @@ class TableAbstract:
 
     def create_new_node_and_add_to_table(self,
                                          number_of_tables_in_previous_layer,
-                                         number_of_tables_in_next_layer,
-                                         number_of_tables_in_previous_layer_that_support_deletion,
-                                         number_of_tables_in_next_layer_that_support_deletion):
+                                         number_of_tables_in_next_layer):
         """
         :param number_of_tables_in_previous_layer:
         :param number_of_tables_in_next_layer:
-        :param number_of_tables_in_previous_layer_that_support_deletion:
-        :param number_of_tables_in_next_layer_that_support_deletion:
         :return: the node created
         """
         new_node = Node(number_of_tables_in_previous_layer,
                         number_of_tables_in_next_layer,
-                        number_of_tables_in_previous_layer_that_support_deletion,
-                        number_of_tables_in_next_layer_that_support_deletion,
                         -1, -1)
 
         node_key = self._add_node_to_table_without_checking(new_node)
@@ -342,9 +336,7 @@ class ARNodeTable(TableSupportsDeletion):
 
     def create_new_node_and_add_to_table(self,
                                          number_of_tables_in_previous_layer,
-                                         number_of_tables_in_next_layer,
-                                         number_of_tables_in_previous_layer_that_support_deletion,
-                                         number_of_tables_in_next_layer_that_support_deletion):
+                                         number_of_tables_in_next_layer):
         raise NotImplemented("this class can only contain arnodes")
 
     def create_new_arnode_and_add_to_table(self, starting_nodes):
@@ -391,9 +383,9 @@ class ARNodeTable(TableSupportsDeletion):
             # start node with bogus arguments and then add it to the table_manager which would give the node
             # real arguments
             new_arnode = self.create_new_arnode_and_add_to_table(node_list)
-            new_arnode.fully_activate_arnode(function_to_calculate_merger_of_incoming_edges,
-                                             function_to_calculate_merger_of_outgoing_edges,
-                                             add_this_node_to_given_node_neighbors=True)
+            new_arnode.forward_activate_arnode(function_to_calculate_merger_of_outgoing_edges)
+            new_arnode.fully_activate_arnode_and_recalculate_incoming_edges(
+                function_to_calculate_merger_of_incoming_edges)
 
     def merge_two_arnodes(self,
                           arnode1,
@@ -429,7 +421,5 @@ class ARNodeTable(TableSupportsDeletion):
         arnode2.destructor()
 
         new_arnode = self.create_new_arnode_and_add_to_table(inner_nodes_for_new_arnode)
-
-        new_arnode.fully_activate_arnode(function_to_calculate_merger_of_incoming_edges,
-                                         function_to_calculate_merger_of_outgoing_edges,
-                                         add_this_node_to_given_node_neighbors=True)
+        new_arnode.forward_activate_arnode(function_to_calculate_merger_of_outgoing_edges)
+        new_arnode.fully_activate_arnode_and_recalculate_incoming_edges(function_to_calculate_merger_of_incoming_edges)
