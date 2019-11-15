@@ -350,11 +350,12 @@ class ARNode(Node):
 
     def _insert_edges_for_the_first_time(self, direction_of_connection,
                                          function_to_calculate_merger_of_edges,
-                                         function_to_verify_arnode_neighbors_with=lambda x: True,
-                                         add_this_node_to_given_node_neighbors=False):
+                                         function_to_verify_arnode_neighbors_with=lambda x: True):
         """
         this function would be used to connect this arnode to other arnodes that may have an incoming or an outgoing
         connection with us.
+        this function would create a double connection, i.e. we would be connected to other nodes and they would
+        be connected to us
 
         :param direction_of_connection:
         either Node.OUTGOING_EDGE_DIRECTION or Node.INCOMING_EDGE_DIRECTION
@@ -410,24 +411,20 @@ class ARNode(Node):
             reference_to_arnode.add_neighbor(-direction_of_connection,
                                              weight_to_connect_to_arnode_with,
                                              self,
-                                             add_this_node_to_given_node_neighbors)
+                                             add_this_node_to_given_node_neighbors=True)
 
-    def forward_activate_arnode(self, function_to_calculate_merger_of_outgoing_edges,
-                                add_this_node_to_given_node_neighbors=False):
+    def forward_activate_arnode(self, function_to_calculate_merger_of_outgoing_edges):
         """
         this method partially activates the arnode.
-        it connects this arnode to all the arnodes containing all the nodes which are connected to the nodes in its
-        not list via an outgoing edge.
+        it connects this arnode to the arnodes it should be connected to via an outgoing connection.
+        this function would create a double connection, i.e. we would be connected to other nodes and they would
+        be connected to us
 
         :param function_to_calculate_merger_of_outgoing_edges:
         a function that receives 2 inputs
         1) a reference to an arnode
         2) a list of weights we are connected to the arnode with
         and returns a new weight for that we will connect to the given arnode with
-
-        :param add_this_node_to_given_node_neighbors: when we add a new arnode neighbor to this node we might want to
-        notify this neighbor to have him add us as his neighbor.
-        if true, it will set the add_this_node_to_given_node_neighbors in the add_neighbor function to true.
         """
         self.check_if_killed_and_raise_error_if_is()
 
@@ -447,9 +444,7 @@ class ARNode(Node):
         # 1) this arnode might contain multiple nodes in its inner nodes list
         # 2) the arnodes we need to connect to might have merged
         self._insert_edges_for_the_first_time(Node.OUTGOING_EDGE_DIRECTION,
-                                              function_to_calculate_merger_of_outgoing_edges,
-                                              add_this_node_to_given_node_neighbors=
-                                              add_this_node_to_given_node_neighbors)
+                                              function_to_calculate_merger_of_outgoing_edges)
 
         # finally, set the right activation status
         self.activation_status = ARNode.ONLY_FORWARD_ACTIVATED_STATUS
@@ -485,14 +480,28 @@ class ARNode(Node):
             return
 
         if self.activation_status == ARNode.NOT_ACTIVATED_STATUS:
-            self.forward_activate_arnode(function_to_calculate_merger_of_incoming_edges,
-                                         add_this_node_to_given_node_neighbors=add_this_node_to_given_node_neighbors)
+            # from assumption (5) for us to be fully activated requires the arnodes we are connected to by an outgoing
+            # connection to be fully activated. for this to be the case, we have to be forward activated before, again
+            # from assumption (5). hence it can not be that we are not forward activated once we are called to
+            # fully activate ourselves.
+            raise Exception("must fully activate arnodes we are connected to by an outgoing connection before"
+                            "fully activating this arnode")
+
+
+
+
+
+
+        # FIX, when this function is called we are not creating the edges for the first time
+
+
+
 
         # when connecting incoming edges make sure that the nodes we are connected to are at least forward activated
         # to preserve assumption (5). using assumption (5) its enough to check that their
         # status is not ARNode.NOT_ACTIVATED_STATUS
-        self._insert_edges_for_the_first_time(Node.OUTGOING_EDGE_DIRECTION,
-                                              function_to_calculate_merger_of_outgoing_edges,
+        self._insert_edges_for_the_first_time(Node.INCOMING_EDGE_DIRECTION,
+                                              function_to_calculate_merger_of_incoming_edges,
                                               function_to_verify_arnode_neighbors_with=lambda
                                                   node: node.get_activation_status() != ARNode.NOT_ACTIVATED_STATUS,
                                               add_this_node_to_given_node_neighbors=

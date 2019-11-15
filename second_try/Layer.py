@@ -88,22 +88,16 @@ class Layer:
 
     def forward_activate_arnode_table(self,
                                       table_index,
-                                      function_to_calculate_merger_of_outgoing_edges,
-                                      add_this_node_to_given_node_neighbors=False):
+                                      function_to_calculate_merger_of_outgoing_edges):
         arnode_iterator = self.arnode_tables[table_index].get_iterator_for_all_nodes()
         for arnode in arnode_iterator:
             if arnode.get_activation_status() != ARNode.FULLY_ACTIVATED_STATUS:
-                arnode.forward_activate_arnode(function_to_calculate_merger_of_outgoing_edges,
-                                               add_this_node_to_given_node_neighbors)
+                arnode.forward_activate_arnode(function_to_calculate_merger_of_outgoing_edges)
 
     def fully_activate_arnode_table(self,
                                     table_index,
-                                    function_to_calculate_merger_of_incoming_edges,
-                                    function_to_calculate_merger_of_outgoing_edges,
-                                    add_this_node_to_given_node_neighbors=False):
+                                    function_to_calculate_merger_of_incoming_edges):
         arnode_iterator = self.arnode_tables[table_index].get_iterator_for_all_nodes()
         for arnode in arnode_iterator:
             if arnode.get_activation_status() != ARNode.FULLY_ACTIVATED_STATUS:
-                arnode.fully_activate_arnode(function_to_calculate_merger_of_incoming_edges,
-                                             function_to_calculate_merger_of_outgoing_edges,
-                                             add_this_node_to_given_node_neighbors)
+                arnode.fully_activate_arnode(function_to_calculate_merger_of_incoming_edges)
