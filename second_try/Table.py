@@ -158,7 +158,7 @@ class TableAbstract:
                         -1, -1)
 
         node_key = self._add_node_to_table_without_checking(new_node)
-        new_node.set_new_table_without_checking(self.table_number, node_key)
+        new_node.set_new_location(self.table_number, node_key)
 
         return new_node
 
@@ -181,7 +181,7 @@ class TableAbstract:
         new_node_key = self._add_node_to_table_without_checking(node)
 
         # change the inserted node location_data so that its table number and index would correspond to its new location
-        node.set_new_table_without_checking(self.table_number, new_node_key)
+        node.set_new_location(self.table_number, new_node_key)
 
         node.notify_all_neighbors_that_my_location_changed(previous_location)
 
@@ -218,6 +218,14 @@ class TableDoesntSupportsDeletion(TableAbstract):
     def _add_node_to_table_without_checking(self, node):
         self.nodes.append(node)
         return len(self.nodes) - 1
+
+    def add_existing_node_to_table(self, previous_table_manager, node):
+        """
+        override the super method so that the node which was inserted to the table would be set in stone.
+        it does that since it was added to a table which does not support deletion
+        """
+        super().add_existing_node_to_table(previous_table_manager, node)
+        node.set_in_stone()
 
     def get_node_by_key(self, node_key):
         return self.nodes[node_key]
@@ -290,7 +298,7 @@ class ARNodeTable(TableSupportsDeletion):
         new_node = ARNode(starting_nodes, -1, -1)
 
         node_key = self._add_node_to_table_without_checking(new_node)
-        new_node.set_new_table_without_checking(self.table_number, node_key)
+        new_node.set_new_location(self.table_number, node_key)
 
         return new_node
 

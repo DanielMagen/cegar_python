@@ -1,5 +1,6 @@
 from second_try.NodeEdges import *
 
+
 class Node:
     """
     this class would represent a node that would work under the assumptions detailed in
@@ -52,6 +53,9 @@ class Node:
         # when you implement this is cpp have this be a void* pointer to avoid circular dependencies
         self.pointer_to_ar_node_nested_in = Node.NO_AR_NODE_CONTAINER
 
+        # later when we will wrap this node in an ar_node, this value would have to be false
+        self.node_can_change_location = True
+
         # if this value is true then the node can not do any action
         # this value would be deprecated in the cpp implementation, as a call to the destructor would
         # make it unnecessary
@@ -87,7 +91,17 @@ class Node:
         if self.finished_lifetime:
             raise Exception("this node is dead and can not support any function")
 
-    def set_new_table_without_checking(self, new_table_number, new_key_in_table):
+    def set_in_stone(self):
+        # from assumption (3)
+        self.node_can_change_location = False
+
+    def check_if_location_can_be_changed(self):
+        return self.node_can_change_location
+
+    def set_new_location(self, new_table_number, new_key_in_table):
+        if not self.node_can_change_location:
+            raise Exception("node location can not be changed")
+
         self.table_number = new_table_number
         self.key_in_table = new_key_in_table
 
@@ -319,7 +333,7 @@ class ARNode(Node):
         raise NotImplementedError("can not change")
 
     def get_pointer_to_ar_node_nested_in(self):
-        return self.get_location()
+        return self
 
     def is_nested_in_ar_node(self):
         return True

@@ -1,11 +1,13 @@
 Layer assumptions:
 1)
-each layer containing the nodes would be segmented into a consecutive ordered list of tables, and the number of such
-tables per layer would be known and unchanging by the time this node is created.
+each layer would be segmented into 5 table objects that would represent nodes from all possible kinds
+in the following order:
+(pos,inc), (pos,dec), (neg,inc), (neg,dec), (unprocessed)
 
 2)
 each layer would contain 2 tables lists
 the first table list would be a list of regular nodes tables and the second would be a list of arnode tables.
-regular nodes tables would only allow deletion at the lowest table.
+regular nodes tables would allow deletion only at the lowest table.
 arnodes tables would allow deletion at all tables.
+
 
