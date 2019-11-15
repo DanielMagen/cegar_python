@@ -1,5 +1,6 @@
 1)
 each table object would contain the nodes in the network in a corresponding order to the one in the network.
+(not sure if I can maintain this assumption)
 
 2)
 each table would contain the index in the layer of its starting node.
@@ -7,3 +8,8 @@ each table would contain the index in the layer of its starting node.
 3)
 the tables in the same layer would be connected by their index values
 such that changing the amount of nodes in a table would change the starting index of all the tables below it.
+
+4)
+nodes that are added to tables that don't enable deletion, will be added at the bottom of the table and
+will never move or be deleted once added. as such for the nodes that reside in those tables,
+the nodes key_in_table would serve as an absolute unchanging id

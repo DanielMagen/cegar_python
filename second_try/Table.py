@@ -138,6 +138,9 @@ class TableAbstract:
     def get_node_by_key(self, node_key):
         raise NotImplemented("this is an abstract class")
 
+    def get_iterator_for_all_nodes(self):
+        raise NotImplemented("this is an abstract class")
+
     def _reset_key_of_node_currently_being_removed_from_table(self):
         self.key_of_node_currently_being_removed_from_table = TableAbstract.NO_NODE_IS_CURRENTLY_BEING_REMOVED
 
@@ -259,6 +262,7 @@ class TableDoesntSupportsDeletion(TableAbstract):
         return len(self.nodes)
 
     def _add_node_to_table_without_checking(self, node):
+        # from assumption (4) we need to insert it to the end of the table
         self.nodes.append(node)
         return len(self.nodes) - 1
 
@@ -288,6 +292,10 @@ class TableSupportsDeletion(TableAbstract):
         self.next_table = table_to_return
 
         return table_to_return
+
+    def get_iterator_for_all_nodes(self):
+        for node in self.nodes:
+            yield node
 
     def get_number_of_nodes_in_table(self):
         return self.number_of_nodes
@@ -326,7 +334,12 @@ class TableSupportsDeletion(TableAbstract):
 
         return new_node_key
 
+
 class ARNodeTable(TableSupportsDeletion):
+    def get_iterator_for_all_nodes(self):
+        for node in self.nodes:
+            yield node
+
     def create_new_node_and_add_to_table(self,
                                          number_of_tables_in_previous_layer,
                                          number_of_tables_in_next_layer,

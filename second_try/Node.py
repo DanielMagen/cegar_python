@@ -425,11 +425,9 @@ class ARNode(Node):
         2) a list of weights we are connected to the arnode with
         and returns a new weight for that we will connect to the given arnode with
 
-
         :param add_this_node_to_given_node_neighbors: when we add a new arnode neighbor to this node we might want to
         notify this neighbor to have him add us as his neighbor.
         if true, it will set the add_this_node_to_given_node_neighbors in the add_neighbor function to true.
-
         """
         self.check_if_killed_and_raise_error_if_is()
 
@@ -476,7 +474,6 @@ class ARNode(Node):
         1) a reference to an arnode
         2) a list of weights we are connected to the arnode with
         and returns a new weight for that we will connect to the given arnode with
-
 
         :param add_this_node_to_given_node_neighbors: when we add a new arnode neighbor to this node we might want to
         notify this neighbor to have him add us as his neighbor.
