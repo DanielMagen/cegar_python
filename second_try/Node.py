@@ -17,7 +17,6 @@ class Node:
     NO_AR_NODE_CONTAINER = None
 
     def __init__(self,
-                 table_manager_reference,
                  number_of_tables_in_previous_layer,
                  number_of_tables_in_next_layer,
                  number_of_tables_in_previous_layer_that_support_deletion,
@@ -30,7 +29,6 @@ class Node:
 
         the following arguments given are explained in assumption (4)
 
-        :param table_manager_reference: a reference to the table object that node is saved in
         :param number_of_tables_in_previous_layer:
         :param number_of_tables_in_next_layer:
         :param number_of_tables_in_previous_layer_that_support_deletion:
@@ -40,11 +38,8 @@ class Node:
         :param table_number:
         :param key_in_table:
         """
-
-        self.table_manager = table_manager_reference
         self.table_number = table_number
         self.key_in_table = key_in_table
-        self.location_can_not_be_changed = False  ## maybe remove it, maybe only the table manager should care
 
         if number_of_tables_in_previous_layer_that_support_deletion < number_of_tables_in_previous_layer:
             self.incoming_edges_manager = NodeEdgesForNonDeletionTables(
@@ -76,8 +71,6 @@ class Node:
         it then remove the node from its residing table
         """
 
-        self.table_manager.get_notified_node_wants_to_remove_itself_from_table(self.key_in_table)
-
         def remove_from_node_by_direction_and_data(direction_of_connection, connection_data):
             table_number, key_in_table, weight, neighbor = connection_data
             neighbor_location_data = [table_number, key_in_table]
@@ -95,28 +88,14 @@ class Node:
 
         self.finished_lifetime = True
 
-    def _check_if_killed_and_raise_error_if_is(self):
+    ################ remove when transferring to cpp
+    def check_if_killed_and_raise_error_if_is(self):
         if self.finished_lifetime:
             raise Exception("this node is dead and can not support any function")
 
-    def set_new_table_without_checking(self, new_table_manager, new_table_number, new_key_in_table):
-        self.table_manager = new_table_manager
+    def set_new_table_without_checking(self, new_table_number, new_key_in_table):
         self.table_number = new_table_number
         self.key_in_table = new_key_in_table
-
-    def move_node_to_new_table(self, new_table_manager):
-        self._check_if_killed_and_raise_error_if_is()
-        self._check_if_location_can_be_changed_and_raise_error_if_not()
-
-        previous_location = self.get_location()
-
-        # the new table_manager would make sure to tell our current table_manager that we need to be removed from it
-        new_table_manager.claim_node_as_your_own(self)
-
-        self._notify_all_neighbors_that_my_location_changed(previous_location)
-
-    def get_table_manager(self):
-        return self.table_manager
 
     def get_number_of_tables_in_previous_layer(self):
         return self.incoming_edges_manager.get_number_of_tables_in_layer_connected_to()
@@ -141,40 +120,23 @@ class Node:
     def is_nested_in_ar_node(self):
         return self.pointer_to_ar_node_nested_in is not Node.NO_AR_NODE_CONTAINER
 
-    def set_in_stone(self):
-        """
-        removes the ability to change the node location
-        """
-        self.location_can_not_be_changed = True
-
-    def check_if_location_can_be_changed(self):
-        return self.location_can_not_be_changed
-
     def get_location(self):
         """
         :return: a tuple of (table_number, key_in_table)
         """
-        self._check_if_killed_and_raise_error_if_is()
+        self.check_if_killed_and_raise_error_if_is()
 
         # using assumption (2), since the node can not be moved to another layer we do not include the layer number
         # in the id. hence the node id is unique only in the preview of the layer its in
-        return (self.table_number, self.key_in_table)
-
-    def _check_if_location_can_be_changed_and_raise_error_if_not(self):
-        """
-        if the node location can not be changed it raises an error
-        otherwise it does nothing
-        """
-        if self.location_can_not_be_changed:
-            raise Exception("the node location cannot be changed")
+        return self.table_number, self.key_in_table
 
     def get_iterator_for_incoming_edges_data(self):
-        self._check_if_killed_and_raise_error_if_is()
+        self.check_if_killed_and_raise_error_if_is()
 
         return self.incoming_edges_manager.get_iterator_over_connections()
 
     def get_iterator_for_outgoing_edges_data(self):
-        self._check_if_killed_and_raise_error_if_is()
+        self.check_if_killed_and_raise_error_if_is()
 
         return self.outgoing_edges_manager.get_iterator_over_connections()
 
@@ -194,7 +156,7 @@ class Node:
         (from the right direction of course)
         :return:
         """
-        self._check_if_killed_and_raise_error_if_is()
+        self.check_if_killed_and_raise_error_if_is()
 
         if direction_of_connection == Node.INCOMING_EDGE_DIRECTION:
             edges_manager_to_work_with = self.incoming_edges_manager
@@ -218,7 +180,7 @@ class Node:
         node neighbors (from the right direction of course)
         :return:
         """
-        self._check_if_killed_and_raise_error_if_is()
+        self.check_if_killed_and_raise_error_if_is()
 
         if direction_of_connection == Node.INCOMING_EDGE_DIRECTION:
             edges_manager_to_work_with = self.incoming_edges_manager
@@ -246,7 +208,7 @@ class Node:
         :param new_location: the new location of the node that was changed
         :return:
         """
-        self._check_if_killed_and_raise_error_if_is()
+        self.check_if_killed_and_raise_error_if_is()
 
         if direction_of_connection == Node.INCOMING_EDGE_DIRECTION:
             edges_manager_to_work_with = self.incoming_edges_manager
@@ -263,13 +225,13 @@ class Node:
         edges_manager_to_work_with.move_connection(previous_table_number, previous_key_in_table, new_table_number,
                                                    new_key_in_table)
 
-    def _notify_all_neighbors_that_my_location_changed(self, previous_location):
+    def notify_all_neighbors_that_my_location_changed(self, previous_location):
         """
         :param previous_location:
         goes over all neighbors of the node and notifies them that this node has been moved to another location
         within the layer (using assumption (2))
         """
-        self._check_if_killed_and_raise_error_if_is()
+        self.check_if_killed_and_raise_error_if_is()
 
         new_location = self.get_location()
 
@@ -311,7 +273,6 @@ class ARNode(Node):
     FULLY_ACTIVATED_STATUS = 1
 
     def __init__(self,
-                 table_manager_reference,
                  starting_nodes,
                  table_number,
                  key_in_table):
@@ -329,7 +290,6 @@ class ARNode(Node):
         number_of_tables_in_next_layer = first_node_in_starting_nodes.get_number_of_tables_in_next_layer()
 
         super().__init__(
-            table_manager_reference,
             number_of_tables_in_previous_layer,
             number_of_tables_in_next_layer,
             number_of_tables_in_previous_layer,
@@ -460,7 +420,7 @@ class ARNode(Node):
         if true, it will set the add_this_node_to_given_node_neighbors in the add_neighbor function to true.
 
         """
-        self._check_if_killed_and_raise_error_if_is()
+        self.check_if_killed_and_raise_error_if_is()
 
         if self.activation_status == ARNode.FULLY_ACTIVATED_STATUS:
             raise Exception("can not demote in activation status")
@@ -511,7 +471,7 @@ class ARNode(Node):
         notify this neighbor to have him add us as his neighbor.
         if true, it will set the add_this_node_to_given_node_neighbors in the add_neighbor function to true.
         """
-        self._check_if_killed_and_raise_error_if_is()
+        self.check_if_killed_and_raise_error_if_is()
 
         if self.activation_status == ARNode.FULLY_ACTIVATED_STATUS:
             return
@@ -534,9 +494,19 @@ class ARNode(Node):
         # finally, set the right activation status
         self.activation_status = ARNode.FULLY_ACTIVATED_STATUS
 
+
+
+
+
+
+
+
+
+
+######################################### move to table
+
     @staticmethod
     def split(arnodes_to_split, partition_of_arnode_inner_nodes,
-              code_for_no_table_manager,
               function_to_calculate_merger_of_incoming_edges,
               function_to_calculate_merger_of_outgoing_edges
               ):
@@ -546,9 +516,6 @@ class ARNode(Node):
         arnode inner nodes.
         each sub list would contain a list of nodes references all of which are currently owned by
         the given arnodes_to_split
-
-        :param code_for_no_table_manager: we will use this code and set it as the node table manager.
-
 
         those functions would be used to calculate the edges of each resulting arnode
         :param function_to_calculate_merger_of_incoming_edges:
