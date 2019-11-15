@@ -33,6 +33,14 @@ class Layer:
         for i in range(1, Layer.NUMBER_OF_REGULAR_TABLES_THAT_DO_NOT_SUPPORT_DELETION):
             self.arnode_tables.append(self.arnode_tables[i - 1].create_table_below_of_same_type())
 
+    @staticmethod
+    def type_to_number_of_map(type_of_node):
+        """
+        :param type_of_node: (pos,inc), (pos,dec), (neg,inc), (neg,dec), (unprocessed)
+        :return: the number of table corresponding to the type given in the list of 5 tables
+        """
+        return [('pos', 'inc'), ('pos', 'dec'), ('neg', 'inc'), ('neg', 'dec'), 'unprocessed'].index(type_of_node)
+
     def create_new_node(self,
                         number_of_tables_in_previous_layer,
                         number_of_tables_in_next_layer,
