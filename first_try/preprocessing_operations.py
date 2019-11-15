@@ -34,12 +34,6 @@ def split_single_node_to_pos_neg(network, layer_node_is_in, node_number):
     network.remove_node_from_network(original_node)
 
 
-def split_whole_layer_to_pos_neg(network, layer_to_split):
-    # maybe because this is a whole layer worth of changes we can optimize and first save the edges connecting
-    # this layer to the previous and the next in the side, then delete all the layer and its connections to the
-    # previous and next layer and then build it from scratch again.
-    for node in network[layer_to_split]:
-        split_single_node_to_pos_neg(network, layer_to_split, node)
 
 
 

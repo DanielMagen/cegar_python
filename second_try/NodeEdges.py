@@ -31,8 +31,7 @@ class NodeEdges:
 
         return key_in_table in self.list_of_tables[table_number]
 
-    # when translating this function to cpp, have the node_connected_to be nullptr or Node to enable it to contain
-    # both arnodes and nodes
+    # when translating this function to cpp, have the node_connected_to be of type void* to avoid circular dependencies
     def add_or_edit_connection(self, table_number, key_in_table, weight, node_connected_to):
         """
         if a connection already exist between a node and the node we are given it overrides its data with the

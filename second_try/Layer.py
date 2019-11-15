@@ -43,18 +43,14 @@ class Layer:
 
     def create_new_node(self,
                         number_of_tables_in_previous_layer,
-                        number_of_tables_in_next_layer,
-                        number_of_tables_in_previous_layer_that_support_deletion,
-                        number_of_tables_in_next_layer_that_support_deletion):
+                        number_of_tables_in_next_layer):
         """
         :return: creates a new node and returns it location. i.e. table number and key in table
         """
         # when new nodes are created they are inserted into the unprocessed table
         new_node = self.regular_node_tables[Layer.INDEX_OF_UNPROCESSED_TABLE].create_new_node_and_add_to_table(
             number_of_tables_in_previous_layer,
-            number_of_tables_in_next_layer,
-            number_of_tables_in_previous_layer_that_support_deletion,
-            number_of_tables_in_next_layer_that_support_deletion)
+            number_of_tables_in_next_layer)
 
         return new_node.get_location()
 
@@ -86,6 +82,31 @@ class Layer:
         # finally, return the location of the arnode created
         return new_arnode.get_location()
 
+    def move_unprocessed_node_to_table_by_function(self, node_key_in_unprocessed_table,
+                                                   function_to_decide_which_table_to_move_node_to):
+        """
+
+        :param node_key_in_unprocessed_table:
+        :param function_to_decide_which_table_to_move_node_to: the function returns the index_of_table_to_move_to
+        as should be given to the move_unprocessed_node_to_table method
+
+        :return: the location of the arnode created
+        """
+        unprocessed_table = self.regular_node_tables[Layer.INDEX_OF_UNPROCESSED_TABLE]
+        node = unprocessed_table.get_node_by_key(node_key_in_unprocessed_table)
+
+        index_of_table_to_move_to = function_to_decide_which_table_to_move_node_to(node)
+
+        return self.move_unprocessed_node_to_table(node_key_in_unprocessed_table, index_of_table_to_move_to)
+
+    def preprocess_entire_layer(self, function_to_decide_which_table_to_move_node_to):
+        unprocessed_table = self.regular_node_tables[Layer.INDEX_OF_UNPROCESSED_TABLE]
+        for node in unprocessed_table.get_iterator_for_all_nodes():
+            node_key_in_unprocessed_table = node.get_key_in_table()
+            index_of_table_to_move_to = function_to_decide_which_table_to_move_node_to(node)
+            self.move_unprocessed_node_to_table(node_key_in_unprocessed_table, index_of_table_to_move_to)
+
+    ################################### create more functions to enable finer control over activation
     def forward_activate_arnode_table(self,
                                       table_index,
                                       function_to_calculate_merger_of_outgoing_edges):
@@ -94,10 +115,33 @@ class Layer:
             if arnode.get_activation_status() != ARNode.FULLY_ACTIVATED_STATUS:
                 arnode.forward_activate_arnode(function_to_calculate_merger_of_outgoing_edges)
 
-    def fully_activate_arnode_table(self,
-                                    table_index,
-                                    function_to_calculate_merger_of_incoming_edges):
+    def fully_activate_layer_by_recalculating_incoming_edges(self,
+                                                             table_index,
+                                                             function_to_calculate_merger_of_incoming_edges):
+        """
+        if the previous layer was entirely forward activated but you want ot recalculate the incoming edges to
+        this layer arnodes, use this function
+        :param table_index:
+        :param function_to_calculate_merger_of_incoming_edges:
+        :return:
+        """
         arnode_iterator = self.arnode_tables[table_index].get_iterator_for_all_nodes()
         for arnode in arnode_iterator:
             if arnode.get_activation_status() != ARNode.FULLY_ACTIVATED_STATUS:
-                arnode.fully_activate_arnode(function_to_calculate_merger_of_incoming_edges)
+                arnode.fully_activate_arnode_and_recalculate_incoming_edges(
+                    function_to_calculate_merger_of_incoming_edges)
+
+    def fully_activate_layer_without_changing_incoming_edges(self,
+                                                             table_index,
+                                                             check_validity_of_activation=True):
+        """
+        if the previous layer was entirely forward activated and you do not want ot recalculate the incoming edges to
+        this layer arnodes, use this function
+        :param table_index:
+        :param check_validity_of_activation:
+        :return:
+        """
+        arnode_iterator = self.arnode_tables[table_index].get_iterator_for_all_nodes()
+        for arnode in arnode_iterator:
+            if arnode.get_activation_status() != ARNode.FULLY_ACTIVATED_STATUS:
+                arnode.fully_activate_arnode_without_changing_incoming_edges(check_validity_of_activation)

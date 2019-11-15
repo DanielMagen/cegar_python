@@ -35,7 +35,7 @@ class Node:
         self.incoming_edges_manager = NodeEdges(number_of_tables_in_previous_layer)
         self.outgoing_edges_manager = NodeEdges(number_of_tables_in_next_layer)
 
-        # when you implement this is cpp have this be a nullptr pointer to avoid circular dependencies
+        # when you implement this is cpp have this be a void* pointer to avoid circular dependencies
         self.pointer_to_ar_node_nested_in = Node.NO_AR_NODE_CONTAINER
 
         # later when we will wrap this node in an ar_node, this value would have to be false
@@ -346,10 +346,10 @@ class ARNode(Node):
     def get_activation_status(self):
         return self.activation_status
 
-    def _insert_edges_for_the_first_time(self,
-                                         direction_of_connection,
-                                         function_to_calculate_merger_of_edges,
-                                         function_to_verify_arnode_neighbors_with=lambda x: True):
+    def _recalculate_edges_in_direction(self,
+                                        direction_of_connection,
+                                        function_to_calculate_merger_of_edges,
+                                        function_to_verify_arnode_neighbors_with=lambda x: True):
         """
         this function would be used to connect this arnode to other arnodes that may have an incoming or an outgoing
         connection with us.
@@ -442,8 +442,8 @@ class ARNode(Node):
         # and as such we need to take into account the fact that when this function is called
         # 1) this arnode might contain multiple nodes in its inner nodes list
         # 2) the arnodes we need to connect to might have merged
-        self._insert_edges_for_the_first_time(Node.OUTGOING_EDGE_DIRECTION,
-                                              function_to_calculate_merger_of_outgoing_edges)
+        self._recalculate_edges_in_direction(Node.OUTGOING_EDGE_DIRECTION,
+                                             function_to_calculate_merger_of_outgoing_edges)
 
         # finally, set the right activation status
         self.activation_status = ARNode.ONLY_FORWARD_ACTIVATED_STATUS
@@ -542,9 +542,9 @@ class ARNode(Node):
         # when connecting incoming edges make sure that the nodes we are connected to are at least forward activated
         # to preserve assumption (5). using assumption (5) its enough to check that their
         # status is not ARNode.NOT_ACTIVATED_STATUS
-        self._insert_edges_for_the_first_time(Node.INCOMING_EDGE_DIRECTION,
-                                              function_to_calculate_merger_of_incoming_edges,
-                                              function_to_verify_arnode_neighbors_with=lambda
+        self._recalculate_edges_in_direction(Node.INCOMING_EDGE_DIRECTION,
+                                             function_to_calculate_merger_of_incoming_edges,
+                                             function_to_verify_arnode_neighbors_with=lambda
                                               node: node.get_activation_status() != ARNode.NOT_ACTIVATED_STATUS)
 
         # finally, set the right activation status
