@@ -25,15 +25,51 @@ class TableAbstract:
         # the table always starts empty so its set to INDEX_OF_START_IF_NO_NODES_IN_TABLE accordingly
         self.table_starting_index = TableAbstract.INDEX_OF_START_IF_NO_NODES_IN_TABLE
 
-        self.previous_table = previous_table
-        self.next_table = next_table
+        self.previous_table = previous_table  # table above
+        self.next_table = next_table  # table below
 
         # this would help us make sure that moving nodes between tables would never be done without notifying the
         # current parent table
         self.key_of_node_currently_being_removed_from_table = TableAbstract.NO_NODE_IS_CURRENTLY_BEING_REMOVED
 
     def create_table_below_of_same_type(self):
+        """
+        :return: the table created
+        """
         raise NotImplemented("this is an abstract class")
+
+    def get_arguments_to_create_table_below(self):
+        return self.table_number + 1, self, TableAbstract.NO_NEXT_TABLE
+
+    ######## might not need it
+    def set_next_table(self, table, set_given_table_previous_table_as_this_table):
+        """
+        :param table:
+        :param set_given_table_previous_table_as_this_table: if true would set the given table previous table to
+        be this table. i.e. it would double link the tables
+        """
+        if self.next_table != TableAbstract.NO_NEXT_TABLE:
+            raise Exception("next table is already set")
+
+        self.next_table = table
+        if set_given_table_previous_table_as_this_table:
+            # to avoid infinite loop set_given_table_next_table_as_this_table would be false
+            table.set_previous_table(self, False)
+
+    ######## might not need it
+    def set_previous_table(self, table, set_given_table_next_table_as_this_table):
+        """
+        :param table:
+        :param set_given_table_next_table_as_this_table: if true would set the given table next table to
+        be this table. i.e. it would double link the tables
+        """
+        if self.previous_table != TableAbstract.NO_NEXT_TABLE:
+            raise Exception("previous table is already set")
+
+        self.next_table = table
+        if set_given_table_next_table_as_this_table:
+            # to avoid infinite loop set_given_table_previous_table_as_this_table would be false
+            table.set_next_table(self, False)
 
     def get_number_of_nodes_in_table(self):
         raise NotImplemented("this is an abstract class")
@@ -127,6 +163,11 @@ class TableAbstract:
         raise NotImplemented("this is an abstract class")
 
     def remove_node_from_table_and_relocate_to_other_table(self, node_key, new_table_manager):
+        """
+        :param node_key:
+        :param new_table_manager:
+        :return: the new node key in the table it was moved to
+        """
         raise NotImplemented("this is an abstract class")
 
     def _add_node_to_table_without_checking(self, node):
@@ -164,10 +205,10 @@ class TableAbstract:
 
     def add_existing_node_to_table(self, previous_table_manager, node):
         """
-        notifies te current
+        notifies the previous_table_manager that its node is being removed from it, and adds it to this table
         :param previous_table_manager: the current table manager of the given node
         :param node:
-        :return:
+        :return: the new key of the node
         """
         previous_table_manager.get_notified_node_is_being_removed_from_table(node.get_key_in_table())
 
@@ -188,6 +229,8 @@ class TableAbstract:
         # now notify all bottom tables that their table_starting_index has increased
         if self.next_table is not TableAbstract.NO_NEXT_TABLE:
             self.next_table.increase_starting_node_index()
+
+        return new_node_key
 
     def delete_node(self, node_key):
         # check that the node belongs to this table
@@ -224,8 +267,9 @@ class TableDoesntSupportsDeletion(TableAbstract):
         override the super method so that the node which was inserted to the table would be set in stone.
         it does that since it was added to a table which does not support deletion
         """
-        super().add_existing_node_to_table(previous_table_manager, node)
+        new_node_key = super().add_existing_node_to_table(previous_table_manager, node)
         node.set_in_stone()
+        return new_node_key
 
     def get_node_by_key(self, node_key):
         return self.nodes[node_key]
@@ -240,7 +284,7 @@ class TableSupportsDeletion(TableAbstract):
     def create_table_below_of_same_type(self):
         assert self.next_table == TableAbstract.NO_NEXT_TABLE
 
-        table_to_return = TableSupportsDeletion(self.table_number + 1, self, TableAbstract.NO_NEXT_TABLE)
+        table_to_return = TableSupportsDeletion(*self.get_arguments_to_create_table_below())
         self.next_table = table_to_return
 
         return table_to_return
@@ -276,10 +320,11 @@ class TableSupportsDeletion(TableAbstract):
         self.key_of_node_currently_being_removed_from_table = node_key
 
         self._remove_node_from_table_without_affecting_the_node(node_key)
-        new_table_manager.add_existing_node_to_table(node_to_relocate)
+        new_node_key = new_table_manager.add_existing_node_to_table(node_to_relocate)
 
         self._reset_key_of_node_currently_being_removed_from_table()
 
+        return new_node_key
 
 class ARNodeTable(TableSupportsDeletion):
     def create_new_node_and_add_to_table(self,

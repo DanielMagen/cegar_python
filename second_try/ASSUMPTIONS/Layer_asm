@@ -1,13 +1,21 @@
 Layer assumptions:
 1)
-each layer would be segmented into 5 table objects that would represent nodes from all possible kinds
-in the following order:
+each layer would be represented by 2 table lists.
+the first list would contain only regular nodes. it would contain 5 table objects in the following order:
 (pos,inc), (pos,dec), (neg,inc), (neg,dec), (unprocessed)
+such that the first 4 table objects would not support deletion and the 5th would.
 
-2)
-each layer would contain 2 tables lists
-the first table list would be a list of regular nodes tables and the second would be a list of arnode tables.
-regular nodes tables would allow deletion only at the lowest table.
-arnodes tables would allow deletion at all tables.
+the second list would only arnodes. to preserve arnode assumption (2) it would contain 4 table objects
+in the following order:
+(pos,inc), (pos,dec), (neg,inc), (neg,dec)
+
+each time a node would be inserted into the (pos,inc), (pos,dec), (neg,inc), (neg,dec) tables in the regular node
+tables list, we will create a arnode which would contain it and insert it to the corresponding table in the
+second table list
+
+
+
+
+
 
 
