@@ -136,6 +136,33 @@ def t_get_notified_when_neighbor_changes(node_object):
         assert data[NodeEdges.INDEX_OF_REFERENCE_TO_NODE_CONNECTED_TO_IN_DATA] == new_node
 
 
+def t_check_destruction_of_node(node_object):
+    """
+    cant use the node object given after this method
+    """
+    neighbors_created = []
+    possible_direction_of_connection = [Node.INCOMING_EDGE_DIRECTION, Node.OUTGOING_EDGE_DIRECTION]
+    for direction_of_connection in possible_direction_of_connection:
+        new_node = create_new_node_in_direction(direction_of_connection)
+        new_node_table_number, new_node_key_in_table = new_node.get_location()
+
+        weight = random.randint(-20, 20)
+        connection_data = [new_node_table_number, new_node_key_in_table, weight, new_node]
+        node_object.add_or_edit_neighbor(direction_of_connection, connection_data,
+                                         add_this_node_to_given_node_neighbors=True)
+
+        neighbors_created.append(new_node)
+
+    location_of_node_given = node_object.get_location()
+    node_object.destructor()
+
+    # now check that the neighbors no longer have a connection to the node
+    for i in range(len(possible_direction_of_connection)):
+        direction_of_connection = -possible_direction_of_connection[i]
+        assert neighbors_created[i].check_if_neighbor_exists(direction_of_connection, location_of_node_given) == False
+
+
+
 if __name__ == '__main':
     t_get_number_of_tables_in_layers(node)
     for _ in range(20):
@@ -146,3 +173,5 @@ if __name__ == '__main':
         t_get_iterator_for_edges_data(node)
     for _ in range(20):
         t_get_notified_when_neighbor_changes(node)
+
+    t_check_destruction_of_node(node)
