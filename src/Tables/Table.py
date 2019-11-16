@@ -1,7 +1,7 @@
 from src.Nodes.Node import Node
 
 
-class TableAbstract:
+class AbstractTable:
     # the table_starting_index that should be given if there are no nodes in table
     INDEX_OF_START_IF_NO_NODES_IN_TABLE = -1
 
@@ -23,14 +23,14 @@ class TableAbstract:
         # the index of the first node in the table in the corresponding layer. for example if the table contains the
         # nodes in indices 2-10, then table_starting_index = 2. it simply states where in the layer the table starts
         # the table always starts empty so its set to INDEX_OF_START_IF_NO_NODES_IN_TABLE accordingly
-        self.table_starting_index = TableAbstract.INDEX_OF_START_IF_NO_NODES_IN_TABLE
+        self.table_starting_index = AbstractTable.INDEX_OF_START_IF_NO_NODES_IN_TABLE
 
         self.previous_table = previous_table  # table above
         self.next_table = next_table  # table below
 
         # this would help us make sure that moving nodes between tables would never be done without notifying the
         # current parent table
-        self.key_of_node_currently_being_removed_from_table = TableAbstract.NO_NODE_IS_CURRENTLY_BEING_REMOVED
+        self.key_of_node_currently_being_removed_from_table = AbstractTable.NO_NODE_IS_CURRENTLY_BEING_REMOVED
 
     def create_table_below_of_same_type(self):
         """
@@ -39,7 +39,7 @@ class TableAbstract:
         raise NotImplemented("this is an abstract class")
 
     def get_arguments_to_create_table_below(self):
-        return self.table_number + 1, self, TableAbstract.NO_NEXT_TABLE
+        return self.table_number + 1, self, AbstractTable.NO_NEXT_TABLE
 
     ######## might not need it
     def set_next_table(self, table, set_given_table_previous_table_as_this_table):
@@ -48,7 +48,7 @@ class TableAbstract:
         :param set_given_table_previous_table_as_this_table: if true would set the given table previous table to
         be this table. i.e. it would double link the tables
         """
-        if self.next_table != TableAbstract.NO_NEXT_TABLE:
+        if self.next_table != AbstractTable.NO_NEXT_TABLE:
             raise Exception("next table is already set")
 
         self.next_table = table
@@ -63,7 +63,7 @@ class TableAbstract:
         :param set_given_table_next_table_as_this_table: if true would set the given table next table to
         be this table. i.e. it would double link the tables
         """
-        if self.previous_table != TableAbstract.NO_NEXT_TABLE:
+        if self.previous_table != AbstractTable.NO_NEXT_TABLE:
             raise Exception("previous table is already set")
 
         self.next_table = table
@@ -84,10 +84,10 @@ class TableAbstract:
         this function is used to propagate the fact that a node was removed above without affecting the tables which
         have no nodes in them
         """
-        if self.table_starting_index != TableAbstract.INDEX_OF_START_IF_NO_NODES_IN_TABLE:
+        if self.table_starting_index != AbstractTable.INDEX_OF_START_IF_NO_NODES_IN_TABLE:
             self.table_starting_index -= 1
 
-        if self.next_table is not TableAbstract.NO_NEXT_TABLE:
+        if self.next_table is not AbstractTable.NO_NEXT_TABLE:
             self.next_table.decrease_starting_node_index()
 
     def increase_starting_node_index(self):
@@ -100,10 +100,10 @@ class TableAbstract:
         this function is used to propagate the fact that a node was inserted above without affecting the tables which
         have no nodes in them
         """
-        if self.table_starting_index != TableAbstract.INDEX_OF_START_IF_NO_NODES_IN_TABLE:
+        if self.table_starting_index != AbstractTable.INDEX_OF_START_IF_NO_NODES_IN_TABLE:
             self.table_starting_index += 1
 
-        if self.next_table is not TableAbstract.NO_NEXT_TABLE:
+        if self.next_table is not AbstractTable.NO_NEXT_TABLE:
             self.next_table.increase_starting_node_index()
 
     def get_number_of_nodes_after_table_ends(self):
@@ -112,7 +112,7 @@ class TableAbstract:
         before it
         """
         how_many_nodes_before_table = 0
-        if self.previous_table is not TableAbstract.NO_PREVIOUS_TABLE:
+        if self.previous_table is not AbstractTable.NO_PREVIOUS_TABLE:
             how_many_nodes_before_table += self.previous_table.get_number_of_nodes_after_table_ends()
 
         return how_many_nodes_before_table + self.get_number_of_nodes_in_table()
@@ -127,7 +127,7 @@ class TableAbstract:
         but is shouldn't do any harm if called during the run (although calling it on a non empty table
         should have no purpose)
         """
-        if self.previous_table is TableAbstract.NO_PREVIOUS_TABLE:
+        if self.previous_table is AbstractTable.NO_PREVIOUS_TABLE:
             self.table_starting_index = 0
         else:
             # the indices start with 0, so the count of how many nodes are before the table is equal to the
@@ -145,7 +145,7 @@ class TableAbstract:
         raise NotImplemented("this is an abstract class")
 
     def _reset_key_of_node_currently_being_removed_from_table(self):
-        self.key_of_node_currently_being_removed_from_table = TableAbstract.NO_NODE_IS_CURRENTLY_BEING_REMOVED
+        self.key_of_node_currently_being_removed_from_table = AbstractTable.NO_NODE_IS_CURRENTLY_BEING_REMOVED
 
     def get_notified_node_is_being_removed_from_table(self, node_key):
         """
@@ -227,7 +227,7 @@ class TableAbstract:
         node.notify_all_neighbors_that_my_location_changed(previous_location)
 
         # now notify all bottom tables that their table_starting_index has increased
-        if self.next_table is not TableAbstract.NO_NEXT_TABLE:
+        if self.next_table is not AbstractTable.NO_NEXT_TABLE:
             self.next_table.increase_starting_node_index()
 
         return new_node_key

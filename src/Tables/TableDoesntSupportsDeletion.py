@@ -1,15 +1,15 @@
-from src.Tables.Table import TableAbstract
+from src.Tables.Table import AbstractTable
 
 
-class TableDoesntSupportsDeletion(TableAbstract):
+class TableDoesntSupportsDeletion(AbstractTable):
     def __init__(self, table_number, previous_table, next_table):
         super().__init__(table_number, previous_table, next_table)
         self.nodes = []
 
     def create_table_below_of_same_type(self):
-        assert self.next_table == TableAbstract.NO_NEXT_TABLE
+        assert self.next_table == AbstractTable.NO_NEXT_TABLE
 
-        table_to_return = TableDoesntSupportsDeletion(self.table_number + 1, self, TableAbstract.NO_NEXT_TABLE)
+        table_to_return = TableDoesntSupportsDeletion(self.table_number + 1, self, AbstractTable.NO_NEXT_TABLE)
         self.next_table = table_to_return
 
         return table_to_return

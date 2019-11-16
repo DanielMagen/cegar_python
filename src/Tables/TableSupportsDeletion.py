@@ -1,14 +1,14 @@
-from src.Tables.Table import TableAbstract
+from src.Tables.Table import AbstractTable
 
 
-class TableSupportsDeletion(TableAbstract):
+class TableSupportsDeletion(AbstractTable):
     def __init__(self, table_number, previous_table, next_table):
         super().__init__(table_number, previous_table, next_table)
         self.nodes = {}
         self.number_of_nodes = 0
 
     def create_table_below_of_same_type(self):
-        assert self.next_table == TableAbstract.NO_NEXT_TABLE
+        assert self.next_table == AbstractTable.NO_NEXT_TABLE
 
         table_to_return = TableSupportsDeletion(*self.get_arguments_to_create_table_below())
         self.next_table = table_to_return
@@ -44,7 +44,7 @@ class TableSupportsDeletion(TableAbstract):
         del self.nodes[node_key]
 
         # now notify all bottom tables that their table_starting_index has decreased
-        if self.next_table is not TableAbstract.NO_NEXT_TABLE:
+        if self.next_table is not AbstractTable.NO_NEXT_TABLE:
             self.next_table.decrease_starting_node_index()
 
     def remove_node_from_table_and_relocate_to_other_table(self, node_key, new_table_manager):
