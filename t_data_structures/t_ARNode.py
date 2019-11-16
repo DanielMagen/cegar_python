@@ -213,5 +213,10 @@ def t_arnode_full_activation():
     arnode_in_previous_layer2.fully_activate_arnode_without_changing_incoming_edges()
 
 
+if __name__ == '__main':
+    t_check_arnode_wont_start_if_node_isnt_set_in_stone()
 
-t_arnode_full_activation()
+    for _ in range(20):
+        t_arnode_forward_activation()
+    for _ in range(20):
+        t_arnode_full_activation()
