@@ -18,7 +18,7 @@ class ARNode(Node):
     # further assumptions about he different activation status can be found in the ASSUMPTIONS file
     NOT_ACTIVATED_STATUS = 0
     ONLY_FORWARD_ACTIVATED_STATUS = 1
-    FULLY_ACTIVATED_STATUS = 1
+    FULLY_ACTIVATED_STATUS = 2
 
     def __init__(self,
                  starting_nodes,
@@ -212,7 +212,7 @@ class ARNode(Node):
                 arnode_connected_to = node_connected_to.get_pointer_to_ar_node_nested_in()
                 if arnode_connected_to == Node.NO_AR_NODE_CONTAINER:
                     # assumption (1) is violated, we can't find an arnode to link to
-                    raise AssertionError("can not activate arnode because an outgoing connection can not link into any"
+                    raise AssertionError("can not activate arnode because an incoming connection can not link into any"
                                          "existent arnode")
 
                 # if an node is connected to us by an edge that is outgoing from us it means that for him we are
@@ -224,6 +224,26 @@ class ARNode(Node):
                 if arnode_connected_to.get_activation_status() == ARNode.NOT_ACTIVATED_STATUS:
                     raise AssertionError("can not fully activate arnode since an incoming connection is not "
                                          "forward activated")
+
+        direction_of_connection = Node.OUTGOING_EDGE_DIRECTION
+        for node in self.inner_nodes:
+            for edge_data in node.get_iterator_for_edges_data(direction_of_connection):
+                _, _, _, node_connected_to = edge_data
+                arnode_connected_to = node_connected_to.get_pointer_to_ar_node_nested_in()
+                if arnode_connected_to == Node.NO_AR_NODE_CONTAINER:
+                    # assumption (1) is violated, we can't find an arnode to link to
+                    raise AssertionError("can not activate arnode because an incoming connection can not link into any"
+                                         "existent arnode")
+
+                # if an node is connected to us by an edge that is outgoing from us it means that for him we are
+                # an incoming connection,m and vice versa
+                if not arnode_connected_to.check_if_neighbor_exists(-direction_of_connection, our_location):
+                    raise AssertionError("arnode that should be connected to this arnode was not connected. can not "
+                                         "fully activate arnode")
+
+                if arnode_connected_to.get_activation_status() != ARNode.FULLY_ACTIVATED_STATUS:
+                    raise AssertionError("can not fully activate arnode since an outgoing connection is not "
+                                         "fully activated")
 
         return True
 

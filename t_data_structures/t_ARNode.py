@@ -178,7 +178,7 @@ def t_arnode_full_activation():
     arnode_in_next_layer.fully_activate_arnode_without_changing_incoming_edges()
 
     # since we still haven't even wrapped node_in_previous_layer2 in an arnode we shouldn't be able to fully activate
-    # the node in the current. if it were not for this node, we should have been able to fully activate it since
+    # the node in the current layer. if it were not for this node, we should have been able to fully activate it since
     # we fully activated the arnode_in_next_layer
     try:
         arnode_in_current_layer.check_if_arnode_can_be_fully_activated_and_raise_exception_if_cant()
@@ -188,6 +188,7 @@ def t_arnode_full_activation():
 
     # now we wrap the node_in_previous_layer2 in an arnode, but still we shouldn't be able to fully activate
     # the node in the current since the arnode won't be forward activated
+    node_in_previous_layer2.set_in_stone()
     arnode_in_previous_layer2 = ARNode([node_in_previous_layer2],
                                        *node_in_previous_layer2.get_location())
     try:
