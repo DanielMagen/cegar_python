@@ -12,7 +12,11 @@ ARNodes can merge with other ARNode, split and change location
 4)
 ARNodes would not split or merge unless they are fully activated
 
-5) nodes have only three activation status: activated, partially (forward) activated, fully activated
+5) nodes have only three activation status: activated, forward (partially) activated, fully activated
+
+forward activated entails that
+a) all the arnodes which this arnode should be connected to via an outgoing connection have been created
+
 fully activated entails that
 a) the arnodes that have outgoing connections (which are incoming) to this node must be forward activated
 b) the arnodes that we are connected to by outgoing connections will be fully activated

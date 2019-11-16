@@ -162,7 +162,6 @@ def t_check_destruction_of_node(node_object):
         assert neighbors_created[i].check_if_neighbor_exists(direction_of_connection, location_of_node_given) == False
 
 
-
 if __name__ == '__main':
     t_get_number_of_tables_in_layers(node)
     for _ in range(20):

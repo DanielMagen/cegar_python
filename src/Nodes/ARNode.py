@@ -1,5 +1,6 @@
 from src.Nodes.Node import Node
 
+
 # use the decorator pattern
 class ARNode(Node):
     """
@@ -117,11 +118,11 @@ class ARNode(Node):
                 arnode_connected_to = node_connected_to.get_pointer_to_ar_node_nested_in()
                 if arnode_connected_to == Node.NO_AR_NODE_CONTAINER:
                     # assumption (1) is violated, we can't find an arnode to link to
-                    raise Exception("can not activate arnode because an outgoing connection can not link into any"
+                    raise AssertionError("can not activate arnode because a connection can not link into any"
                                     "existent arnode")
 
                 if not function_to_verify_arnode_neighbors_with(arnode_connected_to):
-                    raise Exception("failed screening via function")
+                    raise AssertionError("failed screening via function")
 
                 location_of_arnode_connected_to = arnode_connected_to.get_location()
 
@@ -164,7 +165,7 @@ class ARNode(Node):
         self.check_if_killed_and_raise_error_if_is()
 
         if self.activation_status == ARNode.FULLY_ACTIVATED_STATUS:
-            raise Exception("can not demote in activation status")
+            raise AssertionError("can not demote in activation status")
 
         if self.activation_status == ARNode.ONLY_FORWARD_ACTIVATED_STATUS:
             return
