@@ -1,4 +1,4 @@
-from src.NodeEdges import *
+from src.NodeEdges import NodeEdges
 
 
 class Node:

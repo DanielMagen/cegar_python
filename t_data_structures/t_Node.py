@@ -1,4 +1,5 @@
 from src.Nodes.Node import Node
+from src.NodeEdges import NodeEdges
 import random
 
 """
@@ -126,11 +127,22 @@ def t_get_notified_when_neighbor_changes(node_object):
         new_key_in_table = random.randint(0, 10)
         new_node.set_new_location(new_table_number, new_key_in_table)
 
+        # first check that the 2 nodes know about each other
+        assert node_object.check_if_neighbor_exists(direction_of_connection, new_node.get_location()) == True
+        assert new_node.check_if_neighbor_exists(-direction_of_connection, node_object.get_location()) == True
+
         # now try and see if the node knows that the new node changed location
-        node_object
+        data = node_object.get_connection_data_for_neighbor(direction_of_connection, new_node.get_location())
+        assert data[NodeEdges.INDEX_OF_REFERENCE_TO_NODE_CONNECTED_TO_IN_DATA] == new_node
 
 
-t_get_number_of_tables_in_layers(node)
-t_adding_connection(node)
-t_remove_connection(node)
-t_get_iterator_for_edges_data(node)
+if __name__ == '__main':
+    t_get_number_of_tables_in_layers(node)
+    for _ in range(20):
+        t_adding_connection(node)
+    for _ in range(20):
+        t_remove_connection(node)
+    for _ in range(20):
+        t_get_iterator_for_edges_data(node)
+    for _ in range(20):
+        t_get_notified_when_neighbor_changes(node)
