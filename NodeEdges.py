@@ -71,14 +71,21 @@ class NodeEdges:
         del self.list_of_tables[table_number][key_in_table]
         return weight, node_connected_to
 
-    def move_connection(self, previous_table_number, previous_key_in_table, new_table_number, new_key_in_table):
+    def move_connection(self, previous_table_number, previous_key_in_table, new_table_number, new_key_in_table,
+                        override_existing_connection=True):
         """
+        it could override existing connections so be careful when using this method
 
         :param previous_table_number:
         :param previous_key_in_table:
         :param new_table_number:
         :param new_key_in_table:
+        :param override_existing_connection:
         """
+        if not override_existing_connection:
+            if self.check_if_connection_exist(new_table_number, new_key_in_table):
+                raise Exception("tried to override existing connection")
+
         weight, node_connected_to = self.delete_connection(previous_table_number, previous_key_in_table)
         self.add_or_edit_connection(new_table_number, new_key_in_table, weight, node_connected_to)
 
@@ -101,5 +108,3 @@ class NodeEdges:
             to_return.append(data)
 
         return to_return
-
-
