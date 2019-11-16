@@ -59,32 +59,8 @@ class Layer:
 
         return new_node.get_location()
 
-    def split_unprocessed_node_to_tables(self, node_key_in_unprocessed_table):
-        """
-        :param node_key_in_unprocessed_table:
-        would remove the the node from the unprocessed table and replace it with nodes in the
-        other tables
-        it assumes that all the nodes that this node is connected to by an outgoing connection have been preprocessed
-
-        for each node it would insert into a regular table, it would create a corresponding arnode
-        """
-        unprocessed_table = self.regular_node_tables[Layer.INDEX_OF_UNPROCESSED_TABLE]
-        node = unprocessed_table.get_node_by_key(node_key_in_unprocessed_table)
-
-        if node.get_number_of_connections(Node.OUTGOING_EDGE_DIRECTION) == 0:
-            # this node is the output node, simply move it to the POS_INC_TABLE
-            table_to_move_to = self.regular_node_tables[Layer.INDEX_OF_POS_INC_TABLE]
-
-            new_node_key = unprocessed_table.remove_node_from_table_and_relocate_to_other_table(
-                node_key_in_unprocessed_table,
-                table_to_move_to)
-
-            node = table_to_move_to.get_node_by_key(new_node_key)
-
-            # now create a corresponding arnode for the node
-            new_arnode = self.arnode_tables[Layer.INDEX_OF_POS_INC_TABLE].create_new_arnode_and_add_to_table([node])
-            return
-
+    @staticmethod
+    def get_split_edge_data_by_types(node):
         weight_location_in_data = NodeEdges.INDEX_OF_WEIGHT_IN_DATA
 
         data_for_nodes_we_are_pos_linked_to = []
@@ -128,11 +104,57 @@ class Layer:
                 raise Exception("some of the nodes that this node is connected to by an outgoing connection were not"
                                 "preprocessed")
 
+        return split_data_by_types
+
+    def _create_arnode_for_node(self, node):
+        node_table = node.get_table_number()
+        if node_table == Layer.INDEX_OF_UNPROCESSED_TABLE or not node.check_if_location_can_be_changed():
+            raise Exception("can not create an arnode for a node which is not set in stone")
+
+        self.arnode_tables[node_table].create_new_arnode_and_add_to_table([node])
+
+    def split_unprocessed_node_to_tables(self,
+                                         node_key_in_unprocessed_table,
+                                         function_to_split_edges_data=get_split_edge_data_by_types):
+        """
+        :param node_key_in_unprocessed_table:
+        this method would remove the the node from the unprocessed table and replace it with nodes in the
+        other tables
+        it assumes that all the nodes that this node is connected to by an outgoing connection have been preprocessed
+
+        :param function_to_split_edges_data: a function that receives a node and returns a list (lets call it lis)
+        of size NUMBER_OF_REGULAR_TABLES_THAT_DO_NOT_SUPPORT_DELETION, such that
+        lis[i] would contain all the connection data for outgoing edges that should go to the node we will create
+        in regular_node_tables[i].
+
+        for each node it would insert into a regular table, it would create a corresponding arnode in the arnodes table
+        """
+        unprocessed_table = self.regular_node_tables[Layer.INDEX_OF_UNPROCESSED_TABLE]
+        node = unprocessed_table.get_node_by_key(node_key_in_unprocessed_table)
+
+        if node.get_number_of_connections(Node.OUTGOING_EDGE_DIRECTION) == 0:
+            # this node is the output node, simply move it to the POS_INC_TABLE
+            table_to_move_to = self.regular_node_tables[Layer.INDEX_OF_POS_INC_TABLE]
+
+            new_node_key = unprocessed_table.remove_node_from_table_and_relocate_to_other_table(
+                node_key_in_unprocessed_table,
+                table_to_move_to)
+
+            node = table_to_move_to.get_node_by_key(new_node_key)
+
+            # now create a corresponding arnode for the node
+            self._create_arnode_for_node(node)
+            return
+
+        edge_data_split_by_type = function_to_split_edges_data(node)
+
         # now create a new node for each list which isn't empty and insert the node in the right table
+        # we wish this list to be of length NUMBER_OF_REGULAR_TABLES_THAT_DO_NOT_SUPPORT_DELETION,
+        # so a None value would indicate if a list is empty at a specific location
         nodes_created = [None for _ in range(Layer.NUMBER_OF_REGULAR_TABLES_THAT_DO_NOT_SUPPORT_DELETION)]
 
-        for i in range(len(split_data_by_types)):
-            if len(split_data_by_types[i]) != 0:
+        for i in range(len(edge_data_split_by_type)):
+            if len(edge_data_split_by_type[i]) != 0:
                 current_table = self.regular_node_tables[i]
                 new_node = current_table.create_new_node_and_add_to_table(
                     self.number_of_tables_in_previous_layer,
@@ -143,13 +165,14 @@ class Layer:
                 # now add all outgoing edges to the node
                 new_node_key = new_node.get_key_in_table()
                 current_table.add_or_edit_connection_to_node_by_bulk(new_node_key, Node.OUTGOING_EDGE_DIRECTION,
-                                                                     split_data_by_types[i],
+                                                                     edge_data_split_by_type[i],
                                                                      add_this_node_to_given_node_neighbors=True)
         # now add all the incoming edges to all the nodes created
         incoming_edges_data = node.get_a_list_of_all_incoming_connections_data(Node.INCOMING_EDGE_DIRECTION)
-        for new_node in nodes_created:
-            if new_node is not None:
-                new_node_key = new_node.get_key_in_table()
+        for i in range(len(nodes_created)):
+            if nodes_created[i] is not None:
+                current_table = self.regular_node_tables[i]
+                new_node_key = nodes_created[i].get_key_in_table()
                 current_table.add_or_edit_connection_to_node_by_bulk(new_node_key, Node.INCOMING_EDGE_DIRECTION,
                                                                      incoming_edges_data,
                                                                      add_this_node_to_given_node_neighbors=True)
@@ -160,14 +183,13 @@ class Layer:
         # now create an arnode for all the nodes created
         for i in range(len(nodes_created)):
             if nodes_created[i] is not None:
-                self.arnode_tables[i].create_new_arnode_and_add_to_table([nodes_created[i]])
+                self._create_arnode_for_node(nodes_created[i])
 
     def preprocess_entire_layer(self):
         unprocessed_table = self.regular_node_tables[Layer.INDEX_OF_UNPROCESSED_TABLE]
         for node_key in unprocessed_table.get_iterator_for_all_keys():
             self.split_unprocessed_node_to_tables(node_key)
 
-    ################################### create more functions to enable finer control over activation
     def forward_activate_arnode_table(self,
                                       table_index,
                                       function_to_calculate_merger_of_outgoing_edges):
@@ -206,3 +228,5 @@ class Layer:
         for arnode in arnode_iterator:
             if arnode.get_activation_status() != ARNode.FULLY_ACTIVATED_STATUS:
                 arnode.fully_activate_arnode_without_changing_incoming_edges(check_validity_of_activation)
+
+    ################################### create more functions to enable finer control over activation
