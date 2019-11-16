@@ -1,4 +1,4 @@
-from second_try.NodeEdges import *
+from NodeEdges import *
 
 
 class Node:

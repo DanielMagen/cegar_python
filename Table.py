@@ -1,4 +1,4 @@
-from second_try.Node import Node, ARNode
+from Node import Node, ARNode
 
 
 class TableAbstract:

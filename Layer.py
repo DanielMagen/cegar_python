@@ -1,5 +1,5 @@
-from second_try.Table import *
-from second_try.NodeEdges import *
+from Table import *
+from NodeEdges import *
 
 
 class Layer:

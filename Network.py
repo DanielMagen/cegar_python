@@ -1,4 +1,4 @@
-from second_try.Layer import *
+from Layer import *
 
 
 class Network:
