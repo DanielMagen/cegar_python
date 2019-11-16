@@ -125,4 +125,92 @@ def t_arnode_forward_activation():
     assert arnode_in_next_layer.get_activation_status() == ARNode.ONLY_FORWARD_ACTIVATED_STATUS
 
 
-t_arnode_forward_activation()
+def t_arnode_full_activation():
+    node_in_previous_layer = get_new_node_in_previous_layer()
+
+    # create another node to check that forward activation is affected only by outgoing connections, but that
+    # full activation is also affected by incoming connections
+    node_in_previous_layer2 = get_new_node_in_previous_layer()
+
+    node_in_current_layer = get_new_node_in_current_layer()
+    node_in_next_layer = get_new_node_in_next_layer()
+
+    node_in_previous_layer.set_in_stone()
+    node_in_current_layer.set_in_stone()
+    node_in_next_layer.set_in_stone()
+
+    # connect between the nodes
+    node_in_previous_layer.add_or_edit_neighbor(Node.OUTGOING_EDGE_DIRECTION,
+                                                [*node_in_current_layer.get_location(),
+                                                 get_random_weight(),
+                                                 node_in_current_layer])
+
+    node_in_previous_layer2.add_or_edit_neighbor(Node.OUTGOING_EDGE_DIRECTION,
+                                                 [*node_in_current_layer.get_location(),
+                                                  get_random_weight(),
+                                                  node_in_current_layer])
+
+    node_in_current_layer.add_or_edit_neighbor(Node.OUTGOING_EDGE_DIRECTION,
+                                               [*node_in_next_layer.get_location(),
+                                                get_random_weight(),
+                                                node_in_next_layer])
+
+    # now create corresponding arnodes for the nodes
+    arnode_in_previous_layer = ARNode([node_in_previous_layer],
+                                      *node_in_previous_layer.get_location())
+
+    arnode_in_current_layer = ARNode([node_in_current_layer],
+                                     *node_in_current_layer.get_location())
+
+    arnode_in_next_layer = ARNode([node_in_next_layer],
+                                  *node_in_next_layer.get_location())
+
+    # test that forward activation can be done at any order as long as the right conditions are met
+    all_arnodes_needed_to_activate = [arnode_in_previous_layer, arnode_in_current_layer, arnode_in_next_layer]
+    for i in get_random_permutations_of_range(len(all_arnodes_needed_to_activate)):
+        all_arnodes_needed_to_activate[i].forward_activate_arnode(lambda x, lis: sum(lis))
+
+    assert arnode_in_previous_layer.get_activation_status() == ARNode.ONLY_FORWARD_ACTIVATED_STATUS
+    assert arnode_in_current_layer.get_activation_status() == ARNode.ONLY_FORWARD_ACTIVATED_STATUS
+    assert arnode_in_next_layer.get_activation_status() == ARNode.ONLY_FORWARD_ACTIVATED_STATUS
+
+    # now begin fully activating
+    arnode_in_next_layer.fully_activate_arnode_without_changing_incoming_edges()
+
+    # since we still haven't even wrapped node_in_previous_layer2 in an arnode we shouldn't be able to fully activate
+    # the node in the current. if it were not for this node, we should have been able to fully activate it since
+    # we fully activated the arnode_in_next_layer
+    try:
+        arnode_in_current_layer.check_if_arnode_can_be_fully_activated_and_raise_exception_if_cant()
+        raise Exception("did not raise error when trying to incorrectly fully activate an arnode")
+    except AssertionError:
+        pass
+
+    # now we wrap the node_in_previous_layer2 in an arnode, but still we shouldn't be able to fully activate
+    # the node in the current since the arnode won't be forward activated
+    arnode_in_previous_layer2 = ARNode([node_in_previous_layer2],
+                                       *node_in_previous_layer2.get_location())
+    try:
+        arnode_in_current_layer.check_if_arnode_can_be_fully_activated_and_raise_exception_if_cant()
+        raise Exception("did not raise error when trying to incorrectly fully activate an arnode")
+    except AssertionError:
+        pass
+
+    # passed all tests so far, activate arnode_in_previous_layer2
+    arnode_in_previous_layer2.forward_activate_arnode(lambda x, lis: sum(lis))
+
+    # now we shouldn't be able to fully activate arnode_in_previous_layer since arnode_in_current_layer was not
+    # fully activated before
+    try:
+        arnode_in_previous_layer.check_if_arnode_can_be_fully_activated_and_raise_exception_if_cant()
+        raise Exception("did not raise error when trying to incorrectly fully activate an arnode")
+    except AssertionError:
+        pass
+
+    arnode_in_current_layer.fully_activate_arnode_without_changing_incoming_edges()
+    arnode_in_previous_layer.fully_activate_arnode_without_changing_incoming_edges()
+    arnode_in_previous_layer2.fully_activate_arnode_without_changing_incoming_edges()
+
+
+
+t_arnode_full_activation()

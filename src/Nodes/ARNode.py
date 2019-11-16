@@ -26,7 +26,7 @@ class ARNode(Node):
                  key_in_table):
 
         if len(starting_nodes) == 0:
-            raise Exception("ar node must have at least one starting node")
+            raise AssertionError("ar node must have at least one starting node")
 
         first_node_in_starting_nodes = None
         for node in starting_nodes:
@@ -47,7 +47,7 @@ class ARNode(Node):
         for node in starting_nodes:
             if node.check_if_location_can_be_changed():
                 # assumption (2) is violated
-                raise Exception("arnodes can only contain nodes which can not change their location")
+                raise AssertionError("arnodes can only contain nodes which can not change their location")
 
         # this list should be kept ordered by the nodes indices.
         # from assumption (2) all the nodes in the inner nodes list would be in the same table
@@ -119,7 +119,7 @@ class ARNode(Node):
                 if arnode_connected_to == Node.NO_AR_NODE_CONTAINER:
                     # assumption (1) is violated, we can't find an arnode to link to
                     raise AssertionError("can not activate arnode because a connection can not link into any"
-                                    "existent arnode")
+                                         "existent arnode")
 
                 if not function_to_verify_arnode_neighbors_with(arnode_connected_to):
                     raise AssertionError("failed screening via function")
@@ -200,8 +200,8 @@ class ARNode(Node):
             # connection to be fully activated. for this to be the case, we have to be forward activated before, again
             # from assumption (5). hence it can not be that we are not forward activated once we are called to
             # fully activate ourselves.
-            raise Exception("must fully activate arnodes we are connected to by an outgoing connection before"
-                            "fully activating this arnode")
+            raise AssertionError("must fully activate arnodes we are connected to by an outgoing connection before"
+                                 "fully activating this arnode")
 
         # now check that all needed assumptions hold
         our_location = self.get_location()
@@ -212,18 +212,18 @@ class ARNode(Node):
                 arnode_connected_to = node_connected_to.get_pointer_to_ar_node_nested_in()
                 if arnode_connected_to == Node.NO_AR_NODE_CONTAINER:
                     # assumption (1) is violated, we can't find an arnode to link to
-                    raise Exception("can not activate arnode because an outgoing connection can not link into any"
-                                    "existent arnode")
+                    raise AssertionError("can not activate arnode because an outgoing connection can not link into any"
+                                         "existent arnode")
 
                 # if an node is connected to us by an edge that is outgoing from us it means that for him we are
                 # an incoming connection,m and vice versa
                 if not arnode_connected_to.check_if_neighbor_exists(-direction_of_connection, our_location):
-                    raise Exception("arnode that should be connected to this arnode was not connected. can not "
-                                    "fully activate arnode")
+                    raise AssertionError("arnode that should be connected to this arnode was not connected. can not "
+                                         "fully activate arnode")
 
                 if arnode_connected_to.get_activation_status() == ARNode.NOT_ACTIVATED_STATUS:
-                    raise Exception("can not fully activate arnode since an incoming connection is not "
-                                    "forward activated")
+                    raise AssertionError("can not fully activate arnode since an incoming connection is not "
+                                         "forward activated")
 
         return True
 
@@ -242,8 +242,8 @@ class ARNode(Node):
             # connection to be fully activated. for this to be the case, we have to be forward activated before, again
             # from assumption (5). hence it can not be that we are not forward activated once we are called to
             # fully activate ourselves.
-            raise Exception("must fully activate arnodes we are connected to by an outgoing connection before"
-                            "fully activating this arnode")
+            raise AssertionError("must fully activate arnodes we are connected to by an outgoing connection before"
+                                 "fully activating this arnode")
 
         if check_validity_of_activation:
             self.check_if_arnode_can_be_fully_activated_and_raise_exception_if_cant()
@@ -273,8 +273,8 @@ class ARNode(Node):
             # connection to be fully activated. for this to be the case, we have to be forward activated before, again
             # from assumption (5). hence it can not be that we are not forward activated once we are called to
             # fully activate ourselves.
-            raise Exception("must fully activate arnodes we are connected to by an outgoing connection before"
-                            "fully activating this arnode")
+            raise AssertionError("must fully activate arnodes we are connected to by an outgoing connection before"
+                                 "fully activating this arnode")
 
         # when connecting incoming edges make sure that the nodes we are connected to are at least forward activated
         # to preserve assumption (5). using assumption (5) its enough to check that their
