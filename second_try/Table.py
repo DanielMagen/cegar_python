@@ -141,6 +141,9 @@ class TableAbstract:
     def get_iterator_for_all_nodes(self):
         raise NotImplemented("this is an abstract class")
 
+    def get_iterator_for_all_keys(self):
+        raise NotImplemented("this is an abstract class")
+
     def _reset_key_of_node_currently_being_removed_from_table(self):
         self.key_of_node_currently_being_removed_from_table = TableAbstract.NO_NODE_IS_CURRENTLY_BEING_REMOVED
 
@@ -238,6 +241,27 @@ class TableAbstract:
         node_to_remove.destructor()
         self._remove_node_from_table_without_affecting_the_node(node_key)
 
+    def add_or_edit_connection_to_node(self, node_key, direction_of_connection, connection_data,
+                                       add_this_node_to_given_node_neighbors=False):
+        """
+
+        :param node_key:
+        :param direction_of_connection:
+        :param connection_data: a list as returned by the NodeEdges class
+        :param add_this_node_to_given_node_neighbors:
+        :return:
+        """
+        node_to_add_connection_to = self.get_node_by_key(node_key)
+        node_to_add_connection_to.add_or_edit_neighbor(direction_of_connection, connection_data,
+                                                       add_this_node_to_given_node_neighbors)
+
+    def add_or_edit_connection_to_node_by_bulk(self, node_key, direction_of_connection, list_of_connection_data,
+                                               add_this_node_to_given_node_neighbors=False):
+        node_to_add_connection_to = self.get_node_by_key(node_key)
+        for connection_data in list_of_connection_data:
+            node_to_add_connection_to.add_or_edit_neighbor(direction_of_connection, connection_data,
+                                                           add_this_node_to_given_node_neighbors)
+
 
 class TableDoesntSupportsDeletion(TableAbstract):
     def __init__(self, table_number, previous_table, next_table):
@@ -251,6 +275,14 @@ class TableDoesntSupportsDeletion(TableAbstract):
         self.next_table = table_to_return
 
         return table_to_return
+
+    def get_iterator_for_all_nodes(self):
+        for node in self.nodes:
+            yield node
+
+    def get_iterator_for_all_keys(self):
+        for i in range(len(self.nodes)):
+            return i
 
     def get_number_of_nodes_in_table(self):
         return len(self.nodes)
@@ -291,6 +323,10 @@ class TableSupportsDeletion(TableAbstract):
         for node in self.nodes:
             yield node
 
+    def get_iterator_for_all_keys(self):
+        for key in self.nodes:
+            return key
+
     def get_number_of_nodes_in_table(self):
         return self.number_of_nodes
 
@@ -330,10 +366,6 @@ class TableSupportsDeletion(TableAbstract):
 
 
 class ARNodeTable(TableSupportsDeletion):
-    def get_iterator_for_all_nodes(self):
-        for node in self.nodes:
-            yield node
-
     def create_new_node_and_add_to_table(self,
                                          number_of_tables_in_previous_layer,
                                          number_of_tables_in_next_layer):

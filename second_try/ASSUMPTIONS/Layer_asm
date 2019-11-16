@@ -13,8 +13,12 @@ each time a node would be inserted into the (pos,inc), (pos,dec), (neg,inc), (ne
 tables list, we will create a arnode which would contain it and insert it to the corresponding table in the
 second table list
 
-
-
+2) the table number would correspond to the type of nodes it would contain
+0 -> (pos,inc)
+1 -> (pos,dec)
+2 -> (neg,inc)
+3 -> (neg,dec)
+4 -> (unprocessed)
 
 
 

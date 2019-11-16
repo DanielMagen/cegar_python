@@ -12,12 +12,23 @@ class NodeEdges:
     LOCATION_OF_WEIGHT_IN_MAP = 0
     LOCATION_OF_REFERENCE_IN_MAP = 1
 
+    INDEX_OF_TABLE_NUMBER_IN_DATA = 0
+    INDEX_OF_KEY_IN_TABLE_IN_DATA = 1
+    INDEX_OF_WEIGHT_IN_DATA = 2
+    INDEX_OF_REFERENCE_TO_NODE_CONNECTED_TO_IN_DATA = 3
+
     def __init__(self, number_of_tables_in_layer_connected_to):
         self.number_of_tables_in_layer_connected_to = number_of_tables_in_layer_connected_to
 
         # for tables which support deletion, we will use a list of unordered maps
         # such that map[key_in_table] = (weight of edge, reference to the node connected to)
         self.list_of_tables = [{} for _ in range(number_of_tables_in_layer_connected_to)]
+
+    def get_number_of_connections(self):
+        number_of_connections = 0
+        for table in self.list_of_tables:
+            number_of_connections += len(table)
+        return number_of_connections
 
     def get_number_of_tables_in_layer_connected_to(self):
         return self.number_of_tables_in_layer_connected_to
@@ -83,4 +94,12 @@ class NodeEdges:
                 weight = data[NodeEdges.LOCATION_OF_WEIGHT_IN_MAP]
                 reference_to_node_connected_to = data[NodeEdges.LOCATION_OF_REFERENCE_IN_MAP]
                 yield [current_table_number, key_in_table, weight, reference_to_node_connected_to]
+
+    def get_a_list_of_all_connections(self):
+        to_return = []
+        for data in self.get_iterator_over_connections():
+            to_return.append(data)
+
+        return to_return
+
 

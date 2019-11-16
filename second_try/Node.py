@@ -6,6 +6,7 @@ class Node:
     this class would represent a node that would work under the assumptions detailed in
     the ASSUMPTIONS file
     """
+    # its important that they would be opposite to each other
     INCOMING_EDGE_DIRECTION = -1
     OUTGOING_EDGE_DIRECTION = 1
 
@@ -126,6 +127,12 @@ class Node:
         # in the id. hence the node id is unique only in the preview of the layer its in
         return self.table_number, self.key_in_table
 
+    def get_number_of_incoming_connections(self):
+        return self.incoming_edges_manager.get_number_of_connections()
+
+    def get_number_of_outgoing_connections(self):
+        return self.outgoing_edges_manager.get_number_of_connections()
+
     def get_iterator_for_incoming_edges_data(self):
         self.check_if_killed_and_raise_error_if_is()
 
@@ -135,6 +142,18 @@ class Node:
         self.check_if_killed_and_raise_error_if_is()
 
         return self.outgoing_edges_manager.get_iterator_over_connections()
+
+    def get_all_incoming_connections_data(self):
+        """
+        :return: a list of all incoming connections data
+        """
+        self.incoming_edges_manager.get_a_list_of_all_connections()
+
+    def get_all_outgoing_connections_data(self):
+        """
+        :return: a list of all incoming connections data
+        """
+        self.outgoing_edges_manager.get_a_list_of_all_connections()
 
     def get_iterator_for_edges_data_using_direction(self, direction):
         if direction == Node.OUTGOING_EDGE_DIRECTION:
@@ -156,12 +175,12 @@ class Node:
         if direction_of_connection == Node.OUTGOING_EDGE_DIRECTION:
             return self.outgoing_edges_manager.check_if_connection_exist(table_number, key_in_table)
 
-    def add_or_edit_neighbor(self, direction_of_connection, weight, node, add_this_node_to_given_node_neighbors=False):
+    def add_or_edit_neighbor(self, direction_of_connection, connection_data,
+                             add_this_node_to_given_node_neighbors=False):
         """
 
         :param direction_of_connection:
-        :param weight:
-        :param node:
+        :param connection_data: a list as returned by the NodeEdges class
         :param add_this_node_to_given_node_neighbors: if true we would add ourselves to the given node neighbors
         (from the right direction of course)
         :return:
@@ -175,12 +194,13 @@ class Node:
         else:
             raise Exception("invalid direction_of_connection")
 
-        table_number, key_in_table = node.get_location()
-        edges_manager_to_work_with.add_or_edit_connection(table_number, key_in_table, weight, node)
+        table_number, key_in_table, weight, node_connected_to = connection_data
+        edges_manager_to_work_with.add_or_edit_connection(table_number, key_in_table, weight, node_connected_to)
 
         if add_this_node_to_given_node_neighbors:
-            node.add_or_edit_neighbor(-direction_of_connection, weight, self,
-                                      add_this_node_to_given_node_neighbors=False)
+            node_connected_to.add_or_edit_neighbor(-direction_of_connection,
+                                                   [self.table_number, self.key_in_table, weight, self],
+                                                   add_this_node_to_given_node_neighbors=False)
 
     def remove_neighbor_from_neighbors_list(self, direction_of_connection, neighbor_location_data,
                                             remove_this_node_from_given_node_neighbors_list=False):
@@ -408,8 +428,8 @@ class ARNode(Node):
             # if an node is connected to us by an edge that is outgoing from us it means that for him we are
             # an incoming connection,m and vice versa
             reference_to_arnode.add_or_edit_neighbor(-direction_of_connection,
-                                                     weight_to_connect_to_arnode_with,
-                                                     self,
+                                                     [self.table_number, self.key_in_table,
+                                                      weight_to_connect_to_arnode_with, self],
                                                      add_this_node_to_given_node_neighbors=True)
 
     def forward_activate_arnode(self, function_to_calculate_merger_of_outgoing_edges):
@@ -545,7 +565,7 @@ class ARNode(Node):
         self._recalculate_edges_in_direction(Node.INCOMING_EDGE_DIRECTION,
                                              function_to_calculate_merger_of_incoming_edges,
                                              function_to_verify_arnode_neighbors_with=lambda
-                                              node: node.get_activation_status() != ARNode.NOT_ACTIVATED_STATUS)
+                                                 node: node.get_activation_status() != ARNode.NOT_ACTIVATED_STATUS)
 
         # finally, set the right activation status
         self.activation_status = ARNode.FULLY_ACTIVATED_STATUS
