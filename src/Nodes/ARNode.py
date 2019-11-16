@@ -44,7 +44,7 @@ class ARNode(Node):
         self.location_of_ar_node_nested_in = self.get_location()
 
         for node in starting_nodes:
-            if not node.check_if_location_can_be_changed():
+            if node.check_if_location_can_be_changed():
                 # assumption (2) is violated
                 raise Exception("arnodes can only contain nodes which can not change their location")
 
@@ -52,7 +52,7 @@ class ARNode(Node):
         # from assumption (2) all the nodes in the inner nodes list would be in the same table
         self.inner_nodes = [starting_nodes[i] for i in range(len(starting_nodes))]  # copy is really slow
         for node in starting_nodes:
-            node.set_pointer_to_ar_node_nested_in(self.get_location())
+            node.set_pointer_to_ar_node_nested_in(self)
 
         self.activation_status = ARNode.NOT_ACTIVATED_STATUS
 

@@ -105,6 +105,12 @@ class Node:
     def get_number_of_tables_in_next_layer(self):
         return self.outgoing_edges_manager.get_number_of_tables_in_layer_connected_to()
 
+    def set_pointer_to_ar_node_nested_in(self, pointer_to_ar_node_nested_in):
+        if self.is_nested_in_ar_node():
+            raise Exception("node is already nested in another ar_node. call reset_ar_node_nested_in before"
+                            " calling this method")
+        self.pointer_to_ar_node_nested_in = pointer_to_ar_node_nested_in
+
     def get_pointer_to_ar_node_nested_in(self):
         return self.pointer_to_ar_node_nested_in
 
@@ -112,12 +118,6 @@ class Node:
     # have the pointer be null or 0 in cpp
     def reset_ar_node_nested_in(self):
         self.pointer_to_ar_node_nested_in = Node.NO_AR_NODE_CONTAINER
-
-    def set_pointer_to_ar_node_nested_in(self, ar_node_location):
-        if self.is_nested_in_ar_node():
-            raise Exception("node is already nested in another ar_node. call reset_ar_node_nested_in before"
-                            " calling this method")
-        self.pointer_to_ar_node_nested_in = ar_node_location
 
     def is_nested_in_ar_node(self):
         return self.pointer_to_ar_node_nested_in is not Node.NO_AR_NODE_CONTAINER
