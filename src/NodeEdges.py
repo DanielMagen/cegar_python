@@ -1,8 +1,3 @@
-# TODO add checks for when connection is non existent
-
-from copy import deepcopy
-
-
 class NodeEdges:
     """
     this class would be used to hold and manage 1-sided node edges
@@ -33,14 +28,18 @@ class NodeEdges:
     def get_number_of_tables_in_layer_connected_to(self):
         return self.number_of_tables_in_layer_connected_to
 
-    def _check_valid_table_number(self, table_number):
+    def _check_valid_table_number_and_raise_error_if_not(self, table_number):
         if not 0 <= table_number < self.number_of_tables_in_layer_connected_to:
             raise Exception("there is no such table")
 
     def check_if_connection_exist(self, table_number, key_in_table):
-        self._check_valid_table_number(table_number)
+        self._check_valid_table_number_and_raise_error_if_not(table_number)
 
         return key_in_table in self.list_of_tables[table_number]
+
+    def _check_if_connection_exist_and_raise_error_if_not(self, table_number, key_in_table):
+        if not self.check_if_connection_exist(table_number, key_in_table):
+            raise Exception("no such connection")
 
     # when translating this function to cpp, have the node_connected_to be of type void* to avoid circular dependencies
     def add_or_edit_connection(self, table_number, key_in_table, weight, node_connected_to):
@@ -52,14 +51,24 @@ class NodeEdges:
         :param weight:
         :param node_connected_to:
         """
-        self._check_valid_table_number(table_number)
+        self._check_valid_table_number_and_raise_error_if_not(table_number)
 
         self.list_of_tables[table_number][key_in_table] = (weight, node_connected_to)
 
     def find_weight_of_connection(self, table_number, key_in_table):
-        self._check_valid_table_number(table_number)
+        self._check_valid_table_number_and_raise_error_if_not(table_number)
+        self._check_if_connection_exist_and_raise_error_if_not(table_number, key_in_table)
 
-        return self.list_of_tables[table_number][key_in_table][0]
+        return self.list_of_tables[table_number][key_in_table][NodeEdges.LOCATION_OF_WEIGHT_IN_MAP]
+
+    def get_connection_data_for_neighbor(self, table_number, key_in_table):
+        self._check_if_connection_exist_and_raise_error_if_not(table_number, key_in_table)
+
+        data = self.list_of_tables[table_number][key_in_table]
+        weight = data[NodeEdges.LOCATION_OF_WEIGHT_IN_MAP]
+        reference_to_node_connected_to = data[NodeEdges.LOCATION_OF_REFERENCE_IN_MAP]
+
+        return [table_number, key_in_table, weight, reference_to_node_connected_to]
 
     def delete_connection(self, table_number, key_in_table):
         """
@@ -67,12 +76,15 @@ class NodeEdges:
         :param key_in_table:
         :return: the (weight, node_connected_to) of the connection deleted
         """
+        self._check_valid_table_number_and_raise_error_if_not(table_number)
+        self._check_if_connection_exist_and_raise_error_if_not(table_number, key_in_table)
+
         weight, node_connected_to = self.list_of_tables[table_number][key_in_table]
         del self.list_of_tables[table_number][key_in_table]
         return weight, node_connected_to
 
     def move_connection(self, previous_table_number, previous_key_in_table, new_table_number, new_key_in_table,
-                        override_existing_connection=True):
+                        override_existing_connection=False):
         """
         it could override existing connections so be careful when using this method
 
@@ -80,9 +92,16 @@ class NodeEdges:
         :param previous_key_in_table:
         :param new_table_number:
         :param new_key_in_table:
-        :param override_existing_connection:
+        :param override_existing_connection: if true would override an existing connection if it meets it
         """
-        if not override_existing_connection:
+        # no need to check that the new location is valid, it would be checked by the add_or_edit_connection method
+        # self._check_valid_table_number_and_raise_error_if_not(new_table_number)
+
+        # no need to check that the previous location is valid, it would be checked by the delete_connection method
+        # self._check_valid_table_number_and_raise_error_if_not(previous_table_number)
+        # self._check_if_connection_exist_and_raise_error_if_not(previous_table_number, previous_key_in_table)
+
+        if self.check_if_connection_exist(new_table_number, new_key_in_table) and not override_existing_connection:
             if self.check_if_connection_exist(new_table_number, new_key_in_table):
                 raise Exception("tried to override existing connection")
 

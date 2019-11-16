@@ -16,7 +16,7 @@ class ARNodeTable(TableSupportsDeletion):
         new_node = ARNode(starting_nodes, -1, -1)
 
         node_key = self._add_node_to_table_without_checking(new_node)
-        new_node.set_new_location(self.table_number, node_key)
+        new_node.set_new_location(self.table_number, node_key, notify_neighbors_that_location_changed=False)
 
         return new_node
 

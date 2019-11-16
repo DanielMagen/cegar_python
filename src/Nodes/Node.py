@@ -60,7 +60,7 @@ class Node:
             neighbor_location_data = [table_number, key_in_table]
             neighbor.remove_neighbor_from_neighbors_list(direction_of_connection,
                                                          neighbor_location_data,
-                                                         remove_this_node_from_given_node_neighbors_list=False)
+                                                         remove_this_node_from_given_node_neighbors_list=True)
 
         # if an node is connected to us by an edge that is incoming to us it means that for him we are
         # an outgoing connection
@@ -84,12 +84,17 @@ class Node:
     def check_if_location_can_be_changed(self):
         return self.node_can_change_location
 
-    def set_new_location(self, new_table_number, new_key_in_table):
+    def set_new_location(self, new_table_number, new_key_in_table, notify_neighbors_that_location_changed=True):
         if not self.node_can_change_location:
             raise Exception("node location can not be changed")
 
+        previous_location = self.get_location()
+
         self.table_number = new_table_number
         self.key_in_table = new_key_in_table
+
+        if notify_neighbors_that_location_changed:
+            self.notify_all_neighbors_that_my_location_changed(previous_location)
 
     def get_key_in_table(self):
         return self.key_in_table
@@ -127,48 +132,16 @@ class Node:
         # in the id. hence the node id is unique only in the preview of the layer its in
         return self.table_number, self.key_in_table
 
-    def get_number_of_connections(self, direction):
-        if direction == Node.INCOMING_EDGE_DIRECTION:
-            return self.incoming_edges_manager.get_number_of_connections()
-        elif direction == Node.OUTGOING_EDGE_DIRECTION:
-            return self.outgoing_edges_manager.get_number_of_connections()
-
-    def get_iterator_for_edges_data(self, direction):
-        self.check_if_killed_and_raise_error_if_is()
-
-        if direction == Node.INCOMING_EDGE_DIRECTION:
-            return self.incoming_edges_manager.get_iterator_over_connections()
-        elif direction == Node.OUTGOING_EDGE_DIRECTION:
-            return self.outgoing_edges_manager.get_iterator_over_connections()
-
-    def get_a_list_of_all_incoming_connections_data(self, direction):
-        if direction == Node.INCOMING_EDGE_DIRECTION:
-            return self.incoming_edges_manager.get_a_list_of_all_connections()
-        elif direction == Node.OUTGOING_EDGE_DIRECTION:
-            return self.outgoing_edges_manager.get_a_list_of_all_connections()
-
-    def check_if_neighbor_exists(self, direction_of_connection, neighbor_location_data):
-        """
-
-        :param direction_of_connection: a direction of connection from our perspective
-        :param neighbor_location_data:
-        :return: true if the connection exist, false otherwise
-        """
-        table_number, key_in_table = neighbor_location_data
-        if direction_of_connection == Node.INCOMING_EDGE_DIRECTION:
-            return self.incoming_edges_manager.check_if_connection_exist(table_number, key_in_table)
-
-        if direction_of_connection == Node.OUTGOING_EDGE_DIRECTION:
-            return self.outgoing_edges_manager.check_if_connection_exist(table_number, key_in_table)
-
     def add_or_edit_neighbor(self, direction_of_connection, connection_data,
-                             add_this_node_to_given_node_neighbors=False):
+                             add_this_node_to_given_node_neighbors=True):
         """
 
         :param direction_of_connection:
         :param connection_data: a list as returned by the NodeEdges class
         :param add_this_node_to_given_node_neighbors: if true we would add ourselves to the given node neighbors
         (from the right direction of course)
+        TAKE GREAT CARE WHEN YOU SET IT TO FALSE, IF YOU DO THAT YOU MUST NOT RELOCATE THIS NODE OR THE NODE YOU
+        CONNECTED TO.
         :return:
         """
         self.check_if_killed_and_raise_error_if_is()
@@ -184,17 +157,46 @@ class Node:
         edges_manager_to_work_with.add_or_edit_connection(table_number, key_in_table, weight, node_connected_to)
 
         if add_this_node_to_given_node_neighbors:
+            # to avoid infinite loop set add_this_node_to_given_node_neighbors=False
             node_connected_to.add_or_edit_neighbor(-direction_of_connection,
                                                    [self.table_number, self.key_in_table, weight, self],
                                                    add_this_node_to_given_node_neighbors=False)
 
+    def check_if_neighbor_exists(self, direction_of_connection, neighbor_location_data):
+        """
+
+        :param direction_of_connection: a direction of connection from our perspective
+        :param neighbor_location_data:
+        :return: true if the connection exist, false otherwise
+        """
+        table_number, key_in_table = neighbor_location_data
+        if direction_of_connection == Node.INCOMING_EDGE_DIRECTION:
+            return self.incoming_edges_manager.check_if_connection_exist(table_number, key_in_table)
+
+        if direction_of_connection == Node.OUTGOING_EDGE_DIRECTION:
+            return self.outgoing_edges_manager.check_if_connection_exist(table_number, key_in_table)
+
+    def get_connection_data_for_neighbor(self, direction_of_connection, neighbor_location_data):
+        self.check_if_killed_and_raise_error_if_is()
+
+        if direction_of_connection == Node.INCOMING_EDGE_DIRECTION:
+            edges_manager_to_work_with = self.incoming_edges_manager
+        elif direction_of_connection == Node.OUTGOING_EDGE_DIRECTION:
+            edges_manager_to_work_with = self.outgoing_edges_manager
+        else:
+            raise Exception("invalid direction_of_connection")
+
+        return edges_manager_to_work_with.get_connection_data_for_neighbor(*neighbor_location_data)
+
     def remove_neighbor_from_neighbors_list(self, direction_of_connection, neighbor_location_data,
-                                            remove_this_node_from_given_node_neighbors_list=False):
+                                            remove_this_node_from_given_node_neighbors_list=True):
         """
         :param direction_of_connection:
         :param neighbor_location_data:
         :param remove_this_node_from_given_node_neighbors_list: if true would delete this node from the given
         node neighbors (from the right direction of course)
+        TAKE GREAT CARE WHEN YOU SET IT TO FALSE, IF YOU DO THAT YOU MUST NOT RELOCATE THIS NODE OR THE NODE YOU
+        CONNECTED TO.
         :return:
         """
         self.check_if_killed_and_raise_error_if_is()
@@ -269,3 +271,22 @@ class Node:
                                                                                        previous_location,
                                                                                        new_location)
 
+    def get_number_of_connections(self, direction):
+        if direction == Node.INCOMING_EDGE_DIRECTION:
+            return self.incoming_edges_manager.get_number_of_connections()
+        elif direction == Node.OUTGOING_EDGE_DIRECTION:
+            return self.outgoing_edges_manager.get_number_of_connections()
+
+    def get_iterator_for_edges_data(self, direction):
+        self.check_if_killed_and_raise_error_if_is()
+
+        if direction == Node.INCOMING_EDGE_DIRECTION:
+            return self.incoming_edges_manager.get_iterator_over_connections()
+        elif direction == Node.OUTGOING_EDGE_DIRECTION:
+            return self.outgoing_edges_manager.get_iterator_over_connections()
+
+    def get_a_list_of_all_incoming_connections_data(self, direction):
+        if direction == Node.INCOMING_EDGE_DIRECTION:
+            return self.incoming_edges_manager.get_a_list_of_all_connections()
+        elif direction == Node.OUTGOING_EDGE_DIRECTION:
+            return self.outgoing_edges_manager.get_a_list_of_all_connections()

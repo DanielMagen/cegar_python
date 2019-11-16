@@ -199,7 +199,7 @@ class AbstractTable:
                         -1, -1)
 
         node_key = self._add_node_to_table_without_checking(new_node)
-        new_node.set_new_location(self.table_number, node_key)
+        new_node.set_new_location(self.table_number, node_key, notify_neighbors_that_location_changed=False)
 
         return new_node
 
@@ -217,14 +217,10 @@ class AbstractTable:
             # initialize its table_starting_index
             self.initialize_table_starting_index_based_on_previous_tables()
 
-        previous_location = node.get_location()
-
         new_node_key = self._add_node_to_table_without_checking(node)
 
         # change the inserted node location_data so that its table number and index would correspond to its new location
-        node.set_new_location(self.table_number, new_node_key)
-
-        node.notify_all_neighbors_that_my_location_changed(previous_location)
+        node.set_new_location(self.table_number, new_node_key, notify_neighbors_that_location_changed=True)
 
         # now notify all bottom tables that their table_starting_index has increased
         if self.next_table is not AbstractTable.NO_NEXT_TABLE:
@@ -241,25 +237,15 @@ class AbstractTable:
         node_to_remove.destructor()
         self._remove_node_from_table_without_affecting_the_node(node_key)
 
-    def add_or_edit_connection_to_node(self, node_key, direction_of_connection, connection_data,
-                                       add_this_node_to_given_node_neighbors=False):
-        """
-
-        :param node_key:
-        :param direction_of_connection:
-        :param connection_data: a list as returned by the NodeEdges class
-        :param add_this_node_to_given_node_neighbors:
-        :return:
-        """
+    def add_or_edit_connection_to_node(self, node_key, direction_of_connection, connection_data):
         node_to_add_connection_to = self.get_node_by_key(node_key)
         node_to_add_connection_to.add_or_edit_neighbor(direction_of_connection, connection_data,
-                                                       add_this_node_to_given_node_neighbors)
+                                                       add_this_node_to_given_node_neighbors=True)
 
-    def add_or_edit_connection_to_node_by_bulk(self, node_key, direction_of_connection, list_of_connection_data,
-                                               add_this_node_to_given_node_neighbors=False):
+    def add_or_edit_connection_to_node_by_bulk(self, node_key, direction_of_connection, list_of_connection_data):
         node_to_add_connection_to = self.get_node_by_key(node_key)
         for connection_data in list_of_connection_data:
             node_to_add_connection_to.add_or_edit_neighbor(direction_of_connection, connection_data,
-                                                           add_this_node_to_given_node_neighbors)
+                                                           add_this_node_to_given_node_neighbors=True)
 
 
