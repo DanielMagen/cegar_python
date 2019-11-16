@@ -64,10 +64,10 @@ class Node:
 
         # if an node is connected to us by an edge that is incoming to us it means that for him we are
         # an outgoing connection
-        for data in self.get_iterator_for_incoming_edges_data():
+        for data in self.get_iterator_for_edges_data(Node.INCOMING_EDGE_DIRECTION):
             remove_from_node_by_direction_and_data(Node.OUTGOING_EDGE_DIRECTION, data)
 
-        for data in self.get_iterator_for_outgoing_edges_data():
+        for data in self.get_iterator_for_edges_data(Node.OUTGOING_EDGE_DIRECTION):
             remove_from_node_by_direction_and_data(Node.INCOMING_EDGE_DIRECTION, data)
 
         self.finished_lifetime = True
@@ -127,39 +127,25 @@ class Node:
         # in the id. hence the node id is unique only in the preview of the layer its in
         return self.table_number, self.key_in_table
 
-    def get_number_of_incoming_connections(self):
-        return self.incoming_edges_manager.get_number_of_connections()
+    def get_number_of_connections(self, direction):
+        if direction == Node.INCOMING_EDGE_DIRECTION:
+            return self.incoming_edges_manager.get_number_of_connections()
+        elif direction == Node.OUTGOING_EDGE_DIRECTION:
+            return self.outgoing_edges_manager.get_number_of_connections()
 
-    def get_number_of_outgoing_connections(self):
-        return self.outgoing_edges_manager.get_number_of_connections()
-
-    def get_iterator_for_incoming_edges_data(self):
+    def get_iterator_for_edges_data(self, direction):
         self.check_if_killed_and_raise_error_if_is()
 
-        return self.incoming_edges_manager.get_iterator_over_connections()
+        if direction == Node.INCOMING_EDGE_DIRECTION:
+            return self.incoming_edges_manager.get_iterator_over_connections()
+        elif direction == Node.OUTGOING_EDGE_DIRECTION:
+            return self.outgoing_edges_manager.get_iterator_over_connections()
 
-    def get_iterator_for_outgoing_edges_data(self):
-        self.check_if_killed_and_raise_error_if_is()
-
-        return self.outgoing_edges_manager.get_iterator_over_connections()
-
-    def get_all_incoming_connections_data(self):
-        """
-        :return: a list of all incoming connections data
-        """
-        self.incoming_edges_manager.get_a_list_of_all_connections()
-
-    def get_all_outgoing_connections_data(self):
-        """
-        :return: a list of all incoming connections data
-        """
-        self.outgoing_edges_manager.get_a_list_of_all_connections()
-
-    def get_iterator_for_edges_data_using_direction(self, direction):
-        if direction == Node.OUTGOING_EDGE_DIRECTION:
-            return self.get_iterator_for_outgoing_edges_data()
-        elif direction == Node.INCOMING_EDGE_DIRECTION:
-            return self.get_iterator_for_incoming_edges_data()
+    def get_a_list_of_all_incoming_connections_data(self, direction):
+        if direction == Node.INCOMING_EDGE_DIRECTION:
+            return self.incoming_edges_manager.get_a_list_of_all_connections()
+        elif direction == Node.OUTGOING_EDGE_DIRECTION:
+            return self.outgoing_edges_manager.get_a_list_of_all_connections()
 
     def check_if_neighbor_exists(self, direction_of_connection, neighbor_location_data):
         """
@@ -396,7 +382,7 @@ class ARNode(Node):
         # as such the arnode_location is a unique identifier for it
         map_of_weights = {}
         for node in self.inner_nodes:
-            for edge_data in node.get_iterator_for_edges_data_using_direction(direction_of_connection):
+            for edge_data in node.get_iterator_for_edges_data(direction_of_connection):
                 _, _, weight, node_connected_to = edge_data
                 arnode_connected_to = node_connected_to.get_pointer_to_ar_node_nested_in()
                 if arnode_connected_to == Node.NO_AR_NODE_CONTAINER:
@@ -490,7 +476,7 @@ class ARNode(Node):
         our_location = self.get_location()
         direction_of_connection = Node.INCOMING_EDGE_DIRECTION
         for node in self.inner_nodes:
-            for edge_data in node.get_iterator_for_edges_data_using_direction(direction_of_connection):
+            for edge_data in node.get_iterator_for_edges_data(direction_of_connection):
                 _, _, _, node_connected_to = edge_data
                 arnode_connected_to = node_connected_to.get_pointer_to_ar_node_nested_in()
                 if arnode_connected_to == Node.NO_AR_NODE_CONTAINER:

@@ -71,7 +71,7 @@ class Layer:
         unprocessed_table = self.regular_node_tables[Layer.INDEX_OF_UNPROCESSED_TABLE]
         node = unprocessed_table.get_node_by_key(node_key_in_unprocessed_table)
 
-        if node.get_number_of_outgoing_connections() == 0:
+        if node.get_number_of_connections(Node.OUTGOING_EDGE_DIRECTION) == 0:
             # this node is the output node, simply move it to the POS_INC_TABLE
             table_to_move_to = self.regular_node_tables[Layer.INDEX_OF_POS_INC_TABLE]
 
@@ -90,7 +90,7 @@ class Layer:
         data_for_nodes_we_are_pos_linked_to = []
         data_for_nodes_we_are_neg_linked_to = []
 
-        for outgoing_edges_data in node.get_iterator_for_outgoing_edges_data():
+        for outgoing_edges_data in node.get_iterator_for_edges_data(Node.OUTGOING_EDGE_DIRECTION):
             weight_of_connection = outgoing_edges_data[weight_location_in_data]
             if weight_of_connection >= 0:
                 data_for_nodes_we_are_pos_linked_to.append(outgoing_edges_data)
@@ -146,7 +146,7 @@ class Layer:
                                                                      split_data_by_types[i],
                                                                      add_this_node_to_given_node_neighbors=True)
         # now add all the incoming edges to all the nodes created
-        incoming_edges_data = node.get_all_incoming_connections_data()
+        incoming_edges_data = node.get_a_list_of_all_incoming_connections_data(Node.INCOMING_EDGE_DIRECTION)
         for new_node in nodes_created:
             if new_node is not None:
                 new_node_key = new_node.get_key_in_table()
