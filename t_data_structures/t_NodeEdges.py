@@ -1,4 +1,4 @@
-from NodeEdges import *
+from src.NodeEdges import *
 import random
 
 

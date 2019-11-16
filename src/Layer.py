@@ -1,5 +1,5 @@
-from Table import *
-from NodeEdges import *
+from src.Tables.Table import *
+from src.NodeEdges import *
 
 
 class Layer:
