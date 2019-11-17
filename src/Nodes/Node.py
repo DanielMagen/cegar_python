@@ -21,11 +21,8 @@ class Node:
         note that from assumption (3) we do need to care about tables in the current layer
         since we have no connections to nodes in the current layer
 
-        the following arguments given are explained in assumption (4)
-
         :param number_of_tables_in_previous_layer:
         :param number_of_tables_in_next_layer:
-
 
         :param table_number:
         :param key_in_table:
@@ -51,8 +48,6 @@ class Node:
         """
         removes the node from all of its neighbors,
         and sets the node finished_lifetime to True
-
-        it then remove the node from its residing table
         """
 
         def remove_from_node_by_direction_and_data(direction_of_connection, connection_data):
