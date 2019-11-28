@@ -168,9 +168,9 @@ class Layer:
 
                 # now add all outgoing edges to the node
                 new_node_key = new_node.get_key_in_table()
-                current_table.add_or_edit_connection_to_node_by_bulk(new_node_key, Node.OUTGOING_EDGE_DIRECTION,
-                                                                     edge_data_split_by_type[i],
-                                                                     add_this_node_to_given_node_neighbors=True)
+                current_table.add_or_edit_connection_to_node_by_bulk(new_node_key,
+                                                                     Node.OUTGOING_EDGE_DIRECTION,
+                                                                     edge_data_split_by_type[i])
         # now add all the incoming edges to all the nodes created
         incoming_edges_data = node.get_a_list_of_all_incoming_connections_data(Node.INCOMING_EDGE_DIRECTION)
         for i in range(len(nodes_created)):
@@ -178,13 +178,12 @@ class Layer:
                 current_table = self.regular_node_tables[i]
                 new_node_key = nodes_created[i].get_key_in_table()
                 current_table.add_or_edit_connection_to_node_by_bulk(new_node_key, Node.INCOMING_EDGE_DIRECTION,
-                                                                     incoming_edges_data,
-                                                                     add_this_node_to_given_node_neighbors=True)
+                                                                     incoming_edges_data)
 
         # now delete the node from the unprocessed table
         unprocessed_table.delete_node(node.get_key_in_table())
 
-        # now create an arnode for all the nodes created
+        # now create an arnode for all the nodes created to preserve assumption (1)
         for i in range(len(nodes_created)):
             if nodes_created[i] is not None:
                 self._create_arnode_for_node(nodes_created[i])

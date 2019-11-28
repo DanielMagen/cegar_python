@@ -26,6 +26,7 @@ class TableSupportsDeletion(AbstractTable):
     def get_number_of_nodes_in_table(self):
         return self.number_of_nodes
 
+    # maybe add an id system so that the ids won't increase too much
     def _add_node_to_table_without_checking(self, node):
         new_key_for_node = self.number_of_nodes
         self.nodes[new_key_for_node] = node
