@@ -171,9 +171,8 @@ def get_new_node():
                 table_number, key_in_table)
 
 
-node = get_new_node()
-run = True
-if run:
+if __name__ == '__main__':
+    node = get_new_node()
     t_get_number_of_tables_in_layers(node)
     for _ in range(20):
         t_adding_connection(node)
