@@ -28,13 +28,12 @@ class ARNodeTable(TableSupportsDeletion):
 
         return new_node
 
-    def split_arnode(self, arnodes_to_split,
+    def split_arnode(self, key_of_arnode_to_split,
                      partition_of_arnode_inner_nodes,
                      function_to_calculate_merger_of_incoming_edges,
-                     function_to_calculate_merger_of_outgoing_edges
-                     ):
+                     function_to_calculate_merger_of_outgoing_edges):
         """
-        :param arnodes_to_split:
+        :param key_of_arnode_to_split:
         :param partition_of_arnode_inner_nodes: a list of lists which would be a valid partition of the
         arnode inner nodes.
         each sub list would contain a list of nodes references all of which are currently owned by
@@ -48,12 +47,14 @@ class ARNodeTable(TableSupportsDeletion):
         """
         # maybe add a function to check that the partition is valid
 
-        if arnodes_to_split.get_activation_status() != ARNode.FULLY_ACTIVATED_STATUS:
+        arnode_to_split = self.get_node_by_key(key_of_arnode_to_split)
+
+        if arnode_to_split.get_activation_status() != ARNode.FULLY_ACTIVATED_STATUS:
             raise Exception("can not split a non fully activated arnode")
 
         # before continuing, delete the arnode that needs to be split
         # this would also reset the nodes owner arnode
-        arnodes_to_split.destructor()
+        self.delete_node(key_of_arnode_to_split)
 
         for node_list in partition_of_arnode_inner_nodes:
             # start node with bogus arguments and then add it to the table_manager which would give the node
@@ -64,8 +65,8 @@ class ARNodeTable(TableSupportsDeletion):
                 function_to_calculate_merger_of_incoming_edges)
 
     def merge_two_arnodes(self,
-                          arnode1,
-                          arnode2,
+                          key_of_arnode1,
+                          key_of_arnode2,
                           function_to_calculate_merger_of_incoming_edges,
                           function_to_calculate_merger_of_outgoing_edges):
         """
@@ -76,25 +77,31 @@ class ARNodeTable(TableSupportsDeletion):
         them from here on out.
 
 
-        :param arnode1: a fully activated arnode
-        :param arnode2: a fully activated arnode
+        :param key_of_arnode1: a key of a fully activated arnode
+        :param key_of_arnode2: a key of a fully activated arnode
 
         those functions would be used to calculate the edges of each resulting arnode
         :param function_to_calculate_merger_of_incoming_edges:
         :param function_to_calculate_merger_of_outgoing_edges:
         :return: the new merged arnode
         """
+        arnode1 = self.get_node_by_key(key_of_arnode1)
+        arnode2 = self.get_node_by_key(key_of_arnode2)
+
         for arnode in [arnode1, arnode2]:
             if arnode.get_activation_status() != ARNode.FULLY_ACTIVATED_STATUS:
                 raise Exception("can not merge a non fully activated arnode")
 
         # from assumption (2) both arnodes have the same table_manager
-        inner_nodes_for_new_arnode = arnode1.inner_nodes.union(arnode2.inner_nodes)
+        arnode1_inner_nodes_set = set(arnode1.inner_nodes)
+        arnode2_inner_nodes_set = set(arnode2.inner_nodes)
+        inner_nodes_for_new_arnode = arnode1_inner_nodes_set.union(arnode2_inner_nodes_set)
+        inner_nodes_for_new_arnode = list(inner_nodes_for_new_arnode)
 
         # before continuing, delete the arnodes that needs to be merged
         # this would also reset the nodes owner arnode
-        arnode1.destructor()
-        arnode2.destructor()
+        self.delete_node(key_of_arnode1)
+        self.delete_node(key_of_arnode2)
 
         new_arnode = self.create_new_arnode_and_add_to_table(inner_nodes_for_new_arnode)
         new_arnode.forward_activate_arnode(function_to_calculate_merger_of_outgoing_edges)

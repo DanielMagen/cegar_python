@@ -298,7 +298,7 @@ class Layer:
             if arnode.get_activation_status() != ARNode.FULLY_ACTIVATED_STATUS:
                 arnode.forward_activate_arnode(function_to_calculate_merger_of_outgoing_edges)
 
-    def fully_activate_layer_by_recalculating_incoming_edges(self,
+    def fully_activate_table_by_recalculating_incoming_edges(self,
                                                              table_index,
                                                              function_to_calculate_merger_of_incoming_edges):
         """
@@ -314,7 +314,7 @@ class Layer:
                 arnode.fully_activate_arnode_and_recalculate_incoming_edges(
                     function_to_calculate_merger_of_incoming_edges)
 
-    def fully_activate_layer_without_changing_incoming_edges(self,
+    def fully_activate_table_without_changing_incoming_edges(self,
                                                              table_index,
                                                              check_validity_of_activation=True):
         """
@@ -329,7 +329,21 @@ class Layer:
             if arnode.get_activation_status() != ARNode.FULLY_ACTIVATED_STATUS:
                 arnode.fully_activate_arnode_without_changing_incoming_edges(check_validity_of_activation)
 
-    ################################### create more functions to enable finer control over activation
+    def split_arnode(self, table_number, key_in_table, partition_of_arnode_inner_nodes,
+                     function_to_calculate_merger_of_incoming_edges,
+                     function_to_calculate_merger_of_outgoing_edges):
+
+        self.arnode_tables[table_number].split_arnode(key_in_table, partition_of_arnode_inner_nodes,
+                                                      function_to_calculate_merger_of_incoming_edges,
+                                                      function_to_calculate_merger_of_outgoing_edges)
+
+    def merge_two_arnodes(self, table_number, key_in_table1, key_in_table2,
+                          function_to_calculate_merger_of_incoming_edges,
+                          function_to_calculate_merger_of_outgoing_edges):
+
+        self.arnode_tables[table_number].merge_two_arnodes(key_in_table1, key_in_table2,
+                                                           function_to_calculate_merger_of_incoming_edges,
+                                                           function_to_calculate_merger_of_outgoing_edges)
 
     def __str__(self):
         to_return = ''

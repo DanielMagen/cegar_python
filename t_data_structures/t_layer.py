@@ -35,7 +35,6 @@ def get_randomly_connected_layers():
     # now connect the nodes using random weights
     for i in range(len(layers) - 1):
         current_layer = layers[i]
-        next_layer = layers[i + 1]
         for node_key_in_current_layer in unprocessed_nodes_keys_for_each_layer[i]:
             for node_key_in_next_layer in unprocessed_nodes_keys_for_each_layer[i + 1]:
                 random_weight = get_random_weight()
@@ -50,7 +49,12 @@ def get_randomly_connected_layers():
 
 def print_layers(layers):
     for layer in layers:
+        print("+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+")
         print(layer)
+
+
+def dummy_function_to_merge_edges(node, lis):
+    return sum(lis)
 
 
 layers = get_randomly_connected_layers()
@@ -69,6 +73,28 @@ for i in range((len(layers) - 1), -1, -1):
     # randomly activate the tables to check that their activation order doesnt matter
     for table_number in get_random_permutations_of_range(4):
         # for now use sum as the edges merger function
-        layers[i].forward_activate_arnode_table(table_number, lambda node, lis: sum(lis))
+        layers[i].forward_activate_arnode_table(table_number, dummy_function_to_merge_edges)
 
+# now fully activate all the arnodes, you could because they are all forward activated
+for i in range((len(layers) - 1), -1, -1):
+    # randomly activate the tables to check that their activation order doesnt matter
+    for table_number in get_random_permutations_of_range(4):
+        layers[i].fully_activate_table_without_changing_incoming_edges(table_number)
+
+# now the arnodes should be exactly like the regular nodes
 print_layers(layers)
+
+print('............................................................................................................................')
+# now lets try to merge 2 arnodes and see what happens
+# merge the first 2 pos-inc nodes in the middle layer
+pos_inc_table = 0
+layers[1].merge_two_arnodes(pos_inc_table, 0, 1, dummy_function_to_merge_edges, dummy_function_to_merge_edges)
+
+# now print the resulting layer and check visually that the arnodes were created successfully
+#print_layers(layers)
+
+# now split the merged arnode back into 2 arnodes
+# assume that the key that was given to the new merged arnode is the largest key in the table
+key_of_merged_node = max(layers[1].arnode_tables[pos_inc_table].get_list_of_all_keys())
+
+layers[1].split_arnode(pos_inc_table, key_of_merged_node, partition_of_arnode_inner_nodes, dummy_function_to_merge_edges, dummy_function_to_merge_edges)
