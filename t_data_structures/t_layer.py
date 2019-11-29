@@ -88,13 +88,22 @@ print('.........................................................................
 # now lets try to merge 2 arnodes and see what happens
 # merge the first 2 pos-inc nodes in the middle layer
 pos_inc_table = 0
-layers[1].merge_two_arnodes(pos_inc_table, 0, 1, dummy_function_to_merge_edges, dummy_function_to_merge_edges)
+new_merged_node = layers[1].merge_two_arnodes(pos_inc_table, 0, 1, dummy_function_to_merge_edges,
+                                              dummy_function_to_merge_edges)
 
 # now print the resulting layer and check visually that the arnodes were created successfully
-#print_layers(layers)
+# because I finished testing the merger I will not print it, but if you want to test it print it and don't print the
+# splitting test too (because its too much to print it all)
+# print_layers(layers)
 
 # now split the merged arnode back into 2 arnodes
 # assume that the key that was given to the new merged arnode is the largest key in the table
-key_of_merged_node = max(layers[1].arnode_tables[pos_inc_table].get_list_of_all_keys())
 
-layers[1].split_arnode(pos_inc_table, key_of_merged_node, partition_of_arnode_inner_nodes, dummy_function_to_merge_edges, dummy_function_to_merge_edges)
+partition_of_arnode_inner_nodes = [[new_merged_node.inner_nodes[0]], [new_merged_node.inner_nodes[1]]]
+
+layers[1].split_arnode(pos_inc_table, new_merged_node.get_key_in_table(), partition_of_arnode_inner_nodes,
+                       dummy_function_to_merge_edges, dummy_function_to_merge_edges)
+
+# now check visually that the connections are exactly the same up to a change in the keys of arnodes 0,1 in
+# the pos_inc_table of layers[1]
+print_layers(layers)

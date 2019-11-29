@@ -106,3 +106,5 @@ class ARNodeTable(TableSupportsDeletion):
         new_arnode = self.create_new_arnode_and_add_to_table(inner_nodes_for_new_arnode)
         new_arnode.forward_activate_arnode(function_to_calculate_merger_of_outgoing_edges)
         new_arnode.fully_activate_arnode_and_recalculate_incoming_edges(function_to_calculate_merger_of_incoming_edges)
+
+        return new_arnode
