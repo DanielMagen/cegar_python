@@ -320,3 +320,18 @@ class Layer:
                 arnode.fully_activate_arnode_without_changing_incoming_edges(check_validity_of_activation)
 
     ################################### create more functions to enable finer control over activation
+
+    def __str__(self):
+        to_return = ''
+        to_return += 'regular tables'
+        to_return += '\n'
+        for table in self.regular_node_tables:
+            to_return += str(table)
+
+        to_return += '\n'
+        to_return += 'arnode tables'
+        to_return += '\n'
+        for table in self.arnode_tables:
+            to_return += str(table)
+
+        return to_return

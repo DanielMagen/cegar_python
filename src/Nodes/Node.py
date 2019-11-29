@@ -326,3 +326,25 @@ class Node:
             return self.incoming_edges_manager.get_a_list_of_all_connections()
         elif direction == Node.OUTGOING_EDGE_DIRECTION:
             return self.outgoing_edges_manager.get_a_list_of_all_connections()
+
+    def __str__(self):
+        def remove_node_pointer_from_list_of_all_connections(all_connections):
+            return list(map(lambda lis: lis[:-1], all_connections))
+
+        to_return = ''
+        to_return += f'key in table {self.key_in_table}'
+        to_return += '\n'
+        to_return += 'incoming connections:'
+        to_return += '\n'
+        incoming_connections = self.incoming_edges_manager.get_a_list_of_all_connections()
+        incoming_connections = remove_node_pointer_from_list_of_all_connections(incoming_connections)
+        to_return += str(incoming_connections)
+        to_return += '\n'
+        to_return += 'outgoing connections:'
+        to_return += '\n'
+        outgoing_connections = self.outgoing_edges_manager.get_a_list_of_all_connections()
+        outgoing_connections = remove_node_pointer_from_list_of_all_connections(outgoing_connections)
+        to_return += str(outgoing_connections)
+        to_return += '\n'
+
+        return to_return

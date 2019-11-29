@@ -7,15 +7,8 @@ def get_random_weight():
 
 
 def get_randomly_connected_layers():
-    number_of_tables_in_previous_layer = random.randint(1, 10)
-    number_of_tables_in_current_layer = random.randint(1, 10)
-    number_of_tables_in_next_layer = random.randint(1, 10)
+    layers = [Layer(), Layer(), Layer()]
 
-    layer1 = Layer(random.randint(1, 10), number_of_tables_in_current_layer, None, None)
-    layer2 = Layer(number_of_tables_in_previous_layer, number_of_tables_in_next_layer, None, None)
-    layer3 = Layer(number_of_tables_in_current_layer, random.randint(1, 10), None, None)
-
-    layers = [layer1, layer2, layer3]
     for i in range(len(layers) - 1):
         layers[i].set_next_layer(layers[i + 1])
         layers[i + 1].set_previous_layer(layers[i])
@@ -46,5 +39,6 @@ def get_randomly_connected_layers():
                                                                                 random_weight)
 
     return layers
+
 
 layers = get_randomly_connected_layers()

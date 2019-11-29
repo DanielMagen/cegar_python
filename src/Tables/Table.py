@@ -245,4 +245,12 @@ class AbstractTable:
         node_to_add_connection_to = self.get_node_by_key(node_key)
         node_to_add_connection_to.add_or_edit_neighbors_by_bulk(direction_of_connection, list_of_connection_data)
 
+    def __str__(self):
+        to_return = ''
+        to_return += f'table number {self.table_number}'
+        to_return += '\n'
+        for node in self.get_iterator_for_all_nodes():
+            to_return += str(node)
+            to_return += '\n'
 
+        return to_return

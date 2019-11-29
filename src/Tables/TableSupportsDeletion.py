@@ -16,8 +16,8 @@ class TableSupportsDeletion(AbstractTable):
         return table_to_return
 
     def get_iterator_for_all_nodes(self):
-        for node in self.nodes:
-            yield node
+        for key in self.nodes:
+            yield self.nodes[key]
 
     def get_iterator_for_all_keys(self):
         for key in self.nodes:
