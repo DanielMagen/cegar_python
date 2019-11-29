@@ -7,6 +7,14 @@ class ARNodeTable(TableSupportsDeletion):
                                          number_of_tables_in_next_layer):
         raise NotImplemented("this class can only contain arnodes")
 
+    def create_table_below_of_same_type(self):
+        assert self.next_table == ARNodeTable.NO_NEXT_TABLE
+
+        table_to_return = ARNodeTable(*self.get_arguments_to_create_table_below())
+        self.next_table = table_to_return
+
+        return table_to_return
+
     def create_new_arnode_and_add_to_table(self, starting_nodes):
         """
 

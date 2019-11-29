@@ -20,7 +20,10 @@ class TableDoesntSupportsDeletion(AbstractTable):
 
     def get_iterator_for_all_keys(self):
         for i in range(len(self.nodes)):
-            return i
+            yield i
+
+    def get_list_of_all_keys(self):
+        return list(self.get_iterator_for_all_keys())
 
     def get_number_of_nodes_in_table(self):
         return len(self.nodes)
@@ -28,7 +31,21 @@ class TableDoesntSupportsDeletion(AbstractTable):
     def _add_node_to_table_without_checking(self, node):
         # from assumption (4) we need to insert it to the end of the table
         self.nodes.append(node)
+        # the key of the node is simply its index in the table
         return len(self.nodes) - 1
+
+    def create_new_node_and_add_to_table(self,
+                                         number_of_tables_in_previous_layer,
+                                         number_of_tables_in_next_layer):
+        """
+        :param number_of_tables_in_previous_layer:
+        :param number_of_tables_in_next_layer:
+        :return: the node created
+        """
+        new_node = super().create_new_node_and_add_to_table(number_of_tables_in_previous_layer,
+                                                            number_of_tables_in_next_layer)
+        new_node.set_in_stone()
+        return new_node
 
     def add_existing_node_to_table(self, previous_table_manager, node):
         """

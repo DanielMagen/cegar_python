@@ -87,7 +87,7 @@ class Layer:
 
     def _create_arnode_for_node(self, node):
         node_table = node.get_table_number()
-        if node_table == Layer.INDEX_OF_UNPROCESSED_TABLE or not node.check_if_location_can_be_changed():
+        if node_table == Layer.INDEX_OF_UNPROCESSED_TABLE or node.check_if_location_can_be_changed():
             raise Exception("can not create an arnode for a node which is not set in stone")
 
         self.arnode_tables[node_table].create_new_arnode_and_add_to_table([node])
@@ -155,6 +155,16 @@ class Layer:
 
     @staticmethod
     def get_split_edge_data_by_types(node):
+        """
+        this is the function that should be given to the split_unprocessed_node_to_tables function
+
+        :param node:
+        :return:
+        a list (lets call it lis)
+        of size NUMBER_OF_REGULAR_TABLES_THAT_DO_NOT_SUPPORT_DELETION, such that
+        lis[i] would contain all the connection data for outgoing edges that should go to the node we will create
+        in regular_node_tables[i].
+        """
         weight_location_in_data = NodeEdges.INDEX_OF_WEIGHT_IN_DATA
 
         data_for_nodes_we_are_pos_linked_to = []
@@ -202,7 +212,7 @@ class Layer:
 
     def split_unprocessed_node_to_tables(self,
                                          node_key_in_unprocessed_table,
-                                         function_to_split_edges_data=get_split_edge_data_by_types):
+                                         function_to_split_edges_data):
         """
         :param node_key_in_unprocessed_table:
         this method would remove the the node from the unprocessed table and replace it with nodes in the
@@ -277,8 +287,8 @@ class Layer:
 
     def preprocess_entire_layer(self):
         unprocessed_table = self.regular_node_tables[Layer.INDEX_OF_UNPROCESSED_TABLE]
-        for node_key in unprocessed_table.get_iterator_for_all_keys():
-            self.split_unprocessed_node_to_tables(node_key)
+        for node_key in unprocessed_table.get_list_of_all_keys():
+            self.split_unprocessed_node_to_tables(node_key, Layer.get_split_edge_data_by_types)
 
     def forward_activate_arnode_table(self,
                                       table_index,

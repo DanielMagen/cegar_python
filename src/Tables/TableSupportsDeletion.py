@@ -21,7 +21,10 @@ class TableSupportsDeletion(AbstractTable):
 
     def get_iterator_for_all_keys(self):
         for key in self.nodes:
-            return key
+            yield key
+
+    def get_list_of_all_keys(self):
+        return list(self.get_iterator_for_all_keys())
 
     def get_number_of_nodes_in_table(self):
         return self.number_of_nodes
@@ -55,7 +58,7 @@ class TableSupportsDeletion(AbstractTable):
         self.key_of_node_currently_being_removed_from_table = node_key
 
         self._remove_node_from_table_without_affecting_the_node(node_key)
-        new_node_key = new_table_manager.add_existing_node_to_table(node_to_relocate)
+        new_node_key = new_table_manager.add_existing_node_to_table(self, node_to_relocate)
 
         self._reset_key_of_node_currently_being_removed_from_table()
 

@@ -98,6 +98,9 @@ class Node:
         if notify_neighbors_that_location_changed:
             self.notify_all_neighbors_that_my_location_changed(previous_location)
 
+    def get_table_number(self):
+        return self.table_number
+
     def get_key_in_table(self):
         return self.key_in_table
 

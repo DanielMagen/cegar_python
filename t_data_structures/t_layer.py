@@ -42,3 +42,14 @@ def get_randomly_connected_layers():
 
 
 layers = get_randomly_connected_layers()
+
+for layer in layers:
+    pass
+    #print(layer)
+
+for i in range((len(layers) - 1), -1, -1):
+    layers[i].preprocess_entire_layer()
+
+
+for layer in layers:
+    print(layer)
