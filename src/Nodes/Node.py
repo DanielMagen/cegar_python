@@ -335,7 +335,7 @@ class Node:
             return list(map(lambda lis: lis[:-1], all_connections))
 
         to_return = ''
-        to_return += f'key in table {self.key_in_table}'
+        to_return += f'key number {self.key_in_table}'
         to_return += '\n'
         to_return += 'incoming connections:'
         to_return += '\n'

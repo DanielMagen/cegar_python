@@ -6,6 +6,7 @@ from itertools import permutations
 def get_random_weight():
     return random.randint(-100, 100)
 
+
 def get_random_permutations_of_range(up_to_exclusive):
     all_permutations = permutations([i for i in range(up_to_exclusive)])
     all_permutations = list(all_permutations)
@@ -69,6 +70,5 @@ for i in range((len(layers) - 1), -1, -1):
     for table_number in get_random_permutations_of_range(4):
         # for now use sum as the edges merger function
         layers[i].forward_activate_arnode_table(table_number, lambda node, lis: sum(lis))
-
 
 print_layers(layers)
