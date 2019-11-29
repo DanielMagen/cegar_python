@@ -1,3 +1,5 @@
+# maybe make this an inner class inside the node class
+
 class NodeEdges:
     """
     this class would be used to hold and manage 1-sided node edges
@@ -127,3 +129,11 @@ class NodeEdges:
             to_return.append(data)
 
         return to_return
+
+    def get_a_list_of_all_neighbors_pointers(self):
+        to_return = []
+        for data in self.get_iterator_over_connections():
+            to_return.append(data[NodeEdges.INDEX_OF_REFERENCE_TO_NODE_CONNECTED_TO_IN_DATA])
+
+        return to_return
+

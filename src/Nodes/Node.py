@@ -50,20 +50,27 @@ class Node:
         and sets the node finished_lifetime to True
         """
 
-        def remove_from_node_by_direction_and_data(direction_of_connection, connection_data):
-            table_number, key_in_table, weight, neighbor = connection_data
-            neighbor_location_data = [table_number, key_in_table]
-            neighbor.remove_neighbor_from_neighbors_list(direction_of_connection,
-                                                         neighbor_location_data,
-                                                         remove_this_node_from_given_node_neighbors_list=True)
+        # for now simply remove yourself from as a neighbor from all other nodes
+        # later when moving to cpp you would have to destroy the various data structures you used
 
-        # if an node is connected to us by an edge that is incoming to us it means that for him we are
-        # an outgoing connection
-        for data in self.get_iterator_for_edges_data(Node.INCOMING_EDGE_DIRECTION):
-            remove_from_node_by_direction_and_data(Node.OUTGOING_EDGE_DIRECTION, data)
+        our_location = self.get_location()
 
-        for data in self.get_iterator_for_edges_data(Node.OUTGOING_EDGE_DIRECTION):
-            remove_from_node_by_direction_and_data(Node.INCOMING_EDGE_DIRECTION, data)
+        def remove_from_node_by_direction_and_data(direction_of_connection, neighbor):
+            # I choose to simply remove the connection data from the neighbor but not from us since we are
+            # going to destroy the entire NodeEdges structure after we are done, so there is no need to remove each
+            # connection from it one by one.
+
+            # if an node is connected to us by an edge that is incoming to us it means that for him we are
+            # an outgoing connection
+            neighbor.remove_neighbor_from_neighbors_list(-direction_of_connection,
+                                                         our_location,
+                                                         remove_this_node_from_given_node_neighbors_list=False)
+
+        for neighbor in self.incoming_edges_manager.get_a_list_of_all_neighbors_pointers():
+            remove_from_node_by_direction_and_data(Node.INCOMING_EDGE_DIRECTION, neighbor)
+
+        for neighbor in self.outgoing_edges_manager.get_a_list_of_all_neighbors_pointers():
+            remove_from_node_by_direction_and_data(Node.OUTGOING_EDGE_DIRECTION, neighbor)
 
         self.finished_lifetime = True
 
