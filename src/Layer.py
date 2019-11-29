@@ -333,11 +333,15 @@ class Layer:
 
     def __str__(self):
         to_return = ''
+        to_return += '----------------'
+        to_return += '\n'
         to_return += 'regular tables'
         to_return += '\n'
         for table in self.regular_node_tables:
             to_return += str(table)
 
+        to_return += '\n'
+        to_return += '****************'
         to_return += '\n'
         to_return += 'arnode tables'
         to_return += '\n'

@@ -1,9 +1,15 @@
 from src.Layer import *
 import random
+from itertools import permutations
 
 
 def get_random_weight():
     return random.randint(-100, 100)
+
+def get_random_permutations_of_range(up_to_exclusive):
+    all_permutations = permutations([i for i in range(up_to_exclusive)])
+    all_permutations = list(all_permutations)
+    return all_permutations[random.randint(0, len(all_permutations) - 1)]
 
 
 def get_randomly_connected_layers():
@@ -41,15 +47,28 @@ def get_randomly_connected_layers():
     return layers
 
 
+def print_layers(layers):
+    for layer in layers:
+        print(layer)
+
+
 layers = get_randomly_connected_layers()
 
-for layer in layers:
-    pass
-    #print(layer)
+# if you want to print the layers and see them use this
+# print_layers(layers)
 
+# now create all the arnodes
 for i in range((len(layers) - 1), -1, -1):
     layers[i].preprocess_entire_layer()
 
+# now all the arnodes are existent but are not even forward activate and as such have no edges
+# forward activate them before continuing
 
-for layer in layers:
-    print(layer)
+for i in range((len(layers) - 1), -1, -1):
+    # randomly activate the tables to check that their activation order doesnt matter
+    for table_number in get_random_permutations_of_range(4):
+        # for now use sum as the edges merger function
+        layers[i].forward_activate_arnode_table(table_number, lambda node, lis: sum(lis))
+
+
+print_layers(layers)
