@@ -8,6 +8,9 @@ from src.Tables.ARNodeTable import *
 class Layer:
     NUMBER_OF_REGULAR_TABLES_THAT_DO_NOT_SUPPORT_DELETION = 4
 
+    # from assumption (1) all layers have the same number of layers
+    NUMBER_OF_OVERALL_TABLES = 5
+
     INDEX_OF_POS_INC_TABLE = 0
     INDEX_OF_POS_DEC_TABLE = 1
     INDEX_OF_NEG_INC_TABLE = 2
@@ -20,12 +23,8 @@ class Layer:
     INCOMING_LAYER_DIRECTION = Node.INCOMING_EDGE_DIRECTION
     OUTGOING_LAYER_DIRECTION = Node.OUTGOING_EDGE_DIRECTION
 
-    def __init__(self, number_of_tables_in_previous_layer, number_of_tables_in_next_layer,
-                 pointer_to_previous_layer=None, pointer_to_next_layer=None):
+    def __init__(self, pointer_to_previous_layer=None, pointer_to_next_layer=None):
         """
-
-        :param number_of_tables_in_previous_layer:
-        :param number_of_tables_in_next_layer:
         :param pointer_to_previous_layer:
         :param pointer_to_next_layer:
         """
@@ -33,9 +32,6 @@ class Layer:
         # to preserve assumption (1) and (2)
         self.regular_node_tables = []
         self.arnode_tables = []
-
-        self.number_of_tables_in_previous_layer = number_of_tables_in_previous_layer
-        self.number_of_tables_in_next_layer = number_of_tables_in_next_layer
 
         self.previous_layer = pointer_to_previous_layer
         self.next_layer = pointer_to_next_layer
@@ -59,6 +55,12 @@ class Layer:
         for i in range(1, Layer.NUMBER_OF_REGULAR_TABLES_THAT_DO_NOT_SUPPORT_DELETION):
             self.arnode_tables.append(self.arnode_tables[i - 1].create_table_below_of_same_type())
 
+    def set_previous_layer(self, pointer_to_previous_layer):
+        self.previous_layer = pointer_to_previous_layer
+
+    def set_next_layer(self, pointer_to_next_layer):
+        self.next_layer = pointer_to_next_layer
+
     @staticmethod
     def type_to_number_of_map(type_of_node):
         """
@@ -72,9 +74,10 @@ class Layer:
         :return: creates a new node in the unprocessed table (to preserve assumption (4)) and returns it.
         """
         # when new nodes are created they are inserted into the unprocessed table
+        # from assumption (1) all layers have the same number of layers
         new_node = self.regular_node_tables[Layer.INDEX_OF_UNPROCESSED_TABLE].create_new_node_and_add_to_table(
-            self.number_of_tables_in_previous_layer,
-            self.number_of_tables_in_next_layer)
+            Layer.NUMBER_OF_OVERALL_TABLES,
+            Layer.NUMBER_OF_OVERALL_TABLES)
 
         return new_node.get_key_in_table()
 
@@ -227,6 +230,9 @@ class Layer:
             node = table_to_move_to.get_node_by_key(new_node_key)
 
             # now create a corresponding arnode for the node
+            # note that from conclusion (2), even though its safe to create the arnode for now, it might
+            # not be safe to forward activate or fully activate the arnode, since the node it surrounds might
+            # still be connected to nodes in unprocessed tables
             self._create_arnode_for_node(node)
             return
 
@@ -240,9 +246,10 @@ class Layer:
         for i in range(len(edge_data_split_by_type)):
             if len(edge_data_split_by_type[i]) != 0:
                 current_table = self.regular_node_tables[i]
+                # from assumption (1) all layers have the same number of layers
                 new_node = current_table.create_new_node_and_add_to_table(
-                    self.number_of_tables_in_previous_layer,
-                    self.number_of_tables_in_next_layer)
+                    Layer.NUMBER_OF_OVERALL_TABLES,
+                    Layer.NUMBER_OF_OVERALL_TABLES)
 
                 nodes_created[i] = new_node
 

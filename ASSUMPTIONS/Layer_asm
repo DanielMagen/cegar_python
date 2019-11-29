@@ -11,7 +11,7 @@ in the following order:
 
 each time a node would be inserted into the (pos,inc), (pos,dec), (neg,inc), (neg,dec) tables in the regular node
 tables list, we will create a arnode which would contain it and insert it to the corresponding table in the
-second table list
+second table list.
 
 2)
 the table number would correspond to the type of nodes it would contain
@@ -29,3 +29,21 @@ when a new node is created it would be added to the unprocessed table
 
 5)
 nodes can only be connected to nodes in adjacent layers
+
+6)
+only when a node is moved to the (pos,inc), (pos,dec), (neg,inc), (neg,dec) tables would it be set in stone.
+it would never ve set in stone if its in the unprocessed table.
+
+
+
+
+Layer conclusions:
+1)
+since arnodes can only contain nodes which are set in stone, from assumption (6) we conclude that arnodes
+can never contain unprocessed nodes.
+
+2)
+from conclusion (1) and ARNode assumption (5) we conclude that for a arnode to be forward activated,
+all of its outgoing connections should be to arnodes which surround nodes which are not in the unprocessed table.
+i.e. an arnode can never be forward activated if one of its outgoing connections is to a node which
+is in the unprocessed table.
