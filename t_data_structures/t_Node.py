@@ -55,7 +55,7 @@ def t_adding_connection(node_object):
 
             weight = random.randint(-20, 20)
             connection_data = [new_node_table_number, new_node_key_in_table, weight, new_node]
-            node_object.add_or_edit_neighbor(direction_of_connection, connection_data,
+            node_object._add_or_edit_neighbor_helper(direction_of_connection, connection_data,
                                              add_this_node_to_given_node_neighbors=should_add_given_node_to_new_node_neighbors)
 
             assert node_object.check_if_neighbor_exists(direction_of_connection, new_node.get_location()) == True
@@ -72,7 +72,7 @@ def t_remove_connection(node_object):
 
             weight = random.randint(-20, 20)
             connection_data = [new_node_table_number, new_node_key_in_table, weight, new_node]
-            node_object.add_or_edit_neighbor(direction_of_connection, connection_data,
+            node_object._add_or_edit_neighbor_helper(direction_of_connection, connection_data,
                                              add_this_node_to_given_node_neighbors=should_add_given_node_to_new_node_neighbors)
 
             node_object.remove_neighbor_from_neighbors_list(direction_of_connection, new_node.get_location(),
@@ -92,7 +92,7 @@ def t_remove_connection(node_object):
 
                 weight = random.randint(-20, 20)
                 connection_data = [new_node_table_number, new_node_key_in_table, weight, new_node]
-                node_object.add_or_edit_neighbor(direction_of_connection, connection_data,
+                node_object._add_or_edit_neighbor_helper(direction_of_connection, connection_data,
                                                  add_this_node_to_given_node_neighbors=should_add_given_node_to_new_node_neighbors)
 
                 node_object.remove_neighbor_from_neighbors_list(direction_of_connection, new_node.get_location(),
@@ -120,8 +120,7 @@ def t_get_notified_when_neighbor_changes(node_object):
 
         weight = random.randint(-20, 20)
         connection_data = [new_node_table_number, new_node_key_in_table, weight, new_node]
-        node_object.add_or_edit_neighbor(direction_of_connection, connection_data,
-                                         add_this_node_to_given_node_neighbors=True)
+        node_object.add_or_edit_neighbor(direction_of_connection, connection_data)
 
         new_table_number = random.randint(0, number_of_tables_in_current_layer - 1)
         new_key_in_table = random.randint(0, 10)
@@ -148,8 +147,7 @@ def t_check_destruction_of_node(node_object):
 
         weight = random.randint(-20, 20)
         connection_data = [new_node_table_number, new_node_key_in_table, weight, new_node]
-        node_object.add_or_edit_neighbor(direction_of_connection, connection_data,
-                                         add_this_node_to_given_node_neighbors=True)
+        node_object.add_or_edit_neighbor(direction_of_connection, connection_data)
 
         neighbors_created.append(new_node)
 

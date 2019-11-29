@@ -239,13 +239,11 @@ class AbstractTable:
 
     def add_or_edit_connection_to_node(self, node_key, direction_of_connection, connection_data):
         node_to_add_connection_to = self.get_node_by_key(node_key)
-        node_to_add_connection_to.add_or_edit_neighbor(direction_of_connection, connection_data,
-                                                       add_this_node_to_given_node_neighbors=True)
+        node_to_add_connection_to.add_or_edit_neighbor(direction_of_connection, connection_data)
 
     def add_or_edit_connection_to_node_by_bulk(self, node_key, direction_of_connection, list_of_connection_data):
         node_to_add_connection_to = self.get_node_by_key(node_key)
         for connection_data in list_of_connection_data:
-            node_to_add_connection_to.add_or_edit_neighbor(direction_of_connection, connection_data,
-                                                           add_this_node_to_given_node_neighbors=True)
+            node_to_add_connection_to.add_or_edit_neighbor(direction_of_connection, connection_data)
 
 

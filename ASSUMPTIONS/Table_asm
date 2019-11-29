@@ -1,6 +1,7 @@
 1)
 each table object would contain the nodes in the network in a corresponding order to the one in the network.
 (not sure if I can maintain this assumption)
+maybe I can implement it with a complicated id scheme which might not be worth the trouble
 
 2)
 each table would contain the index in the layer of its starting node.

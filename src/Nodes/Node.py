@@ -127,17 +127,46 @@ class Node:
         # in the id. hence the node id is unique only in the preview of the layer its in
         return self.table_number, self.key_in_table
 
-    def add_or_edit_neighbor(self, direction_of_connection, connection_data,
-                             add_this_node_to_given_node_neighbors=True):
+    def add_or_edit_neighbor(self, direction_of_connection, connection_data):
         """
+        :param direction_of_connection: INCOMING_EDGE_DIRECTION or OUTGOING_EDGE_DIRECTION
 
-        :param direction_of_connection:
         :param connection_data: a list as returned by the NodeEdges class
+
+        connects this node and the node given in the connection data to each other
+        if the connection already exists it overrides it with the new data
+        """
+        self._add_or_edit_neighbors_helper(direction_of_connection, [connection_data],
+                                           add_this_node_to_given_node_neighbors=True)
+
+    def add_or_edit_neighbor_list(self, direction_of_connection, connection_data_list):
+        """
+        :param direction_of_connection: INCOMING_EDGE_DIRECTION or OUTGOING_EDGE_DIRECTION
+
+        :param connection_data_list: a list of connection_data.
+        connection_data is a list as returned by the NodeEdges class
+
+        connects this node and the node given in the connection data to each other
+        if the connection already exists it overrides it with the new data
+        """
+        self._add_or_edit_neighbors_helper(direction_of_connection, connection_data_list,
+                                           add_this_node_to_given_node_neighbors=True)
+
+    def _add_or_edit_neighbors_helper(self, direction_of_connection, connection_data_list,
+                                      add_this_node_to_given_node_neighbors=True):
+        """
+        :param direction_of_connection: INCOMING_EDGE_DIRECTION or OUTGOING_EDGE_DIRECTION
+
+        :param connection_data_list: a list of connection_data.
+        connection_data is a list as returned by the NodeEdges class
+
         :param add_this_node_to_given_node_neighbors: if true we would add ourselves to the given node neighbors
         (from the right direction of course)
         TAKE GREAT CARE WHEN YOU SET IT TO FALSE, IF YOU DO THAT YOU MUST NOT RELOCATE THIS NODE OR THE NODE YOU
         CONNECTED TO.
-        :return:
+
+        connects this node and the node given in the connection data to each other
+        if the connection already exists it overrides it with the new data
         """
         self.check_if_killed_and_raise_error_if_is()
 
@@ -148,14 +177,19 @@ class Node:
         else:
             raise Exception("invalid direction_of_connection")
 
-        table_number, key_in_table, weight, node_connected_to = connection_data
-        edges_manager_to_work_with.add_or_edit_connection(table_number, key_in_table, weight, node_connected_to)
+        for connection_data in connection_data_list:
+            table_number, key_in_table, weight, node_connected_to = connection_data
+            edges_manager_to_work_with.add_or_edit_connection(table_number, key_in_table, weight, node_connected_to)
 
-        if add_this_node_to_given_node_neighbors:
-            # to avoid infinite loop set add_this_node_to_given_node_neighbors=False
-            node_connected_to.add_or_edit_neighbor(-direction_of_connection,
-                                                   [self.table_number, self.key_in_table, weight, self],
-                                                   add_this_node_to_given_node_neighbors=False)
+            if add_this_node_to_given_node_neighbors:
+                # to avoid infinite loop set add_this_node_to_given_node_neighbors=False
+                connection_data_to_feed_to_neighbor = [self.table_number,
+                                                       self.key_in_table,
+                                                       weight,
+                                                       self]
+                node_connected_to._add_or_edit_neighbors_helper(-direction_of_connection,
+                                                                [connection_data_to_feed_to_neighbor],
+                                                                add_this_node_to_given_node_neighbors=False)
 
     def check_if_neighbor_exists(self, direction_of_connection, neighbor_location_data):
         """

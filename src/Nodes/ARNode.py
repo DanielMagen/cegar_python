@@ -146,8 +146,7 @@ class ARNode(Node):
             # an incoming connection,m and vice versa
             reference_to_arnode.add_or_edit_neighbor(-direction_of_connection,
                                                      [self.table_number, self.key_in_table,
-                                                      weight_to_connect_to_arnode_with, self],
-                                                     add_this_node_to_given_node_neighbors=True)
+                                                      weight_to_connect_to_arnode_with, self])
 
     def forward_activate_arnode(self, function_to_calculate_merger_of_outgoing_edges):
         """
