@@ -13,7 +13,8 @@ each time a node would be inserted into the (pos,inc), (pos,dec), (neg,inc), (ne
 tables list, we will create a arnode which would contain it and insert it to the corresponding table in the
 second table list
 
-2) the table number would correspond to the type of nodes it would contain
+2)
+the table number would correspond to the type of nodes it would contain
 0 -> (pos,inc)
 1 -> (pos,dec)
 2 -> (neg,inc)
@@ -23,4 +24,8 @@ second table list
 3)
 all the edges would be added to the regular node before splitting it into the various type tables
 
+4)
+when a new node is created it would be added to the unprocessed table
 
+5)
+nodes can only be connected to nodes in adjacent layers

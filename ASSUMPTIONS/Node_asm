@@ -19,3 +19,6 @@ we will assume that the tables will be ordered such that all tables of type a oc
 5)
 all the nodes outgoing edges connect to nodes which all reside in the same layer
 all the nodes incoming edges connect to nodes which all reside in the same layer
+
+6)
+-> Layer assumptions (5)

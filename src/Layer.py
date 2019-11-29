@@ -2,7 +2,6 @@ from src.Nodes.Node import Node
 from src.NodeEdges import NodeEdges
 from src.Tables.Table import AbstractTable
 from src.Tables.TableDoesntSupportsDeletion import TableDoesntSupportsDeletion
-from src.Tables.TableSupportsDeletion import TableSupportsDeletion
 from src.Tables.ARNodeTable import *
 
 
@@ -17,13 +16,29 @@ class Layer:
     # the unprocessed_table would be added after all the tables which do not support deletion
     INDEX_OF_UNPROCESSED_TABLE = NUMBER_OF_REGULAR_TABLES_THAT_DO_NOT_SUPPORT_DELETION
 
-    def __init__(self, number_of_tables_in_previous_layer, number_of_tables_in_next_layer):
+    # those must be equal
+    INCOMING_LAYER_DIRECTION = Node.INCOMING_EDGE_DIRECTION
+    OUTGOING_LAYER_DIRECTION = Node.OUTGOING_EDGE_DIRECTION
+
+    def __init__(self, number_of_tables_in_previous_layer, number_of_tables_in_next_layer,
+                 pointer_to_previous_layer=None, pointer_to_next_layer=None):
+        """
+
+        :param number_of_tables_in_previous_layer:
+        :param number_of_tables_in_next_layer:
+        :param pointer_to_previous_layer:
+        :param pointer_to_next_layer:
+        """
+
         # to preserve assumption (1) and (2)
         self.regular_node_tables = []
         self.arnode_tables = []
 
         self.number_of_tables_in_previous_layer = number_of_tables_in_previous_layer
         self.number_of_tables_in_next_layer = number_of_tables_in_next_layer
+
+        self.previous_layer = pointer_to_previous_layer
+        self.next_layer = pointer_to_next_layer
 
         # first initialize the regular_node_tables
         # to preserve assumption (2) the first 4 tables must have indices of 0-3 in order, as such give the first table
@@ -54,14 +69,86 @@ class Layer:
 
     def create_new_node(self):
         """
-        :return: creates a new node and returns it location. i.e. table number and key in table
+        :return: creates a new node in the unprocessed table (to preserve assumption (4)) and returns it.
         """
         # when new nodes are created they are inserted into the unprocessed table
         new_node = self.regular_node_tables[Layer.INDEX_OF_UNPROCESSED_TABLE].create_new_node_and_add_to_table(
             self.number_of_tables_in_previous_layer,
             self.number_of_tables_in_next_layer)
 
-        return new_node.get_location()
+        return new_node.get_key_in_table()
+
+    def get_unprocessed_node_by_key(self, key_of_node_in_unprocessed_table):
+        return self.regular_node_tables[Layer.INDEX_OF_UNPROCESSED_TABLE].get_node_by_key(
+            key_of_node_in_unprocessed_table)
+
+    def _create_arnode_for_node(self, node):
+        node_table = node.get_table_number()
+        if node_table == Layer.INDEX_OF_UNPROCESSED_TABLE or not node.check_if_location_can_be_changed():
+            raise Exception("can not create an arnode for a node which is not set in stone")
+
+        self.arnode_tables[node_table].create_new_arnode_and_add_to_table([node])
+
+    def add_or_edit_neighbor_to_node_in_unprocessed_table(self, node_key, direction_of_connection,
+                                                          key_of_node_in_unprocessed_table_of_connected_layer,
+                                                          weight):
+        """
+        to preserve assumption (3) we only allow edges to be added to the nodes in the unprocessed table.
+        to preserve assumption (5) we only allow edges to be added between this layer and one of its adjacent layers
+
+        :param node_key:
+        :param direction_of_connection:
+        :param key_of_node_in_unprocessed_table_of_connected_layer:
+        :param weight:
+        """
+        if direction_of_connection == Layer.INCOMING_LAYER_DIRECTION:
+            adjacent_layer = self.previous_layer
+        elif direction_of_connection == Layer.OUTGOING_LAYER_DIRECTION:
+            adjacent_layer = self.next_layer
+        else:
+            raise ValueError("direction given is not valid")
+
+        # now create the connection_data
+        node_in_adjacent_layer = adjacent_layer.get_unprocessed_node_by_key(
+            key_of_node_in_unprocessed_table_of_connected_layer)
+        connection_data = [*node_in_adjacent_layer.get_location(), weight, node_in_adjacent_layer]
+
+        # finally, connect between the 2 nodes
+        node_to_add_connection_to = self.get_unprocessed_node_by_key(node_key)
+        node_to_add_connection_to.add_or_edit_neighbor(direction_of_connection, connection_data)
+
+    def add_or_edit_connection_to_node_in_unprocessed_table_by_bulk(self, node_key, direction_of_connection,
+                                                                    list_of_pairs_of_keys_and_weights):
+        """
+        to preserve assumption (3) we only allow edges to be added to the nodes in the unprocessed table
+        to preserve assumption (5) we only allow edges to be added between this layer and one of its adjacent layers
+
+        :param node_key:
+        :param direction_of_connection:
+        :param list_of_pairs_of_keys_and_weights: a list of pairs of the form
+        (key_of_node_in_unprocessed_table_of_connected_layer, weight)
+        """
+        if direction_of_connection == Layer.INCOMING_LAYER_DIRECTION:
+            adjacent_layer = self.previous_layer
+        elif direction_of_connection == Layer.OUTGOING_LAYER_DIRECTION:
+            adjacent_layer = self.next_layer
+        else:
+            raise ValueError("direction given is not valid")
+
+        # now create the list_of_connection_data
+        list_of_connection_data = []
+        for pair in list_of_pairs_of_keys_and_weights:
+            key_of_node_in_unprocessed_table_of_connected_layer, weight = pair
+
+            node_in_adjacent_layer = adjacent_layer.get_unprocessed_node_by_key(
+                key_of_node_in_unprocessed_table_of_connected_layer)
+
+            connection_data = [*node_in_adjacent_layer.get_location(), weight, node_in_adjacent_layer]
+
+            list_of_connection_data.append(connection_data)
+
+        node_to_add_connection_to = self.get_unprocessed_node_by_key(node_key)
+        node_to_add_connection_to.add_or_edit_neighbors_by_bulk(direction_of_connection, list_of_connection_data)
 
     @staticmethod
     def get_split_edge_data_by_types(node):
@@ -109,36 +196,6 @@ class Layer:
                                 "preprocessed")
 
         return split_data_by_types
-
-    def _create_arnode_for_node(self, node):
-        node_table = node.get_table_number()
-        if node_table == Layer.INDEX_OF_UNPROCESSED_TABLE or not node.check_if_location_can_be_changed():
-            raise Exception("can not create an arnode for a node which is not set in stone")
-
-        self.arnode_tables[node_table].create_new_arnode_and_add_to_table([node])
-
-    def add_or_edit_neighbor_to_node_in_unprocessed_table(self, node_key, direction_of_connection, connection_data):
-        """
-        to preserve assumption (3) we only allow edges to be added to the nodes in the unprocessed table
-
-        :param node_key:
-        :param direction_of_connection:
-        :param connection_data:
-        """
-        node_to_add_connection_to = self.regular_node_tables[Layer.INDEX_OF_UNPROCESSED_TABLE].get_node_by_key(node_key)
-        node_to_add_connection_to.add_or_edit_neighbor(direction_of_connection, connection_data)
-
-    def add_or_edit_connection_to_node_in_unprocessed_table_by_bulk(self, node_key, direction_of_connection,
-                                                                    list_of_connection_data):
-        """
-        to preserve assumption (3) we only allow edges to be added to the nodes in the unprocessed table
-
-        :param node_key:
-        :param direction_of_connection:
-        :param list_of_connection_data:
-        """
-        node_to_add_connection_to = self.regular_node_tables[Layer.INDEX_OF_UNPROCESSED_TABLE].get_node_by_key(node_key)
-        node_to_add_connection_to.add_or_edit_neighbors_by_bulk(direction_of_connection, list_of_connection_data)
 
     def split_unprocessed_node_to_tables(self,
                                          node_key_in_unprocessed_table,
