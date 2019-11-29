@@ -146,25 +146,25 @@ class Node:
         self._add_or_edit_neighbors_helper(direction_of_connection, [connection_data],
                                            add_this_node_to_given_node_neighbors=True)
 
-    def add_or_edit_neighbor_list(self, direction_of_connection, connection_data_list):
+    def add_or_edit_neighbors_by_bulk(self, direction_of_connection, list_of_connection_data):
         """
         :param direction_of_connection: INCOMING_EDGE_DIRECTION or OUTGOING_EDGE_DIRECTION
 
-        :param connection_data_list: a list of connection_data.
+        :param list_of_connection_data: a list of connection_data.
         connection_data is a list as returned by the NodeEdges class
 
         connects this node and the node given in the connection data to each other
         if the connection already exists it overrides it with the new data
         """
-        self._add_or_edit_neighbors_helper(direction_of_connection, connection_data_list,
+        self._add_or_edit_neighbors_helper(direction_of_connection, list_of_connection_data,
                                            add_this_node_to_given_node_neighbors=True)
 
-    def _add_or_edit_neighbors_helper(self, direction_of_connection, connection_data_list,
+    def _add_or_edit_neighbors_helper(self, direction_of_connection, list_of_connection_data,
                                       add_this_node_to_given_node_neighbors=True):
         """
         :param direction_of_connection: INCOMING_EDGE_DIRECTION or OUTGOING_EDGE_DIRECTION
 
-        :param connection_data_list: a list of connection_data.
+        :param list_of_connection_data: a list of connection_data.
         connection_data is a list as returned by the NodeEdges class
 
         :param add_this_node_to_given_node_neighbors: if true we would add ourselves to the given node neighbors
@@ -184,7 +184,7 @@ class Node:
         else:
             raise Exception("invalid direction_of_connection")
 
-        for connection_data in connection_data_list:
+        for connection_data in list_of_connection_data:
             table_number, key_in_table, weight, node_connected_to = connection_data
             edges_manager_to_work_with.add_or_edit_connection(table_number, key_in_table, weight, node_connected_to)
 

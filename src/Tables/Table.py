@@ -237,13 +237,12 @@ class AbstractTable:
         node_to_remove.destructor()
         self._remove_node_from_table_without_affecting_the_node(node_key)
 
-    def add_or_edit_connection_to_node(self, node_key, direction_of_connection, connection_data):
+    def add_or_edit_neighbor_to_node(self, node_key, direction_of_connection, connection_data):
         node_to_add_connection_to = self.get_node_by_key(node_key)
         node_to_add_connection_to.add_or_edit_neighbor(direction_of_connection, connection_data)
 
     def add_or_edit_connection_to_node_by_bulk(self, node_key, direction_of_connection, list_of_connection_data):
         node_to_add_connection_to = self.get_node_by_key(node_key)
-        for connection_data in list_of_connection_data:
-            node_to_add_connection_to.add_or_edit_neighbor(direction_of_connection, connection_data)
+        node_to_add_connection_to.add_or_edit_neighbors_by_bulk(direction_of_connection, list_of_connection_data)
 
 

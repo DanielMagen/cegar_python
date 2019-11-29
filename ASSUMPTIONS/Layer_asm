@@ -20,6 +20,7 @@ second table list
 3 -> (neg,dec)
 4 -> (unprocessed)
 
-
+3)
+all the edges would be added to the regular node before splitting it into the various type tables
 
 

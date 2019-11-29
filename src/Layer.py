@@ -117,6 +117,29 @@ class Layer:
 
         self.arnode_tables[node_table].create_new_arnode_and_add_to_table([node])
 
+    def add_or_edit_neighbor_to_node_in_unprocessed_table(self, node_key, direction_of_connection, connection_data):
+        """
+        to preserve assumption (3) we only allow edges to be added to the nodes in the unprocessed table
+
+        :param node_key:
+        :param direction_of_connection:
+        :param connection_data:
+        """
+        node_to_add_connection_to = self.regular_node_tables[Layer.INDEX_OF_UNPROCESSED_TABLE].get_node_by_key(node_key)
+        node_to_add_connection_to.add_or_edit_neighbor(direction_of_connection, connection_data)
+
+    def add_or_edit_connection_to_node_in_unprocessed_table_by_bulk(self, node_key, direction_of_connection,
+                                                                    list_of_connection_data):
+        """
+        to preserve assumption (3) we only allow edges to be added to the nodes in the unprocessed table
+
+        :param node_key:
+        :param direction_of_connection:
+        :param list_of_connection_data:
+        """
+        node_to_add_connection_to = self.regular_node_tables[Layer.INDEX_OF_UNPROCESSED_TABLE].get_node_by_key(node_key)
+        node_to_add_connection_to.add_or_edit_neighbors_by_bulk(direction_of_connection, list_of_connection_data)
+
     def split_unprocessed_node_to_tables(self,
                                          node_key_in_unprocessed_table,
                                          function_to_split_edges_data=get_split_edge_data_by_types):
