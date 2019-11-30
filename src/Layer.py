@@ -285,6 +285,8 @@ class Layer:
             if nodes_created[i] is not None:
                 self._create_arnode_for_node(nodes_created[i])
 
+    # perhaps its inefficient, it might be more efficient to recalculate all the edges all at once and create
+    # the nodeEdges object from scratch, than deleting all edges one by one
     def preprocess_entire_layer(self):
         unprocessed_table = self.regular_node_tables[Layer.INDEX_OF_UNPROCESSED_TABLE]
         for node_key in unprocessed_table.get_list_of_all_keys():
