@@ -163,6 +163,10 @@ class AbstractTable:
         # for cleaning after the node.
         self._remove_node_from_table_without_affecting_the_node(node_key)
 
+        # now notify all bottom tables that their table_starting_index has decreased
+        if self.next_table is not AbstractTable.NO_NEXT_TABLE:
+            self.next_table.decrease_starting_node_index()
+
     def _remove_node_from_table_without_affecting_the_node(self, node_key):
         """
         removes the node from table without affecting the node at all
@@ -223,6 +227,7 @@ class AbstractTable:
         :param node:
         :return: the new key of the node
         """
+        # first remove the node from its previous table
         previous_table_manager.get_notified_node_is_being_removed_from_table(node.get_key_in_table())
 
         if self.get_number_of_nodes_in_table() == 0:

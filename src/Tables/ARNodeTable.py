@@ -1,3 +1,4 @@
+from src.Tables.Table import AbstractTable
 from src.Tables.TableSupportsDeletion import TableSupportsDeletion
 from src.Nodes.ARNode import ARNode
 
@@ -15,6 +16,11 @@ class ARNodeTable(TableSupportsDeletion):
 
         return table_to_return
 
+    def create_new_node_and_add_to_table(self,
+                                         number_of_tables_in_previous_layer,
+                                         number_of_tables_in_next_layer):
+        raise NotImplemented("this table can only contain arnodes")
+
     def create_new_arnode_and_add_to_table(self, starting_nodes):
         """
 
@@ -23,8 +29,19 @@ class ARNodeTable(TableSupportsDeletion):
         """
         new_node = ARNode(starting_nodes, -1, -1)
 
+        if self.get_number_of_nodes_in_table() == 0:
+            # the table is currently empty, use the initialize_table_starting_index_based_on_previous_tables to
+            # initialize its table_starting_index
+            self.initialize_table_starting_index_based_on_previous_tables()
+
         node_key = self._add_node_to_table_without_checking(new_node)
+        # change the inserted node location_data so that its table number and index would correspond to its new location
+        # no need to notify_neighbors since this node has no neighbors since it was just created
         new_node.set_new_location(self.table_number, node_key, notify_neighbors_that_location_changed=False)
+
+        # now notify all bottom tables that their table_starting_index has increased
+        if self.next_table is not AbstractTable.NO_NEXT_TABLE:
+            self.next_table.increase_starting_node_index()
 
         return new_node
 

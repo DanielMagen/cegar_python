@@ -2,6 +2,7 @@ from src.Tables.Table import AbstractTable
 from src.Tables import TableSupportsDeletion
 from src.Tables import TableDoesntSupportsDeletion
 from src.Tables import ARNodeTable
+from src.Nodes.Node import Node
 import random
 
 
@@ -55,11 +56,11 @@ def check_starting_index_is_not_initialized(tables):
 
 
 def check_adding_and_removing_nodes(tables):
-    def get_tables_starting_indices():
-        return list(map(lambda t: t.table_starting_index, tables))
-
     number_of_tables_in_previous_layer = random.randint(1, 15)
     number_of_tables_in_next_layer = random.randint(1, 15)
+
+    def get_tables_starting_indices():
+        return list(map(lambda t: t.table_starting_index, tables))
 
     starting_indices = get_tables_starting_indices()
 
@@ -92,9 +93,29 @@ def check_adding_and_removing_nodes(tables):
     starting_indices[4] -= 1
     assert get_tables_starting_indices() == starting_indices
 
+    # now start checking moving nodes between tables
+    node_added_to_table_0 = tables[0].create_new_node_and_add_to_table(number_of_tables_in_previous_layer,
+                                                                       number_of_tables_in_next_layer)
+    tables[1].create_new_node_and_add_to_table(number_of_tables_in_previous_layer, number_of_tables_in_next_layer)
+    starting_indices[1] = 2
+    starting_indices[4] = starting_indices[1] + 1
+    assert get_tables_starting_indices() == starting_indices
+
+    # now move a node from table 0 to table 2
+    tables[2].add_existing_node_to_table(tables[0], node_added_to_table_0)
+    starting_indices[1] -= 1
+    starting_indices[2] = starting_indices[1] + 1
+    starting_indices[4] = starting_indices[2] + 1
+
+    assert get_tables_starting_indices() == starting_indices
+
 
 num_of_tables = random.randint(5, 7)
-tables = get_TableSupportsDeletion(num_of_tables)
-check_all_tables_have_zero_nodes(tables)
-check_starting_index_is_not_initialized(tables)
-check_adding_and_removing_nodes(tables)
+for function_to_create_tables in [get_TableSupportsDeletion, get_TableDoesntSupportsDeletion]:
+    tables = get_TableSupportsDeletion(num_of_tables)
+    check_all_tables_have_zero_nodes(tables)
+    check_starting_index_is_not_initialized(tables)
+    check_adding_and_removing_nodes(tables)
+
+
+################### do testing for ARNodeTable too
