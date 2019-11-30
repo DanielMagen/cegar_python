@@ -249,6 +249,7 @@ class ARNode(Node):
     def fully_activate_arnode_without_changing_incoming_edges(self, check_validity_of_activation=True):
         """
         this method fully activates the arnode.
+        if the node is already fully activated it does nothing
 
         the assumption behind this method is that the incoming edges were already set when we forward activated all the
         nodes which have an outgoing connection to this arnode
@@ -256,6 +257,11 @@ class ARNode(Node):
         :param check_validity_of_activation: this might take a long time to do each time, so if you are sure that
         the activation is valid you can set it to false
         """
+        self.check_if_killed_and_raise_error_if_is()
+
+        if self.activation_status == ARNode.FULLY_ACTIVATED_STATUS:
+            return
+
         if self.activation_status == ARNode.NOT_ACTIVATED_STATUS:
             # from assumption (5) for us to be fully activated requires the arnodes we are connected to by an outgoing
             # connection to be fully activated. for this to be the case, we have to be forward activated before, again
@@ -273,7 +279,9 @@ class ARNode(Node):
     def fully_activate_arnode_and_recalculate_incoming_edges(self, function_to_calculate_merger_of_incoming_edges):
         """
         this method fully activates the arnode.
-        it connects/reconnects this arnode to all the arnodes containing all the nodes
+        if the node is already fully activated it does nothing
+
+        otherwise, it connects/reconnects this arnode to all the arnodes containing all the nodes
         which are connected to the starting_node via an outgoing or an incoming edge.
 
         :param function_to_calculate_merger_of_incoming_edges:

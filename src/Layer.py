@@ -329,6 +329,7 @@ class Layer:
             if arnode.get_activation_status() != ARNode.FULLY_ACTIVATED_STATUS:
                 arnode.fully_activate_arnode_without_changing_incoming_edges(check_validity_of_activation)
 
+    # maybe wrap those functions so that we would have default splitting and merging functions for the tables
     def split_arnode(self, table_number, key_in_table, partition_of_arnode_inner_nodes,
                      function_to_calculate_merger_of_incoming_edges,
                      function_to_calculate_merger_of_outgoing_edges):
