@@ -46,10 +46,7 @@ class TableSupportsDeletion(AbstractTable):
         :param node_key:
         """
         del self.nodes[node_key]
-
-        # now notify all bottom tables that their table_starting_index has decreased
-        if self.next_table is not AbstractTable.NO_NEXT_TABLE:
-            self.next_table.decrease_starting_node_index()
+        self.number_of_nodes -= 1
 
     def remove_node_from_table_and_relocate_to_other_table(self, node_key, new_table_manager):
         node_to_relocate = self.get_node_by_key(node_key)

@@ -166,7 +166,6 @@ class AbstractTable:
     def _remove_node_from_table_without_affecting_the_node(self, node_key):
         """
         removes the node from table without affecting the node at all
-        notifies lower tables that this table size has changed.
         :param node_key:
         """
         raise NotImplemented("this is an abstract class")
@@ -201,8 +200,19 @@ class AbstractTable:
                         number_of_tables_in_next_layer,
                         -1, -1)
 
+        if self.get_number_of_nodes_in_table() == 0:
+            # the table is currently empty, use the initialize_table_starting_index_based_on_previous_tables to
+            # initialize its table_starting_index
+            self.initialize_table_starting_index_based_on_previous_tables()
+
         node_key = self._add_node_to_table_without_checking(new_node)
+        # change the inserted node location_data so that its table number and index would correspond to its new location
+        # no need to notify_neighbors since this node has no neighbors since it was just created
         new_node.set_new_location(self.table_number, node_key, notify_neighbors_that_location_changed=False)
+
+        # now notify all bottom tables that their table_starting_index has increased
+        if self.next_table is not AbstractTable.NO_NEXT_TABLE:
+            self.next_table.increase_starting_node_index()
 
         return new_node
 
@@ -232,6 +242,11 @@ class AbstractTable:
         return new_node_key
 
     def delete_node(self, node_key):
+        """
+        deletes the given node from the table
+        notifies lower tables that this table size has changed.
+        :param node_key:
+        """
         # check that the node belongs to this table
         # assumes that the layers are correct
         node_to_remove = self.get_node_by_key(node_key)
@@ -239,6 +254,14 @@ class AbstractTable:
 
         node_to_remove.destructor()
         self._remove_node_from_table_without_affecting_the_node(node_key)
+
+        # check to see if we have no nodes
+        if self.get_number_of_nodes_in_table() == 0:
+            self.table_starting_index = AbstractTable.INDEX_OF_START_IF_NO_NODES_IN_TABLE
+
+        # now notify all bottom tables that their table_starting_index has decreased
+        if self.next_table is not AbstractTable.NO_NEXT_TABLE:
+            self.next_table.decrease_starting_node_index()
 
     def add_or_edit_neighbor_to_node(self, node_key, direction_of_connection, connection_data):
         node_to_add_connection_to = self.get_node_by_key(node_key)

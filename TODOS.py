@@ -5,5 +5,4 @@
 
 # TODO create a struct to hold connection data
 
-# TODO read and implement guy's method of converting the given network to have
-#  only one output
+# TODO read and implement guy's method of converting the given network to have only one output
