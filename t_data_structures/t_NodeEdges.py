@@ -48,7 +48,7 @@ def print_all_edges_data(node_edges_object):
     print(node_edges_object.get_a_list_of_all_connections())
 
 
-if __name__ == '__main':
+if __name__ == '__main__':
     number_of_tables_in_layer_connected_to = 5
     ne = NodeEdges(number_of_tables_in_layer_connected_to)
 
