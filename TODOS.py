@@ -1,6 +1,6 @@
 # TODO figure out how to link actions in the nodes, tables and layers objects to actions in the real network
 # TODO check if you can maintain table assumption 1
 
-# TODO write down a full explanation for the system, including various complexities
+# TODO add to the full explanation the various complexities of various important actions
 
-# TODO create a demi struct to hold connection data
+# TODO create a struct to hold connection data
