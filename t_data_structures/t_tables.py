@@ -110,12 +110,13 @@ def check_adding_and_removing_nodes(tables):
     assert get_tables_starting_indices() == starting_indices
 
 
-num_of_tables = random.randint(5, 7)
-for function_to_create_tables in [get_TableSupportsDeletion, get_TableDoesntSupportsDeletion]:
-    tables = get_TableSupportsDeletion(num_of_tables)
-    check_all_tables_have_zero_nodes(tables)
-    check_starting_index_is_not_initialized(tables)
-    check_adding_and_removing_nodes(tables)
+if __name__ == "__main__":
+    num_of_tables = random.randint(5, 7)
+    for function_to_create_tables in [get_TableSupportsDeletion, get_TableDoesntSupportsDeletion]:
+        tables = get_TableSupportsDeletion(num_of_tables)
+        check_all_tables_have_zero_nodes(tables)
+        check_starting_index_is_not_initialized(tables)
+        check_adding_and_removing_nodes(tables)
 
 
 ################### do testing for ARNodeTable too
