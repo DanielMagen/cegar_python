@@ -85,7 +85,8 @@ for i in range((len(layers) - 1), -1, -1):
 # check visually that this is the case
 print_layers(layers)
 
-print('............................................................................................................................')
+print(
+    '............................................................................................................................')
 # now lets try to merge 2 arnodes and see what happens
 # merge the first 2 pos-inc nodes in the middle layer
 pos_inc_table = 0
@@ -94,8 +95,6 @@ new_merged_node = layers[1].merge_two_arnodes(pos_inc_table, 0, 1, dummy_functio
 
 # now print the resulting layer and check visually that the arnodes were created successfully
 print_layers(layers)
-
-"""
 
 print('............................................................................................................................')
 
@@ -110,6 +109,3 @@ layers[1].split_arnode(pos_inc_table, new_merged_node.get_key_in_table(), partit
 # now check visually that the connections are exactly the same up to a change in the keys of arnodes 0,1 in
 # the pos_inc_table of layers[1]
 print_layers(layers)
-
-
-"""
