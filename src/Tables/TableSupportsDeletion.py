@@ -5,7 +5,8 @@ class TableSupportsDeletion(AbstractTable):
     def __init__(self, table_number, previous_table, next_table):
         super().__init__(table_number, previous_table, next_table)
         self.nodes = {}
-        self.number_of_nodes = 0
+        self.key_for_new_node = 0 # this would serve as the key of the next node that would be added to the table
+        # later we might expand this concept to have a full id system
 
     def create_table_below_of_same_type(self):
         assert self.next_table == AbstractTable.NO_NEXT_TABLE
@@ -27,13 +28,13 @@ class TableSupportsDeletion(AbstractTable):
         return list(self.get_iterator_for_all_keys())
 
     def get_number_of_nodes_in_table(self):
-        return self.number_of_nodes
+        return len(self.nodes)
 
-    # maybe add an id system so that the ids won't increase too much
+    # maybe add an id system so that the ids (keys) won't increase too much
     def _add_node_to_table_without_checking(self, node):
-        new_key_for_node = self.number_of_nodes
+        new_key_for_node = self.key_for_new_node
         self.nodes[new_key_for_node] = node
-        self.number_of_nodes += 1
+        self.key_for_new_node += 1
         return new_key_for_node
 
     def get_node_by_key(self, node_key):
@@ -46,7 +47,6 @@ class TableSupportsDeletion(AbstractTable):
         :param node_key:
         """
         del self.nodes[node_key]
-        self.number_of_nodes -= 1
 
     def remove_node_from_table_and_relocate_to_other_table(self, node_key, new_table_manager):
         node_to_relocate = self.get_node_by_key(node_key)

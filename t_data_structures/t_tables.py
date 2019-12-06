@@ -55,6 +55,24 @@ def check_starting_index_is_not_initialized(tables):
         assert t.get_number_of_nodes_after_table_ends() == 0
 
 
+def check_only_adding_nodes(tables):
+    number_of_tables_in_previous_layer = random.randint(1, 15)
+    number_of_tables_in_next_layer = random.randint(1, 15)
+
+    def get_tables_starting_indices():
+        return list(map(lambda t: t.table_starting_index, tables))
+
+    starting_indices = get_tables_starting_indices()
+
+    tables[0].create_new_node_and_add_to_table(number_of_tables_in_previous_layer, number_of_tables_in_next_layer)
+    starting_indices[0] = 0
+    assert get_tables_starting_indices() == starting_indices
+
+    # adding more nodes to the same table does not change its starting index
+    tables[0].create_new_node_and_add_to_table(number_of_tables_in_previous_layer, number_of_tables_in_next_layer)
+    assert get_tables_starting_indices() == starting_indices
+
+
 def check_adding_and_removing_nodes(tables):
     number_of_tables_in_previous_layer = random.randint(1, 15)
     number_of_tables_in_next_layer = random.randint(1, 15)
@@ -110,13 +128,25 @@ def check_adding_and_removing_nodes(tables):
     assert get_tables_starting_indices() == starting_indices
 
 
+
 if __name__ == "__main__":
     num_of_tables = random.randint(5, 7)
-    for function_to_create_tables in [get_TableSupportsDeletion, get_TableDoesntSupportsDeletion]:
-        tables = get_TableSupportsDeletion(num_of_tables)
-        check_all_tables_have_zero_nodes(tables)
-        check_starting_index_is_not_initialized(tables)
-        check_adding_and_removing_nodes(tables)
+    # first check the tables that support deletion
+    function_to_create_tables = get_TableSupportsDeletion
+    tables = function_to_create_tables(num_of_tables)
+    check_all_tables_have_zero_nodes(tables)
+    check_starting_index_is_not_initialized(tables)
+    check_adding_and_removing_nodes(tables)
+
+    # now check the tables that don't support deletion
+    function_to_create_tables = get_TableDoesntSupportsDeletion
+    tables = function_to_create_tables(num_of_tables)
+    check_all_tables_have_zero_nodes(tables)
+    check_starting_index_is_not_initialized(tables)
+    check_only_adding_nodes(tables)
+
+    # testing the arnode tables would be done when we would test the layers since
+    # the key functions there would be split and merge functions which would require different layers
+    # to test correctly
 
 
-################### do testing for ARNodeTable too

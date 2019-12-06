@@ -172,7 +172,7 @@ class AbstractTable:
         removes the node from table without affecting the node at all
         :param node_key:
         """
-        raise NotImplemented("this is an abstract class")
+        raise NotImplementedError("this is an abstract class")
 
     def remove_node_from_table_and_relocate_to_other_table(self, node_key, new_table_manager):
         """
@@ -180,7 +180,7 @@ class AbstractTable:
         :param new_table_manager:
         :return: the new node key in the table it was moved to
         """
-        raise NotImplemented("this is an abstract class")
+        raise NotImplementedError("this is an abstract class")
 
     def _add_node_to_table_without_checking(self, node):
         """
@@ -190,7 +190,7 @@ class AbstractTable:
         :param node:
         :return the key of the node inserted
         """
-        raise NotImplemented("this is an abstract class")
+        raise NotImplementedError("this is an abstract class")
 
     def create_new_node_and_add_to_table(self,
                                          number_of_tables_in_previous_layer,

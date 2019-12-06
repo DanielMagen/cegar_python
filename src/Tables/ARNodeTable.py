@@ -2,6 +2,7 @@ from src.Tables.Table import AbstractTable
 from src.Tables.TableSupportsDeletion import TableSupportsDeletion
 from src.Nodes.ARNode import ARNode
 
+
 class ARNodeTable(TableSupportsDeletion):
     def create_new_node_and_add_to_table(self,
                                          number_of_tables_in_previous_layer,
@@ -36,7 +37,11 @@ class ARNodeTable(TableSupportsDeletion):
 
         node_key = self._add_node_to_table_without_checking(new_node)
         # change the inserted node location_data so that its table number and index would correspond to its new location
-        # no need to notify_neighbors since this node has no neighbors since it was just created
+        # no need to notify_neighbors since this arnode has no neighbors since it was just created.
+        # this is a consequence of the arnode assumptions. all the details are in the arnode assumptions
+        # and arnode class.
+        # in short, later when we would activate him and his neighbors all the necessary connections between this node
+        # and his neighbors would be added.
         new_node.set_new_location(self.table_number, node_key, notify_neighbors_that_location_changed=False)
 
         # now notify all bottom tables that their table_starting_index has increased

@@ -82,6 +82,7 @@ for i in range((len(layers) - 1), -1, -1):
         layers[i].fully_activate_table_without_changing_incoming_edges(table_number)
 
 # now the arnodes should be exactly like the regular nodes
+# check visually that this is the case
 print_layers(layers)
 
 print('............................................................................................................................')
@@ -92,9 +93,11 @@ new_merged_node = layers[1].merge_two_arnodes(pos_inc_table, 0, 1, dummy_functio
                                               dummy_function_to_merge_edges)
 
 # now print the resulting layer and check visually that the arnodes were created successfully
-# because I finished testing the merger I will not print it, but if you want to test it print it and don't print the
-# splitting test too (because its too much to print it all)
-# print_layers(layers)
+print_layers(layers)
+
+"""
+
+print('............................................................................................................................')
 
 # now split the merged arnode back into 2 arnodes
 # assume that the key that was given to the new merged arnode is the largest key in the table
@@ -107,3 +110,6 @@ layers[1].split_arnode(pos_inc_table, new_merged_node.get_key_in_table(), partit
 # now check visually that the connections are exactly the same up to a change in the keys of arnodes 0,1 in
 # the pos_inc_table of layers[1]
 print_layers(layers)
+
+
+"""
