@@ -2,6 +2,4 @@
 
 # TODO add to the full explanation the various complexities of various important actions
 
-# TODO create a struct to hold connection data
-
 # TODO read and implement guy's method of converting the given network to have only one output

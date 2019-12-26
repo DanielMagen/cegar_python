@@ -56,10 +56,6 @@ class AbstractTable:
         # for cleaning after the node.
         self._remove_node_from_table_without_affecting_the_node(node_key)
 
-        # now notify all bottom tables that their table_starting_index has decreased
-        if self.next_table is not AbstractTable.NO_NEXT_TABLE:
-            self.next_table.decrease_starting_node_index()
-
     def _remove_node_from_table_without_affecting_the_node(self, node_key):
         """
         removes the node from table without affecting the node at all
