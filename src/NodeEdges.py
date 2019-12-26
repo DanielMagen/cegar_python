@@ -112,7 +112,7 @@ class NodeEdges:
 
     def get_iterator_over_connections(self):
         """
-        :return: an iterator of the form
+        :return: an iterator on the connections data which is of the form
         [table_number, key_in_table, weight, reference_to_node_connected_to]
 
         the iterator guarantees order in increasing table_number but does not guarantee order in key_in_table

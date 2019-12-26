@@ -171,7 +171,7 @@ class Node:
         connection_data is a list as returned by the NodeEdges class
 
         :param add_this_node_to_given_node_neighbors: if true we would add ourselves to the given node neighbors
-        (from the right direction of course)
+        (from the correct direction of course)
         TAKE GREAT CARE WHEN YOU SET IT TO FALSE, IF YOU DO THAT YOU MUST NOT RELOCATE THIS NODE OR THE NODE YOU
         CONNECTED TO.
 
