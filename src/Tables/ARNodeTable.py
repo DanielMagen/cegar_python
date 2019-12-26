@@ -10,7 +10,7 @@ class ARNodeTable(TableSupportsDeletion):
         raise NotImplemented("this class can only contain arnodes")
 
     def create_table_below_of_same_type(self):
-        table_to_return = ARNodeTable(self.table_number + 1)
+        table_to_return = ARNodeTable(self.get_arguments_to_create_table_below())
 
         return table_to_return
 

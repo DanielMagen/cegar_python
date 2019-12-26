@@ -35,6 +35,7 @@ def check_all_tables_have_zero_nodes(tables):
         assert t.get_number_of_nodes_in_table() == 0
 
 
+# TODO write tests for new table without assumptions (2)
 if __name__ == "__main__":
     num_of_tables = random.randint(5, 7)
     # first check the tables that support deletion
@@ -50,5 +51,3 @@ if __name__ == "__main__":
     # testing the arnode tables would be done when we would test the layers since
     # the key functions there would be split and merge functions which would require different layers
     # to test correctly
-
-

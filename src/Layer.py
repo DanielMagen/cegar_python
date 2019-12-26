@@ -46,7 +46,7 @@ class Layer:
             self.regular_node_tables.append(self.regular_node_tables[i - 1].create_table_below_of_same_type())
 
         # now create the (unprocessed) table
-        unprocessed_table = TableSupportsDeletion(*self.regular_node_tables[-1].get_arguments_to_create_table_below())
+        unprocessed_table = TableSupportsDeletion(self.regular_node_tables[-1].get_arguments_to_create_table_below())
         self.regular_node_tables.append(unprocessed_table)
 
         # now initialize the arnode_tables

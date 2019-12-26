@@ -15,6 +15,9 @@ class AbstractTable:
         # current parent table
         self.key_of_node_currently_being_removed_from_table = AbstractTable.NO_NODE_IS_CURRENTLY_BEING_REMOVED
 
+    def get_arguments_to_create_table_below(self):
+        return self.table_number + 1
+
     def create_table_below_of_same_type(self):
         """
         creates a new table which would have a table_number bigger by one

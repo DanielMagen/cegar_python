@@ -7,7 +7,7 @@ class TableDoesntSupportsDeletion(AbstractTable):
         self.nodes = []
 
     def create_table_below_of_same_type(self):
-        table_to_return = TableDoesntSupportsDeletion(self.table_number + 1)
+        table_to_return = TableDoesntSupportsDeletion(self.get_arguments_to_create_table_below())
 
         return table_to_return
 
