@@ -41,7 +41,7 @@ class Layer:
         # an index of 0 and the create_table_below_of_same_type function of the table class would take care of
         # increasing the index by 1 each turn
         self.regular_node_tables.append(
-            TableDoesntSupportsDeletion(0, AbstractTable.NO_PREVIOUS_TABLE, AbstractTable.NO_NEXT_TABLE))
+            TableDoesntSupportsDeletion(0))
         for i in range(1, Layer.NUMBER_OF_REGULAR_TABLES_THAT_DO_NOT_SUPPORT_DELETION):
             self.regular_node_tables.append(self.regular_node_tables[i - 1].create_table_below_of_same_type())
 
@@ -51,7 +51,7 @@ class Layer:
 
         # now initialize the arnode_tables
         self.arnode_tables.append(
-            ARNodeTable(0, AbstractTable.NO_PREVIOUS_TABLE, AbstractTable.NO_NEXT_TABLE))
+            ARNodeTable(0))
         for i in range(1, Layer.NUMBER_OF_REGULAR_TABLES_THAT_DO_NOT_SUPPORT_DELETION):
             self.arnode_tables.append(self.arnode_tables[i - 1].create_table_below_of_same_type())
 

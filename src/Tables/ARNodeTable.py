@@ -10,10 +10,7 @@ class ARNodeTable(TableSupportsDeletion):
         raise NotImplemented("this class can only contain arnodes")
 
     def create_table_below_of_same_type(self):
-        assert self.next_table == ARNodeTable.NO_NEXT_TABLE
-
-        table_to_return = ARNodeTable(*self.get_arguments_to_create_table_below())
-        self.next_table = table_to_return
+        table_to_return = ARNodeTable(self.table_number + 1)
 
         return table_to_return
 
@@ -30,11 +27,6 @@ class ARNodeTable(TableSupportsDeletion):
         """
         new_node = ARNode(starting_nodes, -1, -1)
 
-        if self.get_number_of_nodes_in_table() == 0:
-            # the table is currently empty, use the initialize_table_starting_index_based_on_previous_tables to
-            # initialize its table_starting_index
-            self.initialize_table_starting_index_based_on_previous_tables()
-
         node_key = self._add_node_to_table_without_checking(new_node)
         # change the inserted node location_data so that its table number and index would correspond to its new location
         # no need to notify_neighbors since this arnode has no neighbors since it was just created.
@@ -43,10 +35,6 @@ class ARNodeTable(TableSupportsDeletion):
         # in short, later when we would activate him and his neighbors all the necessary connections between this node
         # and his neighbors would be added.
         new_node.set_new_location(self.table_number, node_key, notify_neighbors_that_location_changed=False)
-
-        # now notify all bottom tables that their table_starting_index has increased
-        if self.next_table is not AbstractTable.NO_NEXT_TABLE:
-            self.next_table.increase_starting_node_index()
 
         return new_node
 
