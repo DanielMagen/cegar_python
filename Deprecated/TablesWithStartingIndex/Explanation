@@ -1,0 +1,6 @@
+Those are the table classes before the removal of assumption (2) which forced the tables to have a starting index.
+assumption (2) was that each table would contain the index in the layer of its starting node.
+it was deprecated because the whole purpose of this assumption was for us to calculate where each node is
+in relation to its layer, but there is no need for a node to know its position in the layer.
+
+I hold the classes in txt form so that pycharm won't recognize the classes as valid.

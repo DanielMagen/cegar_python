@@ -2,7 +2,11 @@
 each table object would contain the nodes in the network in a corresponding order to the one in the network.
 
 2)
+---DEPRECATED---
 each table would contain the index in the layer of its starting node.
+DEPRECATED - the whole purpose of this assumption was for us to calculate where each node is
+in relation to its layer, but there is no need for a node to know its position in the layer
+
 
 3)
 the tables in the same layer would be connected by their index values

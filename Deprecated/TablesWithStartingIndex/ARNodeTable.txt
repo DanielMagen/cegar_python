@@ -1,4 +1,4 @@
-from src.Tables.Table import AbstractTable
+﻿from src.Tables.Table import AbstractTable
 from src.Tables.TableSupportsDeletion import TableSupportsDeletion
 from src.Nodes.ARNode import ARNode
 
