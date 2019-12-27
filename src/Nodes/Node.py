@@ -14,7 +14,7 @@ class Node:
 
     NO_GLOBAL_ID = -1
     NO_EQUATION = None
-    NO_CONSTRAINT = None
+    EMPTY_CONSTRAINT = None
     NO_REFERENCE = None
 
     def __init__(self,
@@ -54,13 +54,18 @@ class Node:
         self.equation = Node.NO_EQUATION
         # each node would manage the constraint between its 2 global IDs. if the ids are the same, no constraint would
         # be added
-        self.constraint = Node.NO_CONSTRAINT
+        self.constraint = Node.EMPTY_CONSTRAINT
         # each node would a reference to the
         # marabou_core, input_query and id_manager objects that are responsible for the system.
         # this way the node destructor could call them if need be
         self.id_manager_reference = Node.NO_REFERENCE
         self.marabou_core_reference = Node.NO_REFERENCE
         self.input_query_reference = Node.NO_REFERENCE
+
+        # this would hold whether the data saved in the system data variables is valid or not
+        # it would be invalid if one of (incoming_id, outgoing_id, equation, constraint) is not defined
+        # or if equation, constraint were calculated before some connection data was changed
+        self.system_data_is_valid = False
 
         # if this value is true then the node can not do any action
         # this value would be deprecated in the cpp implementation, as a call to the destructor would
@@ -131,11 +136,24 @@ class Node:
     def get_outgoing_id(self):
         return self.outgoing_id
 
-    def initialize_equation_and_constraints(self):
+    def calculate_equation_and_constraints(self):
         """
-        this function initializes the equation between this node and its incoming nodes
+        this function calculates the equation between this node and its incoming nodes
         and the constraint between its 2 global ids
+
+        if the equation and constraint already exist, it first deletes them from and then recalculates them
+
+        from assumption (7) the equation and constraint should be set or removed together
         """
+        if self.incoming_id == Node.NO_GLOBAL_ID or self.outgoing_id == Node.NO_GLOBAL_ID:
+            raise Exception("the node was never given a global id and as such could not be given an equation")
+
+        # first check if they already exist and if so delete them
+        if self.equation != Node.NO_EQUATION:
+            # from assumption (7) the equation and constraint should be set or removed together,
+            # so its enough to check if the equation was set or not
+            self.remove_equation_and_constraints()
+
         # initialize the constraint
         if self.incoming_id != self.outgoing_id:
             self.constraint = self.marabou_core_reference.addReluConstraint(self.input_query_reference,
@@ -160,30 +178,40 @@ class Node:
         self.equation.setScalar(0)
         self.input_query_reference.addEquation(self.equation)
 
+        # finally set system_data_is_valid to true since an equation and constraint were initialized
+        self.system_data_is_valid = True
+
     def remove_equation_and_constraints(self):
         """
         simply remove the equation and constraint from the input query and marabou_core
         and sets them to none in this node
         """
-        if self.equation == Node.NO_EQUATION or self.constraint == Node.NO_CONSTRAINT:
+        if self.equation == Node.NO_EQUATION:
+            # from assumption (7) the equation and constraint should be set or removed together,
+            # so its enough to check if the equation was set or not
             raise Exception("the node never set any equation or constraint")
 
         self.input_query_reference.removeEquation(self.equation)
         self.marabou_core_reference.removeReluConstraint(self.constraint)
 
         self.equation = Node.NO_EQUATION
-        self.constraint = Node.NO_CONSTRAINT
+        self.constraint = Node.EMPTY_CONSTRAINT
+
+        # finally set system_data_is_valid to False since the equation and constraint were removed
+        self.system_data_is_valid = False
 
     def remove_from_global_system(self):
         """
-        removes this node global ids.
-        if the node was given an equation and a constraint it removes them too.
-        resets the reference to the marabou_core, input_query and id_manager
+        1) removes this node global ids
+        2) if the node was given an equation and a constraint it removes them too.
+        3) resets the reference to the marabou_core, input_query and id_manager
         """
         if self.incoming_id == Node.NO_GLOBAL_ID or self.outgoing_id == Node.NO_GLOBAL_ID:
             raise Exception("the node was never given a global id")
 
-        if self.equation != Node.NO_EQUATION or self.constraint != Node.NO_CONSTRAINT:
+        if self.equation != Node.NO_EQUATION:
+            # from assumption (7) the equation and constraint should be set or removed together,
+            # so its enough to check if the equation was set or not
             self.remove_equation_and_constraints()
 
         self.id_manager_reference.give_id_back(self.incoming_id)
@@ -195,6 +223,9 @@ class Node:
         self.id_manager_reference = Node.NO_REFERENCE
         self.marabou_core_reference = Node.NO_REFERENCE
         self.input_query_reference = Node.NO_REFERENCE
+
+        # finally set system_data_is_valid to False since all global system data was removed
+        self.system_data_is_valid = False
 
     def set_in_stone(self):
         # from assumption (3)
@@ -294,6 +325,8 @@ class Node:
 
         connects this node and the node given in the connection data to each other
         if the connection already exists it overrides it with the new data
+
+        finally, it sets system_data_is_valid to False
         """
         self.check_if_killed_and_raise_error_if_is()
 
@@ -317,6 +350,10 @@ class Node:
                 node_connected_to._add_or_edit_neighbors_helper(-direction_of_connection,
                                                                 [connection_data_to_feed_to_neighbor],
                                                                 add_this_node_to_given_node_neighbors=False)
+
+        # finally set system_data_is_valid to False since a connection data was edited and as such if an equation
+        # was calculated before, it is now invalid
+        self.system_data_is_valid = False
 
     def check_if_neighbor_exists(self, direction_of_connection, neighbor_location_data):
         """
@@ -353,7 +390,8 @@ class Node:
         node neighbors (from the right direction of course)
         TAKE GREAT CARE WHEN YOU SET IT TO FALSE, IF YOU DO THAT YOU MUST NOT RELOCATE THIS NODE OR THE NODE YOU
         CONNECTED TO.
-        :return:
+
+        this function also sets system_data_is_valid to False
         """
         self.check_if_killed_and_raise_error_if_is()
 
@@ -370,6 +408,10 @@ class Node:
         if remove_this_node_from_given_node_neighbors_list:
             node_connected_to.remove_neighbor_from_neighbors_list(-direction_of_connection, self.get_location(),
                                                                   remove_this_node_from_given_node_neighbors_list=False)
+
+        # finally set system_data_is_valid to False since a connection data was edited and as such if an equation
+        # was calculated before, it is now invalid
+        self.system_data_is_valid = False
 
     def get_notified_that_neighbor_location_changed(self, direction_of_connection, previous_location, new_location):
         """
