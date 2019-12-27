@@ -296,7 +296,6 @@ class Layer:
         # now delete the node from the unprocessed table
         unprocessed_table.delete_node(node.get_key_in_table())
 
-        ####################################################################################################### maybe do so only for arnodes which they reside in
         # now calculate the equation and constraints for all nodes created
         for i in range(len(nodes_created)):
             if nodes_created[i] is not None:
