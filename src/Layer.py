@@ -6,6 +6,8 @@ from src.Tables.ARNodeTable import *
 
 
 class Layer:
+    NO_POINTER_TO_ADJACENT_LAYER = None
+
     NUMBER_OF_REGULAR_TABLES_THAT_DO_NOT_SUPPORT_DELETION = 4
 
     # from assumption (1) all layers have the same number of layers
@@ -23,13 +25,14 @@ class Layer:
     INCOMING_LAYER_DIRECTION = Node.INCOMING_EDGE_DIRECTION
     OUTGOING_LAYER_DIRECTION = Node.OUTGOING_EDGE_DIRECTION
 
-    def __init__(self, pointer_to_previous_layer=None, pointer_to_next_layer=None):
+    def __init__(self, global_data_manager, pointer_to_previous_layer=NO_POINTER_TO_ADJACENT_LAYER,
+                 pointer_to_next_layer=NO_POINTER_TO_ADJACENT_LAYER):
         """
         :param pointer_to_previous_layer:
         :param pointer_to_next_layer:
         """
-
         # to preserve assumption (1) and (2)
+        self.global_data_manager = global_data_manager
         self.regular_node_tables = []
         self.arnode_tables = []
 
@@ -40,18 +43,21 @@ class Layer:
         # to preserve assumption (2) the first 4 tables must have indices of 0-3 in order, as such give the first table
         # an index of 0 and the create_table_below_of_same_type function of the table class would take care of
         # increasing the index by 1 each turn
-        self.regular_node_tables.append(
-            TableDoesntSupportsDeletion(0))
+        layer_is_inner = True
+        if pointer_to_previous_layer == Layer.NO_POINTER_TO_ADJACENT_LAYER or \
+                pointer_to_next_layer == Layer.NO_POINTER_TO_ADJACENT_LAYER:
+            layer_is_inner = False
+
+        self.regular_node_tables.append(TableDoesntSupportsDeletion(0, layer_is_inner))
         for i in range(1, Layer.NUMBER_OF_REGULAR_TABLES_THAT_DO_NOT_SUPPORT_DELETION):
             self.regular_node_tables.append(self.regular_node_tables[i - 1].create_table_below_of_same_type())
 
         # now create the (unprocessed) table
-        unprocessed_table = TableSupportsDeletion(self.regular_node_tables[-1].get_arguments_to_create_table_below())
+        unprocessed_table = TableSupportsDeletion(*self.regular_node_tables[-1].get_arguments_to_create_table_below())
         self.regular_node_tables.append(unprocessed_table)
 
         # now initialize the arnode_tables
-        self.arnode_tables.append(
-            ARNodeTable(0))
+        self.arnode_tables.append(ARNodeTable(0, layer_is_inner))
         for i in range(1, Layer.NUMBER_OF_REGULAR_TABLES_THAT_DO_NOT_SUPPORT_DELETION):
             self.arnode_tables.append(self.arnode_tables[i - 1].create_table_below_of_same_type())
 
@@ -77,7 +83,8 @@ class Layer:
         # from assumption (1) all layers have the same number of layers
         new_node = self.regular_node_tables[Layer.INDEX_OF_UNPROCESSED_TABLE].create_new_node_and_add_to_table(
             Layer.NUMBER_OF_OVERALL_TABLES,
-            Layer.NUMBER_OF_OVERALL_TABLES)
+            Layer.NUMBER_OF_OVERALL_TABLES,
+            self.global_data_manager)
 
         return new_node.get_key_in_table()
 
@@ -263,7 +270,8 @@ class Layer:
                 # from assumption (1) all layers have the same number of layers
                 new_node = current_table.create_new_node_and_add_to_table(
                     Layer.NUMBER_OF_OVERALL_TABLES,
-                    Layer.NUMBER_OF_OVERALL_TABLES)
+                    Layer.NUMBER_OF_OVERALL_TABLES,
+                    self.global_data_manager)
 
                 nodes_created[i] = new_node
 
@@ -281,12 +289,7 @@ class Layer:
                 current_table.add_or_edit_connection_to_node_by_bulk(new_node_key, Node.INCOMING_EDGE_DIRECTION,
                                                                      incoming_edges_data)
 
-
-        # now give global id to all nodes created
-
-
-
-
+        ################################################################################################################# now give global id to all nodes created
 
         # now delete the node from the unprocessed table
         unprocessed_table.delete_node(node.get_key_in_table())

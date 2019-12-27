@@ -4,19 +4,25 @@ from src.Nodes.Node import Node
 class AbstractTable:
     NO_NODE_IS_CURRENTLY_BEING_REMOVED = None
 
-    def __init__(self, table_number):
+    def __init__(self, table_number, layer_is_inner):
         """
-
         :param table_number: the number of the table in the overall table order.
+        :param layer_is_inner: a boolean which should be true if the layer this table resides in is an inner layer
+        (not the first or the last layer)
         """
         self.table_number = table_number
+
+        self.layer_is_inner = layer_is_inner
 
         # this would help us make sure that moving nodes between tables would never be done without notifying the
         # current parent table
         self.key_of_node_currently_being_removed_from_table = AbstractTable.NO_NODE_IS_CURRENTLY_BEING_REMOVED
 
     def get_arguments_to_create_table_below(self):
-        return self.table_number + 1
+        """
+        :return: a tuple of arguments needed to create a table below this table
+        """
+        return self.table_number + 1, self.layer_is_inner
 
     def create_table_below_of_same_type(self):
         """
@@ -81,17 +87,36 @@ class AbstractTable:
         """
         raise NotImplementedError("this is an abstract class")
 
+    def _get_ids_for_new_node(self, global_data_manager):
+        """
+        :param global_data_manager:
+        :return: a pair of global_incoming_id, global_outgoing_id for a new node,
+        those ids would be extracted from the given global_data_manager
+        """
+        global_incoming_id = global_data_manager.get_new_id()
+        global_outgoing_id = global_incoming_id
+        if self.layer_is_inner:
+            global_outgoing_id = global_data_manager.get_new_id()
+
+        return global_incoming_id, global_outgoing_id
+
     def create_new_node_and_add_to_table(self,
                                          number_of_tables_in_previous_layer,
-                                         number_of_tables_in_next_layer):
+                                         number_of_tables_in_next_layer,
+                                         global_data_manager):
         """
         :param number_of_tables_in_previous_layer:
         :param number_of_tables_in_next_layer:
+        :param global_data_manager:
         :return: the node created
         """
+        # we need to give the node a global id. we first check if the table is in an inner or and outer layer
+        # if the table is in an inner layer the node needs 2 different ids otherwise it needs only 1
+        global_incoming_id, global_outgoing_id = self._get_ids_for_new_node(global_data_manager)
+
         new_node = Node(number_of_tables_in_previous_layer,
                         number_of_tables_in_next_layer,
-                        -1, -1)
+                        -1, -1, global_incoming_id, global_outgoing_id, global_data_manager)
 
         node_key = self._add_node_to_table_without_checking(new_node)
         # change the inserted node location_data so that its table number and index would correspond to its new location

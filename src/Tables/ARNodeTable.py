@@ -6,18 +6,14 @@ from src.Nodes.ARNode import ARNode
 class ARNodeTable(TableSupportsDeletion):
     def create_new_node_and_add_to_table(self,
                                          number_of_tables_in_previous_layer,
-                                         number_of_tables_in_next_layer):
+                                         number_of_tables_in_next_layer,
+                                         global_data_manager):
         raise NotImplemented("this class can only contain arnodes")
 
     def create_table_below_of_same_type(self):
-        table_to_return = ARNodeTable(self.get_arguments_to_create_table_below())
+        table_to_return = ARNodeTable(*self.get_arguments_to_create_table_below())
 
         return table_to_return
-
-    def create_new_node_and_add_to_table(self,
-                                         number_of_tables_in_previous_layer,
-                                         number_of_tables_in_next_layer):
-        raise NotImplemented("this table can only contain arnodes")
 
     def create_new_arnode_and_add_to_table(self, starting_nodes):
         """

@@ -2,12 +2,12 @@ from src.Tables.Table import AbstractTable
 
 
 class TableDoesntSupportsDeletion(AbstractTable):
-    def __init__(self, table_number):
-        super().__init__(table_number)
+    def __init__(self, table_number, layer_is_inner):
+        super().__init__(table_number, layer_is_inner)
         self.nodes = []
 
     def create_table_below_of_same_type(self):
-        table_to_return = TableDoesntSupportsDeletion(self.get_arguments_to_create_table_below())
+        table_to_return = TableDoesntSupportsDeletion(*self.get_arguments_to_create_table_below())
 
         return table_to_return
 
@@ -33,14 +33,17 @@ class TableDoesntSupportsDeletion(AbstractTable):
 
     def create_new_node_and_add_to_table(self,
                                          number_of_tables_in_previous_layer,
-                                         number_of_tables_in_next_layer):
+                                         number_of_tables_in_next_layer,
+                                         global_data_manager):
         """
         :param number_of_tables_in_previous_layer:
         :param number_of_tables_in_next_layer:
+        :param global_data_manager:
         :return: the node created
         """
         new_node = super().create_new_node_and_add_to_table(number_of_tables_in_previous_layer,
-                                                            number_of_tables_in_next_layer)
+                                                            number_of_tables_in_next_layer,
+                                                            global_data_manager)
         new_node.set_in_stone()
         return new_node
 

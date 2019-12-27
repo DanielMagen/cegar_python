@@ -2,14 +2,14 @@ from src.Tables.Table import AbstractTable
 
 
 class TableSupportsDeletion(AbstractTable):
-    def __init__(self, table_number):
-        super().__init__(table_number)
+    def __init__(self, table_number, layer_is_inner):
+        super().__init__(table_number, layer_is_inner)
         self.nodes = {}
         self.key_for_new_node = 0 # this would serve as the key of the next node that would be added to the table
         # later we might expand this concept to have a full id system
 
     def create_table_below_of_same_type(self):
-        table_to_return = TableSupportsDeletion(self.get_arguments_to_create_table_below())
+        table_to_return = TableSupportsDeletion(*self.get_arguments_to_create_table_below())
 
         return table_to_return
 
