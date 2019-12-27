@@ -12,6 +12,11 @@ class Node:
 
     NO_AR_NODE_CONTAINER = None
 
+    NO_GLOBAL_ID = -1
+    NO_EQUATION = None
+    NO_CONSTRAINT = None
+    NO_REFERENCE = None
+
     def __init__(self,
                  number_of_tables_in_previous_layer,
                  number_of_tables_in_next_layer,
@@ -26,6 +31,7 @@ class Node:
 
         :param table_number:
         :param key_in_table:
+
         """
         self.table_number = table_number
         self.key_in_table = key_in_table
@@ -39,10 +45,32 @@ class Node:
         # later when we will wrap this node in an ar_node, this value would have to be false
         self.node_can_change_location = True
 
+        # each node which is not an input or and output node would be represented by 2 system nodes, which would be
+        # connected by a relu activation function. those nodes ids are given to the node as incoming_id and outgoing_id.
+        #  if a node is an input or output node, the incoming_id should be equal to the outgoing_id
+        self.incoming_id = Node.NO_GLOBAL_ID
+        self.outgoing_id = Node.NO_GLOBAL_ID
+        # each node would manage the equation that links it to its incoming nodes
+        self.equation = Node.NO_EQUATION
+        # each node would manage the constraint between its 2 global IDs. if the ids are the same, no constraint would
+        # be added
+        self.constraint = Node.NO_CONSTRAINT
+        # each node would a reference to the
+        # marabou_core, input_query and id_manager objects that are responsible for the system.
+        # this way the node destructor could call them if need be
+        self.id_manager_reference = Node.NO_REFERENCE
+        self.marabou_core_reference = Node.NO_REFERENCE
+        self.input_query_reference = Node.NO_REFERENCE
+
         # if this value is true then the node can not do any action
         # this value would be deprecated in the cpp implementation, as a call to the destructor would
         # make it unnecessary
         self.finished_lifetime = False
+
+    ################ remove when transferring to cpp
+    def check_if_killed_and_raise_error_if_is(self):
+        if self.finished_lifetime:
+            raise Exception("this node is dead and can not support any function")
 
     def destructor(self):
         """
@@ -72,12 +100,101 @@ class Node:
         for neighbor in self.outgoing_edges_manager.get_a_list_of_all_neighbors_pointers():
             remove_from_node_by_direction_and_data(Node.OUTGOING_EDGE_DIRECTION, neighbor)
 
+        # finally, remove from the global system
+        if self.incoming_id != Node.NO_GLOBAL_ID or self.outgoing_id != Node.NO_GLOBAL_ID:
+            self.remove_from_global_system()
+
         self.finished_lifetime = True
 
-    ################ remove when transferring to cpp
-    def check_if_killed_and_raise_error_if_is(self):
-        if self.finished_lifetime:
-            raise Exception("this node is dead and can not support any function")
+    def give_node_global_ids(self, incoming_id, outgoing_id, id_manager_reference, marabou_core, input_query):
+        """
+        each node which is not an input or and output node would be represented by 2 system nodes, which would be
+        connected by a relu activation function. those nodes ids are given to the node as incoming_id and outgoing_id.
+        if a node is an input or output node, the incoming_id should be equal to the outgoing_id
+
+        :param incoming_id:
+        :param outgoing_id:
+        :param id_manager_reference:
+        :param marabou_core:
+        :param input_query:
+        """
+        self.incoming_id = incoming_id
+        self.outgoing_id = outgoing_id
+
+        self.id_manager_reference = id_manager_reference
+        self.marabou_core_reference = marabou_core
+        self.input_query_reference = input_query
+
+    def get_incoming_id(self):
+        return self.incoming_id
+
+    def get_outgoing_id(self):
+        return self.outgoing_id
+
+    def initialize_equation_and_constraints(self):
+        """
+        this function initializes the equation between this node and its incoming nodes
+        and the constraint between its 2 global ids
+        """
+        # initialize the constraint
+        if self.incoming_id != self.outgoing_id:
+            self.constraint = self.marabou_core_reference.addReluConstraint(self.input_query_reference,
+                                                                            self.incoming_id, self.outgoing_id)
+
+        # initialize the equation
+        self.equation = self.marabou_core_reference.Equation()
+        # add -1 * yourself
+        self.equation.addAddend(-1, self.incoming_id)
+
+        # now go through all incoming nodes and add weight * node_id to the equation
+        iterator_over_connections = self.incoming_edges_manager.get_iterator_over_connections()
+
+        for connection_data in iterator_over_connections:
+            weight = connection_data[NodeEdges.INDEX_OF_WEIGHT_IN_DATA]
+            id_of_incoming_node = connection_data[
+                NodeEdges.INDEX_OF_REFERENCE_TO_NODE_CONNECTED_TO_IN_DATA].get_outgoing_id()
+
+            self.equation.addAddend(weight, id_of_incoming_node)
+
+        # finally set the equation to equation to 0 and add the equation to the input query
+        self.equation.setScalar(0)
+        self.input_query_reference.addEquation(self.equation)
+
+    def remove_equation_and_constraints(self):
+        """
+        simply remove the equation and constraint from the input query and marabou_core
+        and sets them to none in this node
+        """
+        if self.equation == Node.NO_EQUATION or self.constraint == Node.NO_CONSTRAINT:
+            raise Exception("the node never set any equation or constraint")
+
+        self.input_query_reference.removeEquation(self.equation)
+        self.marabou_core_reference.removeReluConstraint(self.constraint)
+
+        self.equation = Node.NO_EQUATION
+        self.constraint = Node.NO_CONSTRAINT
+
+    def remove_from_global_system(self):
+        """
+        removes this node global ids.
+        if the node was given an equation and a constraint it removes them too.
+        resets the reference to the marabou_core, input_query and id_manager
+        """
+        if self.incoming_id == Node.NO_GLOBAL_ID or self.outgoing_id == Node.NO_GLOBAL_ID:
+            raise Exception("the node was never given a global id")
+
+        if self.equation != Node.NO_EQUATION or self.constraint != Node.NO_CONSTRAINT:
+            self.remove_equation_and_constraints()
+
+        self.id_manager_reference.give_id_back(self.incoming_id)
+        self.id_manager_reference.give_id_back(self.outgoing_id)
+
+        self.incoming_id = Node.NO_GLOBAL_ID
+        self.outgoing_id = Node.NO_GLOBAL_ID
+
+        self.id_manager_reference = Node.NO_REFERENCE
+        self.marabou_core_reference = Node.NO_REFERENCE
+        self.input_query_reference = Node.NO_REFERENCE
 
     def set_in_stone(self):
         # from assumption (3)

@@ -1,5 +1,6 @@
 # maybe make this an inner class inside the node class
 
+
 class NodeEdges:
     """
     this class would be used to hold and manage 1-sided node edges
@@ -136,4 +137,3 @@ class NodeEdges:
             to_return.append(data[NodeEdges.INDEX_OF_REFERENCE_TO_NODE_CONNECTED_TO_IN_DATA])
 
         return to_return
-

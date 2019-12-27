@@ -1,0 +1,6 @@
+1)
+each node would have a unique set of ids that would not intersect any other nodes id set
+
+2)
+there would never by any gaps in ids, i.e. after we finished distributing all the ids to the nodes and arnodes,
+the id manager ranges would be of the form [a,max]
