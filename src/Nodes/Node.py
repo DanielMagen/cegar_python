@@ -179,10 +179,11 @@ class Node:
         simply remove the equation and constraint from the input query and marabou_core
         and sets them to none in this node
         """
+        # from assumption (7) the equation and constraint should be set or removed together,
+        # so its enough to check if the equation was set or not
         if self.equation == Node.NO_EQUATION:
-            # from assumption (7) the equation and constraint should be set or removed together,
-            # so its enough to check if the equation was set or not
-            raise Exception("the node never set any equation or constraint")
+            # not much to do, since no equation was set
+            return
 
         self.global_data_reference.get_input_query_reference().removeEquation(self.equation)
         self.global_data_reference.get_marabou_core_reference().removeReluConstraint(self.constraint)
@@ -200,7 +201,13 @@ class Node:
         3) resets the reference to the marabou_core, input_query and id_manager
         """
         if self.global_incoming_id == Node.NO_GLOBAL_ID or self.global_outgoing_id == Node.NO_GLOBAL_ID:
-            raise Exception("the node global id has already been removed form it")
+            if self.global_incoming_id == Node.NO_GLOBAL_ID and self.global_outgoing_id == Node.NO_GLOBAL_ID:
+                # not much to do, since no global variables were set
+                self.global_data_reference = Node.NO_REFERENCE
+                return
+            else:
+                raise Exception("the node was given a only a 1 of the global_incoming_id, global_outgoing_id "
+                                "when it should have received both")
 
         if self.equation != Node.NO_EQUATION:
             # from assumption (7) the equation and constraint should be set or removed together,

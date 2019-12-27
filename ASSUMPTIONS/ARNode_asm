@@ -27,16 +27,28 @@ b) the arnodes that we are connected to by outgoing connections will be fully ac
 7)
 when arnode is first created, if its given a single node to start with it can remain in any activation status as needed.
 but if its created with more than a single node, it must be immediately fully activated.
+also, all arnode which are cread in the process of splitting and merging must be immediately fully activated
 
 8)
 until an arnode is fully activated, its global variables would be determined by the first node in the node group
-it contains.
-this is fine because:
-if an arnode with more than one initial node is created in the process of merging or splitting, then from assumption (7)
-it would immediately be fully activated, and as such this assumption (8) won't matter for it.
+it contains. but when its fully activated all of the inner nodes global data would be erased and recalculated only
+for the arnode which contains them. i.e. once the arnode a node is nested in gets fully activated, the inner node loses
+all right to determine what the values of the global data would be.
+
+I'll show that this assumption is both necessary for the correct function of the system, does not interfere with
+any other related assumption, and does not have any inner inconsistencies:
+if an arnode (with one or more initial nodes) is created in the process of merging or splitting,
+then from assumption (7) it would immediately be fully activated, and as such this assumption (8) won't matter for it.
 
 otherwise if an arnode must be created with only one initial node, and is not fully activated, then by the definition
-of full activation the arnode does not "care" what happens to nodes which are connected to its inner node by an incoming
+of full activation one or more of the following holds:
+a)
+the inner node could not have come from from another arnode which erased its global data, since this would imply
+that the inner node was in a fully activated arnode before, and as such this arnode was created when the other arnode
+split, and as such from assumption (7) this arnode should be immediately fully activated.
+
+b)
+the arnode does not "care" what happens to nodes which are connected to its inner node by an incoming
 connection. in other words the arnode does not care about it incoming connections.
 an arnode must contain only a preprocessed node, but the nodes which are incoming to this preprocessed node have no
 restriction on them and as such could be unprocessed nodes. i.e. the nodes with incoming connections to us could change.

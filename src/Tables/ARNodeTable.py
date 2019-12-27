@@ -34,6 +34,32 @@ class ARNodeTable(TableSupportsDeletion):
 
         return new_node
 
+    def fully_activate_table_by_recalculating_incoming_edges(self,
+                                                             function_to_calculate_merger_of_incoming_edges):
+        """
+        if the previous layer was entirely forward activated but you want ot recalculate the incoming edges to
+        this layer arnodes, use this function
+        :param function_to_calculate_merger_of_incoming_edges:
+        """
+        for arnode in self.get_iterator_for_all_nodes():
+            if arnode.get_activation_status() != ARNode.FULLY_ACTIVATED_STATUS:
+                arnode.fully_activate_arnode_and_recalculate_incoming_edges(
+                    function_to_calculate_merger_of_incoming_edges,
+                    *super()._get_ids_for_new_node(self.global_data_manager))
+
+    def fully_activate_table_without_changing_incoming_edges(self,
+                                                             check_validity_of_activation=True):
+        """
+        if the previous layer was entirely forward activated and you do not want ot recalculate the incoming edges to
+        this layer arnodes, use this function
+        :param check_validity_of_activation:
+        """
+        for arnode in self.get_iterator_for_all_nodes():
+            if arnode.get_activation_status() != ARNode.FULLY_ACTIVATED_STATUS:
+                arnode.fully_activate_arnode_without_changing_incoming_edges(
+                    *super()._get_ids_for_new_node(self.global_data_manager),
+                    check_validity_of_activation)
+
     def split_arnode(self, key_of_arnode_to_split,
                      partition_of_arnode_inner_nodes,
                      function_to_calculate_merger_of_incoming_edges,
@@ -66,9 +92,10 @@ class ARNodeTable(TableSupportsDeletion):
             # start node with bogus arguments and then add it to the table_manager which would give the node
             # real arguments
             new_arnode = self.create_new_arnode_and_add_to_table(node_list)
+            # preserve arnode assumption (7)
             new_arnode.forward_activate_arnode(function_to_calculate_merger_of_outgoing_edges)
             new_arnode.fully_activate_arnode_and_recalculate_incoming_edges(
-                function_to_calculate_merger_of_incoming_edges)
+                function_to_calculate_merger_of_incoming_edges, *super()._get_ids_for_new_node(self.global_data_manager))
 
     def merge_two_arnodes(self,
                           key_of_arnode1,
@@ -110,7 +137,10 @@ class ARNodeTable(TableSupportsDeletion):
         self.delete_node(key_of_arnode2)
 
         new_arnode = self.create_new_arnode_and_add_to_table(inner_nodes_for_new_arnode)
+        # preserve arnode assumption (7)
         new_arnode.forward_activate_arnode(function_to_calculate_merger_of_outgoing_edges)
-        new_arnode.fully_activate_arnode_and_recalculate_incoming_edges(function_to_calculate_merger_of_incoming_edges)
+        new_arnode.fully_activate_arnode_and_recalculate_incoming_edges(function_to_calculate_merger_of_incoming_edges,
+                                                                        *super()._get_ids_for_new_node(
+                                                                            self.global_data_manager))
 
         return new_arnode

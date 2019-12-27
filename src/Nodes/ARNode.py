@@ -41,19 +41,22 @@ class ARNode(Node):
         if len(starting_nodes) == 0:
             raise AssertionError("ar node must have at least one starting node")
 
-        first_node_in_starting_nodes = None
+        self.first_node_in_starting_nodes = None
         for node in starting_nodes:
-            first_node_in_starting_nodes = node
+            self.first_node_in_starting_nodes = node
             break
 
         # from assumption (2) all nodes would be in the same table and would have the same values
-        number_of_tables_in_previous_layer = first_node_in_starting_nodes.get_number_of_tables_in_previous_layer()
-        number_of_tables_in_next_layer = first_node_in_starting_nodes.get_number_of_tables_in_next_layer()
+        number_of_tables_in_previous_layer = self.first_node_in_starting_nodes.get_number_of_tables_in_previous_layer()
+        number_of_tables_in_next_layer = self.first_node_in_starting_nodes.get_number_of_tables_in_next_layer()
 
+        # from assumption (8) we will make sure that until fully activated, the arnode won't have any global variables
+        # of its own
         super().__init__(
             number_of_tables_in_previous_layer,
             number_of_tables_in_next_layer,
-            table_number, key_in_table)
+            table_number, key_in_table,
+            Node.NO_GLOBAL_ID, Node.NO_GLOBAL_ID, Node.NO_REFERENCE)
 
         self.location_of_ar_node_nested_in = self.get_location()
 
@@ -76,6 +79,58 @@ class ARNode(Node):
             node.reset_ar_node_nested_in()
 
         super().destructor()
+
+    def _take_control_over_inner_nodes_global_values(self, global_incoming_id, global_outgoing_id):
+        """
+        this function should only be called once the arnode is fully activated
+        it removes all of the inner nodes global variables and sets this arnode global variables to be the given values.
+        in addition, it also calculates the arnode equation and constraint.
+
+        :param global_incoming_id:
+        :param global_outgoing_id:
+        :return:
+        """
+        self.global_incoming_id = global_incoming_id
+        self.global_outgoing_id = global_outgoing_id
+        self.global_data_manager = self.first_node_in_starting_nodes.global_data_manager
+
+        self.calculate_equation_and_constraints()
+
+    def get_incoming_id(self):
+        # preserve assumption (8)
+        if self.activation_status == ARNode.FULLY_ACTIVATED_STATUS:
+            return super().get_incoming_id()
+        return self.first_node_in_starting_nodes.get_incoming_id()
+
+    def get_outgoing_id(self):
+        # preserve assumption (8)
+        if self.activation_status == ARNode.FULLY_ACTIVATED_STATUS:
+            return super().get_outgoing_id()
+        return self.first_node_in_starting_nodes.get_outgoing_id()
+
+    def check_if_have_global_id(self):
+        # preserve assumption (8)
+        if self.activation_status == ARNode.FULLY_ACTIVATED_STATUS:
+            return super().check_if_have_global_id()
+        return self.first_node_in_starting_nodes.check_if_have_global_id()
+
+    def calculate_equation_and_constraints(self):
+        # preserve assumption (8)
+        if self.activation_status == ARNode.FULLY_ACTIVATED_STATUS:
+            return super().calculate_equation_and_constraints()
+        return self.first_node_in_starting_nodes.calculate_equation_and_constraints()
+
+    def remove_equation_and_constraints(self):
+        # preserve assumption (8)
+        if self.activation_status == ARNode.FULLY_ACTIVATED_STATUS:
+            return super().remove_equation_and_constraints()
+        return self.first_node_in_starting_nodes.remove_equation_and_constraints()
+
+    def remove_from_global_system(self):
+        # preserve assumption (8)
+        if self.activation_status == ARNode.FULLY_ACTIVATED_STATUS:
+            return super().remove_from_global_system()
+        return self.first_node_in_starting_nodes.remove_from_global_system()
 
     def set_pointer_to_ar_node_nested_in(self, ar_node_location):
         raise NotImplementedError("can not change")
@@ -259,7 +314,8 @@ class ARNode(Node):
 
         return True
 
-    def fully_activate_arnode_without_changing_incoming_edges(self, check_validity_of_activation=True):
+    def fully_activate_arnode_without_changing_incoming_edges(self, global_incoming_id, global_outgoing_id,
+                                                              check_validity_of_activation=True):
         """
         this method fully activates the arnode.
         if the node is already fully activated it does nothing
@@ -289,7 +345,11 @@ class ARNode(Node):
         # finally, set the right activation status
         self.activation_status = ARNode.FULLY_ACTIVATED_STATUS
 
-    def fully_activate_arnode_and_recalculate_incoming_edges(self, function_to_calculate_merger_of_incoming_edges):
+        # finally take control over the global variables
+        self._take_control_over_inner_nodes_global_values(global_incoming_id, global_outgoing_id)
+
+    def fully_activate_arnode_and_recalculate_incoming_edges(self, function_to_calculate_merger_of_incoming_edges,
+                                                             global_incoming_id, global_outgoing_id):
         """
         this method fully activates the arnode.
         if the node is already fully activated it does nothing
@@ -297,11 +357,15 @@ class ARNode(Node):
         otherwise, it connects/reconnects this arnode to all the arnodes containing all the nodes
         which are connected to the starting_node via an outgoing or an incoming edge.
 
+
         :param function_to_calculate_merger_of_incoming_edges:
         a function that receives 2 inputs
         1) a reference to an arnode
         2) a list of weights we are connected to the arnode with
         and returns a new weight for that we will connect to the given arnode with
+
+        :param global_incoming_id:
+        :param global_outgoing_id:
         """
         self.check_if_killed_and_raise_error_if_is()
 
@@ -326,3 +390,6 @@ class ARNode(Node):
 
         # finally, set the right activation status
         self.activation_status = ARNode.FULLY_ACTIVATED_STATUS
+
+        # finally take control over the global variables
+        self._take_control_over_inner_nodes_global_values(global_incoming_id, global_outgoing_id)

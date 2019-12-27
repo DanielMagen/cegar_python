@@ -43,12 +43,12 @@ class Layer:
         # to preserve assumption (2) the first 4 tables must have indices of 0-3 in order, as such give the first table
         # an index of 0 and the create_table_below_of_same_type function of the table class would take care of
         # increasing the index by 1 each turn
-        layer_is_inner = True
+        self.layer_is_inner = True
         if pointer_to_previous_layer == Layer.NO_POINTER_TO_ADJACENT_LAYER or \
                 pointer_to_next_layer == Layer.NO_POINTER_TO_ADJACENT_LAYER:
-            layer_is_inner = False
+            self.layer_is_inner = False
 
-        self.regular_node_tables.append(TableDoesntSupportsDeletion(0, layer_is_inner))
+        self.regular_node_tables.append(TableDoesntSupportsDeletion(0, self.layer_is_inner, self.global_data_manager))
         for i in range(1, Layer.NUMBER_OF_REGULAR_TABLES_THAT_DO_NOT_SUPPORT_DELETION):
             self.regular_node_tables.append(self.regular_node_tables[i - 1].create_table_below_of_same_type())
 
@@ -57,7 +57,7 @@ class Layer:
         self.regular_node_tables.append(unprocessed_table)
 
         # now initialize the arnode_tables
-        self.arnode_tables.append(ARNodeTable(0, layer_is_inner))
+        self.arnode_tables.append(ARNodeTable(0, self.layer_is_inner, self.global_data_manager))
         for i in range(1, Layer.NUMBER_OF_REGULAR_TABLES_THAT_DO_NOT_SUPPORT_DELETION):
             self.arnode_tables.append(self.arnode_tables[i - 1].create_table_below_of_same_type())
 
@@ -332,11 +332,8 @@ class Layer:
         :param function_to_calculate_merger_of_incoming_edges:
         :return:
         """
-        arnode_iterator = self.arnode_tables[table_index].get_iterator_for_all_nodes()
-        for arnode in arnode_iterator:
-            if arnode.get_activation_status() != ARNode.FULLY_ACTIVATED_STATUS:
-                arnode.fully_activate_arnode_and_recalculate_incoming_edges(
-                    function_to_calculate_merger_of_incoming_edges)
+        self.arnode_tables[table_index].fully_activate_table_by_recalculating_incoming_edges(
+            function_to_calculate_merger_of_incoming_edges)
 
     def fully_activate_table_without_changing_incoming_edges(self,
                                                              table_index,
@@ -348,10 +345,8 @@ class Layer:
         :param check_validity_of_activation:
         :return:
         """
-        arnode_iterator = self.arnode_tables[table_index].get_iterator_for_all_nodes()
-        for arnode in arnode_iterator:
-            if arnode.get_activation_status() != ARNode.FULLY_ACTIVATED_STATUS:
-                arnode.fully_activate_arnode_without_changing_incoming_edges(check_validity_of_activation)
+        self.arnode_tables[table_index].fully_activate_table_without_changing_incoming_edges(
+            check_validity_of_activation)
 
     def split_arnode(self, table_number, key_in_table, partition_of_arnode_inner_nodes,
                      function_to_calculate_merger_of_incoming_edges,

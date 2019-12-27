@@ -4,7 +4,7 @@ from src.Nodes.Node import Node
 class AbstractTable:
     NO_NODE_IS_CURRENTLY_BEING_REMOVED = None
 
-    def __init__(self, table_number, layer_is_inner):
+    def __init__(self, table_number, layer_is_inner, global_data_manager):
         """
         :param table_number: the number of the table in the overall table order.
         :param layer_is_inner: a boolean which should be true if the layer this table resides in is an inner layer
@@ -14,6 +14,8 @@ class AbstractTable:
 
         self.layer_is_inner = layer_is_inner
 
+        self.global_data_manager = global_data_manager
+
         # this would help us make sure that moving nodes between tables would never be done without notifying the
         # current parent table
         self.key_of_node_currently_being_removed_from_table = AbstractTable.NO_NODE_IS_CURRENTLY_BEING_REMOVED
@@ -22,7 +24,7 @@ class AbstractTable:
         """
         :return: a tuple of arguments needed to create a table below this table
         """
-        return self.table_number + 1, self.layer_is_inner
+        return self.table_number + 1, self.layer_is_inner, self.global_data_manager
 
     def create_table_below_of_same_type(self):
         """
