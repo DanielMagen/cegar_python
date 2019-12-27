@@ -70,6 +70,8 @@ class Layer:
     @staticmethod
     def type_to_number_of_map(type_of_node):
         """
+        this function is only used for visual understanding for the programmer, it as zero utility use
+
         :param type_of_node: (pos,inc), (pos,dec), (neg,inc), (neg,dec), (unprocessed)
         :return: the number of table corresponding to the type given in the list of 5 tables
         """
@@ -294,6 +296,7 @@ class Layer:
         # now delete the node from the unprocessed table
         unprocessed_table.delete_node(node.get_key_in_table())
 
+        ####################################################################################################### maybe do so only for arnodes which they reside in
         # now calculate the equation and constraints for all nodes created
         for i in range(len(nodes_created)):
             if nodes_created[i] is not None:

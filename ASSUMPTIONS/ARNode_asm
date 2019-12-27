@@ -3,8 +3,7 @@ ARNode assumptions:
 ARNodes are only connected to other ARNode
 
 2)
-ARNodes would contain only nodes from the same table, which are set in stone and have
-the nodes that are connected to them set in stone
+ARNodes would contain only nodes from the same table which are set in stone
 
 3)
 ARNodes can merge with other ARNode, split and change location
@@ -12,7 +11,8 @@ ARNodes can merge with other ARNode, split and change location
 4)
 ARNodes would not split or merge unless they are fully activated
 
-5) nodes have only three activation status: activated, forward (partially) activated, fully activated
+5)
+arnodes have only three activation status: not activated, forward (partially) activated, fully activated
 
 forward activated entails that
 a) all the arnodes which this arnode should be connected to via an outgoing connection have been created
@@ -23,3 +23,23 @@ b) the arnodes that we are connected to by outgoing connections will be fully ac
 
 6)
 -> Node assumptions (5)
+
+7)
+when arnode is first created, if its given a single node to start with it can remain in any activation status as needed.
+but if its created with more than a single node, it must be immediately fully activated.
+
+8)
+until an arnode is fully activated, its global variables would be determined by the first node in the node group
+it contains.
+this is fine because:
+if an arnode with more than one initial node is created in the process of merging or splitting, then from assumption (7)
+it would immediately be fully activated, and as such this assumption (8) won't matter for it.
+
+otherwise if an arnode must be created with only one initial node, and is not fully activated, then by the definition
+of full activation the arnode does not "care" what happens to nodes which are connected to its inner node by an incoming
+connection. in other words the arnode does not care about it incoming connections.
+an arnode must contain only a preprocessed node, but the nodes which are incoming to this preprocessed node have no
+restriction on them and as such could be unprocessed nodes. i.e. the nodes with incoming connections to us could change.
+because the equation of the node can change when its incoming connections are being preprocessed, and only the inner
+node would know about it (since, again, the arnode knows nothing about its incoming connections and won't be notified
+when such a connection changed), we will simply give the control over global events to the inner nodes

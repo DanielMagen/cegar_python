@@ -24,6 +24,19 @@ class ARNode(Node):
                  starting_nodes,
                  table_number,
                  key_in_table):
+        """
+        assumption (7)
+        when arnode is first created, if its given a single node to start with it can remain in any activation
+        status as needed.
+        but if its created with more than a single node, it must be immediately fully activated. this is because only
+        fully activated arnodes can merge and as such contain more than a single inner node. but to allow the
+        program to create a new arnode when splitting or merging arnodes,
+        I allow the arnodes constructor to receive more than one initial inner node.
+
+        :param starting_nodes:
+        :param table_number:
+        :param key_in_table:
+        """
 
         if len(starting_nodes) == 0:
             raise AssertionError("ar node must have at least one starting node")
