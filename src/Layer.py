@@ -225,6 +225,8 @@ class Layer:
         this method would remove the the node from the unprocessed table and replace it with nodes in the
         other tables
         it assumes that all the nodes that this node is connected to by an outgoing connection have been preprocessed
+        and also that all the nodes that should be connected to this node by an incoming connection, have been
+        connected to it
 
         :param function_to_split_edges_data: a function that receives a node and returns a list (lets call it lis)
         of size NUMBER_OF_REGULAR_TABLES_THAT_DO_NOT_SUPPORT_DELETION, such that
@@ -289,10 +291,13 @@ class Layer:
                 current_table.add_or_edit_connection_to_node_by_bulk(new_node_key, Node.INCOMING_EDGE_DIRECTION,
                                                                      incoming_edges_data)
 
-        ################################################################################################################# now give global id to all nodes created
-
         # now delete the node from the unprocessed table
         unprocessed_table.delete_node(node.get_key_in_table())
+
+        # now calculate the equation and constraints for all nodes created
+        for i in range(len(nodes_created)):
+            if nodes_created[i] is not None:
+                nodes_created[i].calculate_equation_and_constraints()
 
         # now create an arnode for all the nodes created to preserve assumption (1)
         for i in range(len(nodes_created)):

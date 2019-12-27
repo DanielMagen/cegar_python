@@ -26,3 +26,6 @@ all the nodes incoming edges connect to nodes which all reside in the same layer
 7)
 the node equation and constraint would be set and deleted together. as such to check if a constraint was set before
 (in the case that a constraint was needed to be set), we could simply check if an equation was set before
+
+8)
+each node equation would be determined by its incoming connections only

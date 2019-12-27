@@ -136,7 +136,7 @@ class Node:
         from assumption (7) the equation and constraint should be set or removed together
         """
         if self.global_incoming_id == Node.NO_GLOBAL_ID or self.global_outgoing_id == Node.NO_GLOBAL_ID:
-            raise Exception("the node was never given a global id and as such could not be given an equation")
+            raise Exception("the node global id has been removed form it and as such could not be given an equation")
 
         # first check if they already exist and if so delete them
         if self.equation != Node.NO_EQUATION:
@@ -200,7 +200,7 @@ class Node:
         3) resets the reference to the marabou_core, input_query and id_manager
         """
         if self.global_incoming_id == Node.NO_GLOBAL_ID or self.global_outgoing_id == Node.NO_GLOBAL_ID:
-            raise Exception("the node was never given a global id")
+            raise Exception("the node global id has already been removed form it")
 
         if self.equation != Node.NO_EQUATION:
             # from assumption (7) the equation and constraint should be set or removed together,
@@ -208,7 +208,8 @@ class Node:
             self.remove_equation_and_constraints()
 
         self.global_data_reference.give_id_back(self.global_incoming_id)
-        self.global_data_reference.give_id_back(self.global_outgoing_id)
+        if self.global_incoming_id != self.global_outgoing_id:
+            self.global_data_reference.give_id_back(self.global_outgoing_id)
 
         self.global_incoming_id = Node.NO_GLOBAL_ID
         self.global_outgoing_id = Node.NO_GLOBAL_ID
@@ -342,9 +343,11 @@ class Node:
                                                                 [connection_data_to_feed_to_neighbor],
                                                                 add_this_node_to_given_node_neighbors=False)
 
-        # finally set system_data_is_valid to False since a connection data was edited and as such if an equation
-        # was calculated before, it is now invalid
-        self.system_data_is_valid = False
+        if direction_of_connection == Node.INCOMING_EDGE_DIRECTION:
+            # set system_data_is_valid to False since an incoming connection data was edited and as such if an equation
+            # was calculated before, it is now invalid
+            # from assumption (8) the equation is affected only by incoming connections
+            self.system_data_is_valid = False
 
     def check_if_neighbor_exists(self, direction_of_connection, neighbor_location_data):
         """
