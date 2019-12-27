@@ -246,6 +246,10 @@ class Layer:
             self._create_arnode_for_node(node)
             return
 
+        # before continuing, since the node is about to be removed, we first remove the node global variables,
+        # including the node global id. we do so at this stage to create as little gaps as possible in the id manager
+        node.remove_from_global_system()
+
         edge_data_split_by_type = function_to_split_edges_data(node)
 
         # now create a new node for each list which isn't empty and insert the node in the right table
@@ -276,6 +280,13 @@ class Layer:
                 new_node_key = nodes_created[i].get_key_in_table()
                 current_table.add_or_edit_connection_to_node_by_bulk(new_node_key, Node.INCOMING_EDGE_DIRECTION,
                                                                      incoming_edges_data)
+
+
+        # now give global id to all nodes created
+
+
+
+
 
         # now delete the node from the unprocessed table
         unprocessed_table.delete_node(node.get_key_in_table())

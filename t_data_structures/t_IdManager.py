@@ -1,6 +1,6 @@
-from src.IdManager import IdManager
+from src.GlobalDataManager import GlobalDataManager
 
-id_giver = IdManager(501)
+id_giver = GlobalDataManager(501)
 id_giver.get_new_id()
 id_giver.get_new_id()
 id_giver.get_new_id()

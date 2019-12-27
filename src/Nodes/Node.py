@@ -55,12 +55,9 @@ class Node:
         # each node would manage the constraint between its 2 global IDs. if the ids are the same, no constraint would
         # be added
         self.constraint = Node.EMPTY_CONSTRAINT
-        # each node would a reference to the
-        # marabou_core, input_query and id_manager objects that are responsible for the system.
-        # this way the node destructor could call them if need be
+        # each node would a reference to the id_manager object which is responsible for the system.
+        # this way the node destructor could call it if need be
         self.id_manager_reference = Node.NO_REFERENCE
-        self.marabou_core_reference = Node.NO_REFERENCE
-        self.input_query_reference = Node.NO_REFERENCE
 
         # this would hold whether the data saved in the system data variables is valid or not
         # it would be invalid if one of (incoming_id, outgoing_id, equation, constraint) is not defined
@@ -111,7 +108,7 @@ class Node:
 
         self.finished_lifetime = True
 
-    def give_node_global_ids(self, incoming_id, outgoing_id, id_manager_reference, marabou_core, input_query):
+    def give_node_global_ids(self, incoming_id, outgoing_id, id_manager_reference):
         """
         each node which is not an input or and output node would be represented by 2 system nodes, which would be
         connected by a relu activation function. those nodes ids are given to the node as incoming_id and outgoing_id.
@@ -120,21 +117,20 @@ class Node:
         :param incoming_id:
         :param outgoing_id:
         :param id_manager_reference:
-        :param marabou_core:
-        :param input_query:
         """
         self.incoming_id = incoming_id
         self.outgoing_id = outgoing_id
 
         self.id_manager_reference = id_manager_reference
-        self.marabou_core_reference = marabou_core
-        self.input_query_reference = input_query
 
     def get_incoming_id(self):
         return self.incoming_id
 
     def get_outgoing_id(self):
         return self.outgoing_id
+
+    def check_if_have_global_id(self):
+        return self.incoming_id != Node.NO_GLOBAL_ID and self.outgoing_id != Node.NO_GLOBAL_ID
 
     def calculate_equation_and_constraints(self):
         """
@@ -155,12 +151,15 @@ class Node:
             self.remove_equation_and_constraints()
 
         # initialize the constraint
+        marabou_core_reference = self.id_manager_reference.get_marabou_core_reference()
+        input_query_reference = self.id_manager_reference.get_input_query_reference()
+
         if self.incoming_id != self.outgoing_id:
-            self.constraint = self.marabou_core_reference.addReluConstraint(self.input_query_reference,
-                                                                            self.incoming_id, self.outgoing_id)
+            self.constraint = marabou_core_reference.addReluConstraint(input_query_reference, self.incoming_id,
+                                                                       self.outgoing_id)
 
         # initialize the equation
-        self.equation = self.marabou_core_reference.Equation()
+        self.equation = marabou_core_reference.Equation()
         # add -1 * yourself
         self.equation.addAddend(-1, self.incoming_id)
 
@@ -176,7 +175,7 @@ class Node:
 
         # finally set the equation to equation to 0 and add the equation to the input query
         self.equation.setScalar(0)
-        self.input_query_reference.addEquation(self.equation)
+        input_query_reference.addEquation(self.equation)
 
         # finally set system_data_is_valid to true since an equation and constraint were initialized
         self.system_data_is_valid = True
@@ -191,8 +190,8 @@ class Node:
             # so its enough to check if the equation was set or not
             raise Exception("the node never set any equation or constraint")
 
-        self.input_query_reference.removeEquation(self.equation)
-        self.marabou_core_reference.removeReluConstraint(self.constraint)
+        self.id_manager_reference.get_input_query_reference().removeEquation(self.equation)
+        self.id_manager_reference.get_marabou_core_reference().removeReluConstraint(self.constraint)
 
         self.equation = Node.NO_EQUATION
         self.constraint = Node.EMPTY_CONSTRAINT
@@ -221,8 +220,6 @@ class Node:
         self.outgoing_id = Node.NO_GLOBAL_ID
 
         self.id_manager_reference = Node.NO_REFERENCE
-        self.marabou_core_reference = Node.NO_REFERENCE
-        self.input_query_reference = Node.NO_REFERENCE
 
         # finally set system_data_is_valid to False since all global system data was removed
         self.system_data_is_valid = False

@@ -1,5 +1,5 @@
-class IdManager:
-    def __init__(self, max_id_non_exclusive):
+class GlobalDataManager:
+    def __init__(self, max_id_non_exclusive, marabou_core, input_query):
         """
         this class would give available ids in increasing order
         :param max_id_non_exclusive: the maximum id that can be given
@@ -12,6 +12,15 @@ class IdManager:
         consecutively as such: a,b,c,d,e,f,...
         """
         self.ranges = [0, max_id_non_exclusive]
+
+        self.marabou_core_reference = marabou_core
+        self.input_query_reference = input_query
+
+    def get_input_query_reference(self):
+        return self.input_query_reference
+
+    def get_marabou_core_reference(self):
+        return self.marabou_core_reference
 
     def _insert_id_into_ranges(self, id_to_insert):
         """
@@ -83,4 +92,20 @@ class IdManager:
                 # delete the irrelevant range end and begin
                 self.ranges = self.ranges[:index_inserted] + self.ranges[index_inserted + 2:]
 
+    def get_maximum_number_used(self):
+        """
+        :return: the maximum id that was given away
+        if no ids were given it returns -1
+        """
+        return self.ranges[-2] - 1
 
+    def reset_number_of_variables_in_input_query(self):
+        """
+        check what is the maximum id that was given away and sets the number of variables in the system to be
+        it + 1
+        :return: how many variables there are in the system right now
+        """
+        num_of_variables_in_system = self.get_maximum_number_used() + 1
+        self.input_query_reference.setNumberOfVariables(num_of_variables_in_system)
+
+        return num_of_variables_in_system

@@ -1,0 +1,5 @@
+1)
+each node would have a unique set of ids that would not intersect any other nodes id set
+
+2)
+Marabou can handle gaps in ids (no sure about that one, but I asked guy)
