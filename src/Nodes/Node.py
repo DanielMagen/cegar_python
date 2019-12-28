@@ -69,7 +69,7 @@ class Node:
         # this would hold whether the data saved in the system data variables is valid or not
         # it would be invalid if one of (incoming_id, outgoing_id, equation, constraint) is not defined
         # or if equation, constraint were calculated before some connection data was changed
-        self.system_data_is_valid = False
+        self.global_data_is_valid = False
 
         # if this value is true then the node can not do any action
         # this value would be deprecated in the cpp implementation, as a call to the destructor would
@@ -124,6 +124,9 @@ class Node:
     def check_if_have_global_id(self):
         return self.global_incoming_id != Node.NO_GLOBAL_ID and self.global_outgoing_id != Node.NO_GLOBAL_ID
 
+    def set_global_data_to_invalid(self):
+        self.global_data_is_valid = False
+
     def calculate_equation_and_constraints(self):
         """
         this function calculates the equation between this node and its incoming nodes
@@ -169,8 +172,8 @@ class Node:
         self.equation.setScalar(0)
         input_query_reference.addEquation(self.equation)
 
-        # finally set system_data_is_valid to true since an equation and constraint were initialized
-        self.system_data_is_valid = True
+        # finally set global_data_is_valid to true since an equation and constraint were initialized
+        self.global_data_is_valid = True
 
     def remove_equation_and_constraints(self):
         """
@@ -189,8 +192,8 @@ class Node:
         self.equation = Node.NO_EQUATION
         self.constraint = Node.EMPTY_CONSTRAINT
 
-        # finally set system_data_is_valid to False since the equation and constraint were removed
-        self.system_data_is_valid = False
+        # finally set global_data_is_valid to False since the equation and constraint were removed
+        self.set_global_data_to_invalid()
 
     def remove_from_global_system(self):
         """
@@ -221,8 +224,8 @@ class Node:
 
         self.global_data_reference = Node.NO_REFERENCE
 
-        # finally set system_data_is_valid to False since all global system data was removed
-        self.system_data_is_valid = False
+        # finally set global_data_is_valid to False since all global system data was removed
+        self.set_global_data_to_invalid()
 
     def refresh_global_variables(self, call_calculate_equation_and_constraints=True):
         """
@@ -247,6 +250,13 @@ class Node:
         it removes this node from the global system and then reinsert it
         if self.global_incoming_id != self.global_outgoing_id it will try to take 2 ids for itself
         otherwise it would try to take only 1
+
+        note that after this function is finished, it calls each and every node which we are connected to via an
+        outgoing connection, and tells it that its global data is not valid
+        (we changed our id so the node which is outgoing from us has an invalid equation).
+        as such when calling this function, to avoid inefficiency, if you need to also refresh nodes which we are
+        connected to by an outgoing connection, its better to refresh us first, because else you will need to
+        recalculate the equations for those nodes more than once.
         """
         if self.global_data_reference == Node.NO_REFERENCE or \
                 self.global_incoming_id == Node.NO_GLOBAL_ID or self.global_outgoing_id == Node.NO_GLOBAL_ID:
@@ -269,6 +279,12 @@ class Node:
 
         if call_calculate_equation_and_constraints:
             self.calculate_equation_and_constraints()
+
+        # now tell all our outgoing connections that their global data is invalid
+        outgoing_connections_iter = self.get_iterator_for_edges_data(Node.OUTGOING_EDGE_DIRECTION)
+        for connection_data in outgoing_connections_iter:
+            node = connection_data[NodeEdges.INDEX_OF_REFERENCE_TO_NODE_CONNECTED_TO_IN_DATA]
+            node.set_global_data_to_invalid()
 
         return Node.NO_REFERENCE
 
@@ -371,7 +387,7 @@ class Node:
         connects this node and the node given in the connection data to each other
         if the connection already exists it overrides it with the new data
 
-        finally, it sets system_data_is_valid to False
+        finally, it sets global_data_is_valid to False
         """
         self.check_if_killed_and_raise_error_if_is()
 
@@ -397,10 +413,10 @@ class Node:
                                                                 add_this_node_to_given_node_neighbors=False)
 
         if direction_of_connection == Node.INCOMING_EDGE_DIRECTION:
-            # set system_data_is_valid to False since an incoming connection data was edited and as such if an equation
+            # set global_data_is_valid to False since an incoming connection data was edited and as such if an equation
             # was calculated before, it is now invalid
             # from assumption (8) the equation is affected only by incoming connections
-            self.system_data_is_valid = False
+            self.set_global_data_to_invalid()
 
     def check_if_neighbor_exists(self, direction_of_connection, neighbor_location_data):
         """
@@ -438,7 +454,7 @@ class Node:
         TAKE GREAT CARE WHEN YOU SET IT TO FALSE, IF YOU DO THAT YOU MUST NOT RELOCATE THIS NODE OR THE NODE YOU
         CONNECTED TO.
 
-        this function also sets system_data_is_valid to False
+        this function also sets global_data_is_valid to False
         """
         self.check_if_killed_and_raise_error_if_is()
 
@@ -456,9 +472,9 @@ class Node:
             node_connected_to.remove_neighbor_from_neighbors_list(-direction_of_connection, self.get_location(),
                                                                   remove_this_node_from_given_node_neighbors_list=False)
 
-        # finally set system_data_is_valid to False since a connection data was edited and as such if an equation
+        # finally set global_data_is_valid to False since a connection data was edited and as such if an equation
         # was calculated before, it is now invalid
-        self.system_data_is_valid = False
+        self.set_global_data_to_invalid()
 
     def get_notified_that_neighbor_location_changed(self, direction_of_connection, previous_location, new_location):
         """
@@ -530,7 +546,7 @@ class Node:
         elif direction == Node.OUTGOING_EDGE_DIRECTION:
             return self.outgoing_edges_manager.get_iterator_over_connections()
 
-    def get_a_list_of_all_incoming_connections_data(self, direction):
+    def get_a_list_of_all_connections_data(self, direction):
         if direction == Node.INCOMING_EDGE_DIRECTION:
             return self.incoming_edges_manager.get_a_list_of_all_connections()
         elif direction == Node.OUTGOING_EDGE_DIRECTION:

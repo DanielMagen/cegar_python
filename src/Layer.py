@@ -286,7 +286,7 @@ class Layer:
                                                                      Node.OUTGOING_EDGE_DIRECTION,
                                                                      edge_data_split_by_type[i])
         # now add all the incoming edges to all the nodes created
-        incoming_edges_data = node.get_a_list_of_all_incoming_connections_data(Node.INCOMING_EDGE_DIRECTION)
+        incoming_edges_data = node.get_a_list_of_all_connections_data(Node.INCOMING_EDGE_DIRECTION)
         for i in range(len(nodes_created)):
             if nodes_created[i] is not None:
                 current_table = self.regular_node_tables[i]

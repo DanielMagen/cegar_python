@@ -1,17 +1,8 @@
 from src.GlobalDataManager import GlobalDataManager
 
 id_giver = GlobalDataManager(501)
-id_giver.get_new_id()
-id_giver.get_new_id()
-id_giver.get_new_id()
-id_giver.get_new_id()
-id_giver.get_new_id()
-id_giver.get_new_id()
-id_giver.get_new_id()
-id_giver.get_new_id()
-id_giver.get_new_id()
-id_giver.get_new_id()
-id_giver.get_new_id()
+for i in range(11):
+    id_giver.get_new_id()
 
 assert id_giver.ranges == [11, 501]
 

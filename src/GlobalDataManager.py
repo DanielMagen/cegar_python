@@ -65,6 +65,7 @@ class GlobalDataManager:
     def give_id_back(self, id_returned):
         """
         :param id_returned: an id that should be marked as available
+        for now this function trusts the user that a correct id was returned (i.e. an id that was given before)
         """
         if id_returned >= self.max_id:
             raise ValueError('the id was never given')
