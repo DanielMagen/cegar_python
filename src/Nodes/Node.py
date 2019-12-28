@@ -224,7 +224,7 @@ class Node:
         # finally set system_data_is_valid to False since all global system data was removed
         self.system_data_is_valid = False
 
-    def refresh_id_and_equation(self):
+    def refresh_global_variables(self):
         """
         :return:
         this function tries to removes this node from the global system and then reinsert it and recalculate an
