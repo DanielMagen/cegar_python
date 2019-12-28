@@ -131,14 +131,14 @@ class Node:
 
         if the equation and constraint already exist, it first deletes them from and then recalculates them
 
-        from assumption (7) the equation and constraint should be set or removed together
+        from assumption (9) the equation and constraint should be set or removed together
         """
         if self.global_incoming_id == Node.NO_GLOBAL_ID or self.global_outgoing_id == Node.NO_GLOBAL_ID:
             raise Exception("the node global id has been removed form it and as such could not be given an equation")
 
         # first check if they already exist and if so delete them
         if self.equation != Node.NO_EQUATION:
-            # from assumption (7) the equation and constraint should be set or removed together,
+            # from assumption (9) the equation and constraint should be set or removed together,
             # so its enough to check if the equation was set or not
             self.remove_equation_and_constraints()
 
@@ -177,7 +177,7 @@ class Node:
         simply remove the equation and constraint from the input query and marabou_core
         and sets them to none in this node
         """
-        # from assumption (7) the equation and constraint should be set or removed together,
+        # from assumption (9) the equation and constraint should be set or removed together,
         # so its enough to check if the equation was set or not
         if self.equation == Node.NO_EQUATION:
             # not much to do, since no equation was set
@@ -208,7 +208,7 @@ class Node:
                                 "when it should have received both")
 
         if self.equation != Node.NO_EQUATION:
-            # from assumption (7) the equation and constraint should be set or removed together,
+            # from assumption (9) the equation and constraint should be set or removed together,
             # so its enough to check if the equation was set or not
             self.remove_equation_and_constraints()
 
@@ -224,8 +224,12 @@ class Node:
         # finally set system_data_is_valid to False since all global system data was removed
         self.system_data_is_valid = False
 
-    def refresh_global_variables(self):
+    def refresh_global_variables(self, call_calculate_equation_and_constraints=True):
         """
+        :param call_calculate_equation_and_constraints: true by default, if true this method calls the
+        calculate_equation_and_constraints method after refreshing the global ids.
+        if false, the node would remain without an equation or constraint after the refreshing has finished.
+
         :return:
         this function tries to removes this node from the global system and then reinsert it and recalculate an
         equation and constraint for the node.
@@ -247,6 +251,7 @@ class Node:
         if self.global_data_reference == Node.NO_REFERENCE or \
                 self.global_incoming_id == Node.NO_GLOBAL_ID or self.global_outgoing_id == Node.NO_GLOBAL_ID:
             if self.is_nested_in_ar_node():
+                # assumption (7)
                 return self.get_pointer_to_ar_node_nested_in()
             else:
                 raise Exception("this node has no global data and is not nested inside any arnode and as "
@@ -262,7 +267,8 @@ class Node:
         if should_create_2_global_ids:
             self.global_outgoing_id = self.global_data_reference.get_new_id()
 
-        self.calculate_equation_and_constraints()
+        if call_calculate_equation_and_constraints:
+            self.calculate_equation_and_constraints()
 
         return Node.NO_REFERENCE
 

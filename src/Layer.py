@@ -13,6 +13,7 @@ class Layer:
     # from assumption (1) all layers have the same number of layers
     NUMBER_OF_OVERALL_TABLES = 5
 
+    # can not change do to assumption (2)
     INDEX_OF_POS_INC_TABLE = 0
     INDEX_OF_POS_DEC_TABLE = 1
     INDEX_OF_NEG_INC_TABLE = 2
@@ -371,6 +372,36 @@ class Layer:
         return self.arnode_tables[table_number].merge_two_arnodes(key_in_table1, key_in_table2,
                                                                   function_to_calculate_merger_of_incoming_edges,
                                                                   function_to_calculate_merger_of_outgoing_edges)
+
+    def refresh_layer_global_variables(self, call_calculate_equation_and_constraints=True):
+        """
+        :param call_calculate_equation_and_constraints: true by default, if true all nodes whould have their
+        equation and constraints calculated after the refresh has finished.
+        refresh all the nodes and arnodes in the layer.
+
+        from assumption (7) this method assumes that all nodes that should have a global id,
+        really do have a global id.
+
+        of course, it does not refresh nodes which are nested inside a fully activated arnode, all nodes which should
+        have a global id
+        """
+        # from assumption (1) all nodes in the non-unprocessed_table would be nested inside an arnode which resides in
+        # the arnodes tables. from assumption (8) its enough to go over the arnodes to get all of the arnodes which
+        # have global data + get all nodes which reside inside an arnode but still hold ownership over their global data
+        # so from assumption (1) all we need to do to affect all nodes in the layer including the arnodes and the
+        # regular nodes, is go through all arnodes tables and the unprocessed_table
+
+        # first iterate over all unprocessed nodes
+        unprocessed_nodes_iter = self.regular_node_tables[Layer.INDEX_OF_UNPROCESSED_TABLE].get_iterator_for_all_nodes()
+
+        for node in unprocessed_nodes_iter:
+            node.refresh_global_variables(call_calculate_equation_and_constraints)
+
+        # now go over all arnodes
+        for arnode_table in self.arnode_tables:
+            arnodes_iter = arnode_table.get_iterator_for_all_nodes()
+            for arnode in arnodes_iter:
+                arnode.refresh_global_variables(call_calculate_equation_and_constraints)
 
     def __str__(self):
         to_return = ''

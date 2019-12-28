@@ -132,7 +132,7 @@ class ARNode(Node):
             return super().remove_from_global_system()
         return self.first_node_in_starting_nodes.remove_from_global_system()
 
-    def refresh_global_variables(self):
+    def refresh_global_variables(self, call_calculate_equation_and_constraints=True):
         """
         :return:
         in contrast to the method from the node class, if we do not succeed refreshing the arnode for some reason,
@@ -141,9 +141,10 @@ class ARNode(Node):
 
         # preserve assumption (8)
         if self.activation_status == ARNode.FULLY_ACTIVATED_STATUS:
-            to_return = super().refresh_global_variables()
+            to_return = super().refresh_global_variables(call_calculate_equation_and_constraints)
         else:
-            to_return = self.first_node_in_starting_nodes.refresh_global_variables()
+            to_return = self.first_node_in_starting_nodes.refresh_global_variables(
+                call_calculate_equation_and_constraints)
 
         if to_return == Node.NO_REFERENCE:
             return to_return

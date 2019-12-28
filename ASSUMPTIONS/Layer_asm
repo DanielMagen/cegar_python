@@ -12,6 +12,7 @@ in the following order:
 each time a node would be inserted into the (pos,inc), (pos,dec), (neg,inc), (neg,dec) tables in the regular node
 tables list, we will create a arnode which would contain it and insert it to the corresponding table in the
 second table list.
+those arnodes would be the only arnodes in the arnodes-tables
 
 2)
 the table number would correspond to the type of nodes it would contain
@@ -34,7 +35,11 @@ nodes can only be connected to nodes in adjacent layers
 only when a node is moved to the (pos,inc), (pos,dec), (neg,inc), (neg,dec) tables would it be set in stone.
 it would never ve set in stone if its in the unprocessed table.
 
+7)
+-> Node assumptions (7)
 
+8)
+-> ARNode assumptions (8)
 
 
 
