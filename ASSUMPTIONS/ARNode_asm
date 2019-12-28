@@ -55,3 +55,10 @@ restriction on them and as such could be unprocessed nodes. i.e. the nodes with 
 because the equation of the node can change when its incoming connections are being preprocessed, and only the inner
 node would know about it (since, again, the arnode knows nothing about its incoming connections and won't be notified
 when such a connection changed), we will simply give the control over global events to the inner nodes
+
+9)
+(a conclusion from layer assumption (9) )
+an arnode does not necessarily have to be connected to only arnodes with the same table number.
+on the face of it it seems like this should be the case since table number corresponds to type (pos-inc,...).
+but the problem is that in layer 0 the never categorize (or split) the input nodes, so those nodes and their arnodes,
+would be connected to a plethora of tables.

@@ -238,25 +238,13 @@ class Layer:
 
         for each node it would insert into a regular table, it would create a corresponding arnode in the arnodes table
         """
+        if self.previous_layer == Layer.NO_POINTER_TO_ADJACENT_LAYER or \
+                self.next_layer == Layer.NO_POINTER_TO_ADJACENT_LAYER:
+            raise Exception("input or output layers nodes cannot be split, "
+                            "call preprocess_entire_layer to prepare the layer for further actions")
+
         unprocessed_table = self.regular_node_tables[Layer.INDEX_OF_UNPROCESSED_TABLE]
         node = unprocessed_table.get_node_by_key(node_key_in_unprocessed_table)
-
-        if node.get_number_of_connections(Node.OUTGOING_EDGE_DIRECTION) == 0:
-            # this node is the output node, simply move it to the POS_INC_TABLE
-            table_to_move_to = self.regular_node_tables[Layer.INDEX_OF_POS_INC_TABLE]
-
-            new_node_key = unprocessed_table.remove_node_from_table_and_relocate_to_other_table(
-                node_key_in_unprocessed_table,
-                table_to_move_to)
-
-            node = table_to_move_to.get_node_by_key(new_node_key)
-
-            # now create a corresponding arnode for the node
-            # note that from conclusion (2), even though its safe to create the arnode for now, it might
-            # not be safe to forward activate or fully activate the arnode, since the node it surrounds might
-            # still be connected to nodes in unprocessed tables
-            self._create_arnode_for_node(node)
-            return
 
         # before continuing, since the node is about to be removed, we first remove the node global variables,
         # including the node global id. we do so at this stage to create as little gaps as possible in the id manager
@@ -307,12 +295,42 @@ class Layer:
             if nodes_created[i] is not None:
                 self._create_arnode_for_node(nodes_created[i])
 
+    def handle_preprocess_of_outer_layers(self):
+        # from assumption (9) we will simply move the nodes to the pos-inc table
+        table_to_move_to = self.regular_node_tables[Layer.INDEX_OF_POS_INC_TABLE]
+
+        unprocessed_table = self.regular_node_tables[Layer.INDEX_OF_UNPROCESSED_TABLE]
+        for unprocessed_node in unprocessed_table.get_iterator_for_all_nodes():
+            new_node_key = unprocessed_table.remove_node_from_table_and_relocate_to_other_table(
+                unprocessed_node.get_key_in_table(),
+                table_to_move_to)
+
+            node = table_to_move_to.get_node_by_key(new_node_key)
+
+            # now create a corresponding arnode for the node
+            # note that from conclusion (2), even though its safe to create the arnode for now, it might
+            # not be safe to forward activate or fully activate the arnode, since the node it surrounds might
+            # still be connected to nodes in unprocessed tables
+            self._create_arnode_for_node(node)
+            return
+
     # perhaps its inefficient, it might be more efficient to recalculate all the edges all at once and create
     # the nodeEdges object from scratch, than deleting all edges one by one
     def preprocess_entire_layer(self):
+        """
+        this function must be called before forward activating or fully activating the layer nodes
+        (even if the layer is the input or output layer)
+        :return:
+        """
         unprocessed_table = self.regular_node_tables[Layer.INDEX_OF_UNPROCESSED_TABLE]
-        for node_key in unprocessed_table.get_list_of_all_keys():
-            self.split_unprocessed_node_to_tables(node_key, Layer.get_split_edge_data_by_types)
+        if self.previous_layer == Layer.NO_POINTER_TO_ADJACENT_LAYER or \
+                self.next_layer == Layer.NO_POINTER_TO_ADJACENT_LAYER:
+            # from assumption (9) we will simply move the nodes to the pos-inc table
+            self.handle_preprocess_of_outer_layers()
+
+        else:
+            for node_key in unprocessed_table.get_list_of_all_keys():
+                self.split_unprocessed_node_to_tables(node_key, Layer.get_split_edge_data_by_types)
 
     def forward_activate_arnode_table(self,
                                       table_index,

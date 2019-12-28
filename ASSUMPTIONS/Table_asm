@@ -9,6 +9,7 @@ in relation to its layer, but there is no need for a node to know its position i
 
 
 3)
+---DEPRECATED---
 the tables in the same layer would be connected by their index values
 such that changing the amount of nodes in a table would change the starting index of all the tables below it.
 

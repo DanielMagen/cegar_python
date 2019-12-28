@@ -41,6 +41,12 @@ it would never ve set in stone if its in the unprocessed table.
 8)
 -> ARNode assumptions (8)
 
+9)
+for the first layer - i.e. a layer which has no previous layer,
+we will arbitrarily decide that the nodes in it are pos-inc and would move them to the pos-inc table when the layer
+is being preprocessed. this entails that their arnodes would also count as pos-inc.
+for the last layer, in accordance to the paper, we catalog it as a pos-inc node
+
 
 
 Layer conclusions:
