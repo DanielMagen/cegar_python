@@ -37,3 +37,6 @@ the node equation and constraint would be set and deleted together. as such to c
 10)
 when a node returns a global id, it returns it without any bounds, constraints and equations
 i.e. "you got a clean id, you will return a clean id"
+
+11)
+inner nodes would have 2 global ids, and outer nodes would have only 1 global id

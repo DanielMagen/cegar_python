@@ -83,8 +83,14 @@ class ARNode(Node):
     def _take_control_over_inner_nodes_global_values(self, global_incoming_id, global_outgoing_id):
         """
         this function should only be called once the arnode is fully activated
-        it removes all of the inner nodes global variables and sets this arnode global variables to be the given values.
-        in addition, it also calculates the arnode equation and constraint.
+        it does the following:
+        1) it removes all of the inner nodes global variables
+        2) it sets this arnode global variables to be the given values.
+        3) it calculates the arnode equation and constraint.
+        4) it calculates max (lower bounds for all inner nodes which have bounds)
+        and sets it as the arnode lower bound. if no nodes exist, it sets self.has_bounds to false
+        5) it calculates min (upper bounds for all inner nodes which have bounds)
+        and sets it as the arnode upper bound. if no nodes exist, it sets self.has_bounds to false
 
         :param global_incoming_id:
         :param global_outgoing_id:
@@ -96,17 +102,43 @@ class ARNode(Node):
 
         self.calculate_equation_and_constraints()
 
-    def get_incoming_id(self):
-        # preserve assumption (8)
-        if self.activation_status == ARNode.FULLY_ACTIVATED_STATUS:
-            return super().get_incoming_id()
-        return self.first_node_in_starting_nodes.get_incoming_id()
+        # no calculate arnode bounds
+        inner_nodes_which_have_bounds = []
+        for node in self.inner_nodes:
+            if node.has_bounds:
+                inner_nodes_which_have_bounds.append(node)
 
-    def get_outgoing_id(self):
+        if len(inner_nodes_which_have_bounds) == 0:
+            self.has_bounds = False
+            return
+
+        input_query_reference = self.global_data_manager.get_input_query_reference()
+        max_lower_bound = input_query_reference.getLowerBound(inner_nodes_which_have_bounds[0].get_global_incoming_id)
+        min_upper_bound = input_query_reference.getUpperBound(inner_nodes_which_have_bounds[0].get_global_incoming_id)
+
+        for i in range(1, len(inner_nodes_which_have_bounds)):
+            node = inner_nodes_which_have_bounds[i]
+            current_lower_bound = input_query_reference.getLowerBound(node.get_global_incoming_id)
+            current_upper_bound = input_query_reference.getUpperBound(node.get_global_incoming_id)
+
+            if current_lower_bound > max_lower_bound:
+                max_lower_bound = current_lower_bound
+            if current_upper_bound < min_upper_bound:
+                min_upper_bound = current_upper_bound
+
+        self.set_lower_and_upper_bound(max_lower_bound, min_upper_bound)
+
+    def get_global_incoming_id(self):
         # preserve assumption (8)
         if self.activation_status == ARNode.FULLY_ACTIVATED_STATUS:
-            return super().get_outgoing_id()
-        return self.first_node_in_starting_nodes.get_outgoing_id()
+            return super().get_global_incoming_id()
+        return self.first_node_in_starting_nodes.get_global_incoming_id()
+
+    def get_global_outgoing_id(self):
+        # preserve assumption (8)
+        if self.activation_status == ARNode.FULLY_ACTIVATED_STATUS:
+            return super().get_global_outgoing_id()
+        return self.first_node_in_starting_nodes.get_global_outgoing_id()
 
     def check_if_have_global_id(self):
         # preserve assumption (8)

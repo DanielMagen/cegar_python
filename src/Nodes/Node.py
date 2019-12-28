@@ -67,10 +67,11 @@ class Node:
         self.constraint = Node.EMPTY_CONSTRAINT
         self.has_bounds = False
 
-        # this would hold whether the data saved in the system data variables is valid or not
-        # it would be invalid if one of (incoming_id, outgoing_id, equation, constraint) is not defined
-        # or if equation, constraint were calculated before some connection data was changed
-        self.global_data_is_valid = False
+        # this variable would be set to false if we know that the equation that the node set is no longer correct
+        # for example, if an incoming neighbor changed its global id for some reason, then the equation we calculated
+        # is no longer correct
+        # if the variable has no equation then it is set to True
+        self.global_equation_is_valid = True
 
         # if this value is true then the node can not do any action
         # this value would be deprecated in the cpp implementation, as a call to the destructor would
@@ -116,17 +117,20 @@ class Node:
 
         self.finished_lifetime = True
 
-    def get_incoming_id(self):
+    def get_global_incoming_id(self):
         return self.global_incoming_id
 
-    def get_outgoing_id(self):
+    def get_global_outgoing_id(self):
         return self.global_outgoing_id
 
     def check_if_have_global_id(self):
         return self.global_incoming_id != Node.NO_GLOBAL_ID and self.global_outgoing_id != Node.NO_GLOBAL_ID
 
-    def set_global_data_to_invalid(self):
-        self.global_data_is_valid = False
+    def set_global_equation_to_invalid(self):
+        self.global_equation_is_valid = False
+
+    def check_if_have_global_equation_is_valid(self):
+        return self.global_equation_is_valid
 
     def set_lower_and_upper_bound(self, lower_bound, upper_bound):
         """
@@ -172,11 +176,20 @@ class Node:
             # so its enough to check if the equation was set or not
             self.remove_equation_and_constraints()
 
-        # initialize the constraint
         marabou_core_reference = self.global_data_manager.get_marabou_core_reference()
         input_query_reference = self.global_data_manager.get_input_query_reference()
 
-        if self.global_incoming_id != self.global_outgoing_id:
+        # before starting, check if the node you are about to add an equation and constraint to is an inner
+        # or an outer node. according to assumption (11) an outer node can only have 1 global id
+        if self.global_incoming_id == self.global_outgoing_id:
+            # check if we are in the input or output node
+            if self.incoming_edges_manager.has_no_connections():
+                # we are in the input layer, no need to assign any equations
+                # setting self.global_equation_is_valid = True was done by remove_equation_and_constraints
+                # so simply return
+                return
+        else:
+            # initialize the relu constraint between them
             self.constraint = marabou_core_reference.addReluConstraint(input_query_reference, self.global_incoming_id,
                                                                        self.global_outgoing_id)
 
@@ -186,12 +199,12 @@ class Node:
         self.equation.addAddend(-1, self.global_incoming_id)
 
         # now go through all incoming nodes and add weight * node_id to the equation
-        iterator_over_connections = self.incoming_edges_manager.get_iterator_over_connections()
+        iterator_over_incoming_connections = self.incoming_edges_manager.get_iterator_over_connections()
 
-        for connection_data in iterator_over_connections:
+        for connection_data in iterator_over_incoming_connections:
             weight = connection_data[NodeEdges.INDEX_OF_WEIGHT_IN_DATA]
             id_of_incoming_node = connection_data[
-                NodeEdges.INDEX_OF_REFERENCE_TO_NODE_CONNECTED_TO_IN_DATA].get_outgoing_id()
+                NodeEdges.INDEX_OF_REFERENCE_TO_NODE_CONNECTED_TO_IN_DATA].get_global_outgoing_id()
 
             self.equation.addAddend(weight, id_of_incoming_node)
 
@@ -199,8 +212,8 @@ class Node:
         self.equation.setScalar(0)
         input_query_reference.addEquation(self.equation)
 
-        # finally set global_data_is_valid to true since an equation and constraint were initialized
-        self.global_data_is_valid = True
+        # finally set global_equation_is_valid to true since an equation and constraint were updated
+        self.global_equation_is_valid = True
 
     def remove_equation_and_constraints(self):
         """
@@ -219,8 +232,8 @@ class Node:
         self.equation = Node.NO_EQUATION
         self.constraint = Node.EMPTY_CONSTRAINT
 
-        # finally set global_data_is_valid to False since the equation and constraint were removed
-        self.set_global_data_to_invalid()
+        # finally set global_equation_is_valid to True since the equation and constraint were removed
+        self.global_equation_is_valid = True
 
     def remove_from_global_system(self):
         """
@@ -256,9 +269,6 @@ class Node:
         self.global_outgoing_id = Node.NO_GLOBAL_ID
 
         self.global_data_manager = Node.NO_REFERENCE
-
-        # finally set global_data_is_valid to False since all global system data was removed
-        self.set_global_data_to_invalid()
 
     def refresh_global_variables(self, call_calculate_equation_and_constraints=True):
         """
@@ -317,7 +327,7 @@ class Node:
         outgoing_connections_iter = self.get_iterator_for_edges_data(Node.OUTGOING_EDGE_DIRECTION)
         for connection_data in outgoing_connections_iter:
             node = connection_data[NodeEdges.INDEX_OF_REFERENCE_TO_NODE_CONNECTED_TO_IN_DATA]
-            node.set_global_data_to_invalid()
+            node.set_global_equation_to_invalid()
 
         return Node.NO_REFERENCE
 
@@ -420,7 +430,8 @@ class Node:
         connects this node and the node given in the connection data to each other
         if the connection already exists it overrides it with the new data
 
-        finally, it sets global_data_is_valid to False
+        finally, it sets global_equation_is_valid of all the nodes we are connected to by an outgoing connection
+        to False
         """
         self.check_if_killed_and_raise_error_if_is()
 
@@ -446,10 +457,10 @@ class Node:
                                                                 add_this_node_to_given_node_neighbors=False)
 
         if direction_of_connection == Node.INCOMING_EDGE_DIRECTION:
-            # set global_data_is_valid to False since an incoming connection data was edited and as such if an equation
-            # was calculated before, it is now invalid
+            # set global_equation_is_valid to False since an incoming connection data was edited and as
+            # such if an equation was calculated before, it is now invalid
             # from assumption (8) the equation is affected only by incoming connections
-            self.set_global_data_to_invalid()
+            self.set_global_equation_to_invalid()
 
     def check_if_neighbor_exists(self, direction_of_connection, neighbor_location_data):
         """
@@ -487,7 +498,7 @@ class Node:
         TAKE GREAT CARE WHEN YOU SET IT TO FALSE, IF YOU DO THAT YOU MUST NOT RELOCATE THIS NODE OR THE NODE YOU
         CONNECTED TO.
 
-        this function also sets global_data_is_valid to False
+        this function also sets global_equation_is_valid to False
         """
         self.check_if_killed_and_raise_error_if_is()
 
@@ -505,9 +516,9 @@ class Node:
             node_connected_to.remove_neighbor_from_neighbors_list(-direction_of_connection, self.get_location(),
                                                                   remove_this_node_from_given_node_neighbors_list=False)
 
-        # finally set global_data_is_valid to False since a connection data was edited and as such if an equation
+        # finally set global_equation_is_valid to False since a connection data was edited and as such if an equation
         # was calculated before, it is now invalid
-        self.set_global_data_to_invalid()
+        self.set_global_equation_to_invalid()
 
     def get_notified_that_neighbor_location_changed(self, direction_of_connection, previous_location, new_location):
         """

@@ -22,6 +22,16 @@ class NodeEdges:
         # such that map[key_in_table] = (weight of edge, reference to the node connected to)
         self.list_of_tables = [{} for _ in range(number_of_tables_in_layer_connected_to)]
 
+    def has_no_connections(self):
+        """
+        :return: true if the NodeEdges object has no connections
+        """
+        for table in self.list_of_tables:
+            if len(table) != 0:
+                return True
+
+        return False
+
     def get_number_of_connections(self):
         number_of_connections = 0
         for table in self.list_of_tables:
