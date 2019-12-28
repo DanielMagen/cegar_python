@@ -58,13 +58,14 @@ class Node:
         self.global_outgoing_id = global_outgoing_id
         # each node would a reference to the id_manager object which is responsible for the system.
         # the node destructor would call it if need be
-        self.global_data_reference = global_data_manager
+        self.global_data_manager = global_data_manager
 
         # each node would manage the equation that links it to its incoming nodes
         self.equation = Node.NO_EQUATION
         # each node would manage the constraint between its 2 global IDs. if the ids are the same, no constraint would
         # be added
         self.constraint = Node.EMPTY_CONSTRAINT
+        self.has_bounds = False
 
         # this would hold whether the data saved in the system data variables is valid or not
         # it would be invalid if one of (incoming_id, outgoing_id, equation, constraint) is not defined
@@ -127,6 +128,32 @@ class Node:
     def set_global_data_to_invalid(self):
         self.global_data_is_valid = False
 
+    def set_lower_and_upper_bound(self, lower_bound, upper_bound):
+        """
+        sets lower and upper bound on the node global_incoming_id
+        :param lower_bound:
+        :param upper_bound:
+        :return:
+        """
+        if self.global_incoming_id == Node.NO_GLOBAL_ID:
+            raise Exception("can not set lower and upper bound without a valid global id")
+
+        input_query_reference = self.global_data_manager.get_input_query_reference()
+        input_query_reference.setLowerBound(self.global_incoming_id, lower_bound)
+        input_query_reference.setUpperBound(self.global_incoming_id, upper_bound)
+
+        self.has_bounds = True
+
+    def remove_node_bounds(self):
+        if self.global_incoming_id == Node.NO_GLOBAL_ID:
+            raise Exception("can not remove lower and upper bound without a valid global id")
+        input_query_reference = self.global_data_manager.get_input_query_reference()
+        # for now this function does not exist, but I think that creating one should be ok, its just a map object
+        # and we can delete form it at ease
+        input_query_reference.removeBounds(self.global_incoming_id)
+
+        self.has_bounds = False
+
     def calculate_equation_and_constraints(self):
         """
         this function calculates the equation between this node and its incoming nodes
@@ -146,8 +173,8 @@ class Node:
             self.remove_equation_and_constraints()
 
         # initialize the constraint
-        marabou_core_reference = self.global_data_reference.get_marabou_core_reference()
-        input_query_reference = self.global_data_reference.get_input_query_reference()
+        marabou_core_reference = self.global_data_manager.get_marabou_core_reference()
+        input_query_reference = self.global_data_manager.get_input_query_reference()
 
         if self.global_incoming_id != self.global_outgoing_id:
             self.constraint = marabou_core_reference.addReluConstraint(input_query_reference, self.global_incoming_id,
@@ -186,8 +213,8 @@ class Node:
             # not much to do, since no equation was set
             return
 
-        self.global_data_reference.get_input_query_reference().removeEquation(self.equation)
-        self.global_data_reference.get_marabou_core_reference().removeReluConstraint(self.constraint)
+        self.global_data_manager.get_input_query_reference().removeEquation(self.equation)
+        self.global_data_manager.get_marabou_core_reference().removeReluConstraint(self.constraint)
 
         self.equation = Node.NO_EQUATION
         self.constraint = Node.EMPTY_CONSTRAINT
@@ -204,25 +231,31 @@ class Node:
         if self.global_incoming_id == Node.NO_GLOBAL_ID or self.global_outgoing_id == Node.NO_GLOBAL_ID:
             if self.global_incoming_id == Node.NO_GLOBAL_ID and self.global_outgoing_id == Node.NO_GLOBAL_ID:
                 # not much to do, since no global variables were set
-                self.global_data_reference = Node.NO_REFERENCE
+                self.global_data_manager = Node.NO_REFERENCE
                 return
             else:
                 raise Exception("the node was given a only a 1 of the global_incoming_id, global_outgoing_id "
                                 "when it should have received both")
 
+        # to preserve assumption (10)
+        # before giving back the ids remove all bounds, constraints and equations involving it
         if self.equation != Node.NO_EQUATION:
             # from assumption (9) the equation and constraint should be set or removed together,
             # so its enough to check if the equation was set or not
             self.remove_equation_and_constraints()
 
-        self.global_data_reference.give_id_back(self.global_incoming_id)
+        if self.has_bounds:
+            self.remove_node_bounds()
+            self.has_bounds = False
+
+        self.global_data_manager.give_id_back(self.global_incoming_id)
         if self.global_incoming_id != self.global_outgoing_id:
-            self.global_data_reference.give_id_back(self.global_outgoing_id)
+            self.global_data_manager.give_id_back(self.global_outgoing_id)
 
         self.global_incoming_id = Node.NO_GLOBAL_ID
         self.global_outgoing_id = Node.NO_GLOBAL_ID
 
-        self.global_data_reference = Node.NO_REFERENCE
+        self.global_data_manager = Node.NO_REFERENCE
 
         # finally set global_data_is_valid to False since all global system data was removed
         self.set_global_data_to_invalid()
@@ -258,7 +291,7 @@ class Node:
         connected to by an outgoing connection, its better to refresh us first, because else you will need to
         recalculate the equations for those nodes more than once.
         """
-        if self.global_data_reference == Node.NO_REFERENCE or \
+        if self.global_data_manager == Node.NO_REFERENCE or \
                 self.global_incoming_id == Node.NO_GLOBAL_ID or self.global_outgoing_id == Node.NO_GLOBAL_ID:
             if self.is_nested_in_ar_node():
                 # assumption (7)
@@ -267,15 +300,15 @@ class Node:
                 raise Exception("this node has no global data and is not nested inside any arnode and as "
                                 "such could not be refreshed")
 
-        global_data_reference_backup = self.global_data_reference
+        global_data_reference_backup = self.global_data_manager
         should_create_2_global_ids = (self.global_incoming_id != self.global_outgoing_id)
         self.remove_from_global_system()
 
-        self.global_data_reference = global_data_reference_backup
-        self.global_incoming_id = self.global_data_reference.get_new_id()
+        self.global_data_manager = global_data_reference_backup
+        self.global_incoming_id = self.global_data_manager.get_new_id()
         self.global_outgoing_id = self.global_incoming_id
         if should_create_2_global_ids:
-            self.global_outgoing_id = self.global_data_reference.get_new_id()
+            self.global_outgoing_id = self.global_data_manager.get_new_id()
 
         if call_calculate_equation_and_constraints:
             self.calculate_equation_and_constraints()
