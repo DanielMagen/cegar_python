@@ -132,6 +132,24 @@ class ARNode(Node):
             return super().remove_from_global_system()
         return self.first_node_in_starting_nodes.remove_from_global_system()
 
+    def refresh_id_and_equation(self):
+        """
+        :return:
+        in contrast to the method from the node class, if we do not succeed refreshing the arnode for some reason,
+        we always raise an exception, and when we succeed we always return Node.NO_REFERENCE
+        """
+
+        # preserve assumption (8)
+        if self.activation_status == ARNode.FULLY_ACTIVATED_STATUS:
+            to_return = super().refresh_id_and_equation()
+        else:
+            to_return = self.first_node_in_starting_nodes.refresh_id_and_equation()
+
+        if to_return == Node.NO_REFERENCE:
+            return to_return
+
+        raise Exception("arnode was not able to be refreshed")
+
     def set_pointer_to_ar_node_nested_in(self, ar_node_location):
         raise NotImplementedError("can not change")
 
@@ -139,6 +157,7 @@ class ARNode(Node):
         return self
 
     def is_nested_in_ar_node(self):
+        # not sure if to set it to true or false, I need to see what effects this have on the program
         return True
 
     def set_in_stone(self):

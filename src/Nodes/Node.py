@@ -224,16 +224,13 @@ class Node:
         # finally set system_data_is_valid to False since all global system data was removed
         self.system_data_is_valid = False
 
-    def refresh_id_and_equation(self, were_sure_its_this_node=False):
+    def refresh_id_and_equation(self):
         """
-        :param were_sure_its_this_node: False by default
         :return:
         this function tries to removes this node from the global system and then reinsert it and recalculate an
         equation and constraint for the node.
 
-        if the node has no global data and were_sure_its_this_node is set to True it raises an exception
-
-        otherwise, if the node has no global data and is not nested inside an arnode it raises an exception.
+        if the node has no global data and is not nested inside an arnode it raises an exception.
 
         otherwise, if the node has no global data and is nested inside an arnode this method does nothing
         and returns a reference to the arnode the node is nested in. this is because this method assumes that
@@ -249,8 +246,6 @@ class Node:
         """
         if self.global_data_reference == Node.NO_REFERENCE or \
                 self.global_incoming_id == Node.NO_GLOBAL_ID or self.global_outgoing_id == Node.NO_GLOBAL_ID:
-            if were_sure_its_this_node:
-                raise Exception("this node has no global data but we were sure it must have")
             if self.is_nested_in_ar_node():
                 return self.get_pointer_to_ar_node_nested_in()
             else:
