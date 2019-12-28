@@ -10,8 +10,6 @@ class Node:
     INCOMING_EDGE_DIRECTION = -1
     OUTGOING_EDGE_DIRECTION = 1
 
-    NO_AR_NODE_CONTAINER = None
-
     NO_GLOBAL_ID = -1
     NO_EQUATION = None
     EMPTY_CONSTRAINT = None
@@ -48,7 +46,7 @@ class Node:
         self.outgoing_edges_manager = NodeEdges(number_of_tables_in_next_layer)
 
         # when you implement this is cpp have this be a void* pointer to avoid circular dependencies
-        self.pointer_to_ar_node_nested_in = Node.NO_AR_NODE_CONTAINER
+        self.pointer_to_ar_node_nested_in = Node.NO_REFERENCE
 
         # later when we will wrap this node in an ar_node, this value would have to be false
         self.node_can_change_location = True
@@ -226,6 +224,53 @@ class Node:
         # finally set system_data_is_valid to False since all global system data was removed
         self.system_data_is_valid = False
 
+    def refresh_id_and_equation(self, were_sure_its_this_node=False):
+        """
+        :param were_sure_its_this_node: False by default
+        :return:
+        this function tries to removes this node from the global system and then reinsert it and recalculate an
+        equation and constraint for the node.
+
+        if the node has no global data and were_sure_its_this_node is set to True it raises an exception
+
+        otherwise, if the node has no global data and is not nested inside an arnode it raises an exception.
+
+        otherwise, if the node has no global data and is nested inside an arnode this method does nothing
+        and returns a reference to the arnode the node is nested in. this is because this method assumes that
+        if such a case is met then we are fulfilling arnode assumption (8), i.e. this node has given up any
+        authority to decide what the global variables are and the decision is entirely up to the arnode its nested in.
+
+        otherwise, after the method is over it returns Node.NO_REFERENCE
+
+        it assumes that this node currently has a valid global data manager
+        it removes this node from the global system and then reinsert it
+        if self.global_incoming_id != self.global_outgoing_id it will try to take 2 ids for itself
+        otherwise it would try to take only 1
+        """
+        if self.global_data_reference == Node.NO_REFERENCE or \
+                self.global_incoming_id == Node.NO_GLOBAL_ID or self.global_outgoing_id == Node.NO_GLOBAL_ID:
+            if were_sure_its_this_node:
+                raise Exception("this node has no global data but we were sure it must have")
+            if self.is_nested_in_ar_node():
+                return self.get_pointer_to_ar_node_nested_in()
+            else:
+                raise Exception("this node has no global data and is not nested inside any arnode and as "
+                                "such could not be refreshed")
+
+        global_data_reference_backup = self.global_data_reference
+        should_create_2_global_ids = (self.global_incoming_id != self.global_outgoing_id)
+        self.remove_from_global_system()
+
+        self.global_data_reference = global_data_reference_backup
+        self.global_incoming_id = self.global_data_reference.get_new_id()
+        self.global_outgoing_id = self.global_incoming_id
+        if should_create_2_global_ids:
+            self.global_outgoing_id = self.global_data_reference.get_new_id()
+
+        self.calculate_equation_and_constraints()
+
+        return Node.NO_REFERENCE
+
     def set_in_stone(self):
         # from assumption (3)
         self.node_can_change_location = False
@@ -269,10 +314,10 @@ class Node:
     # when you implement this in cpp have another way to check if the pointer is valid. I remember we saw some way to
     # have the pointer be null or 0 in cpp
     def reset_ar_node_nested_in(self):
-        self.pointer_to_ar_node_nested_in = Node.NO_AR_NODE_CONTAINER
+        self.pointer_to_ar_node_nested_in = Node.NO_REFERENCE
 
     def is_nested_in_ar_node(self):
-        return self.pointer_to_ar_node_nested_in is not Node.NO_AR_NODE_CONTAINER
+        return self.pointer_to_ar_node_nested_in is not Node.NO_REFERENCE
 
     def get_location(self):
         """

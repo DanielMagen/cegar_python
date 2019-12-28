@@ -27,7 +27,7 @@ b) the arnodes that we are connected to by outgoing connections will be fully ac
 7)
 when arnode is first created, if its given a single node to start with it can remain in any activation status as needed.
 but if its created with more than a single node, it must be immediately fully activated.
-also, all arnode which are cread in the process of splitting and merging must be immediately fully activated
+also, all arnode which are created in the process of splitting and merging must be immediately fully activated
 
 8)
 until an arnode is fully activated, its global variables would be determined by the first node in the node group

@@ -184,7 +184,7 @@ class ARNode(Node):
             for edge_data in node.get_iterator_for_edges_data(direction_of_connection):
                 _, _, weight, node_connected_to = edge_data
                 arnode_connected_to = node_connected_to.get_pointer_to_ar_node_nested_in()
-                if arnode_connected_to == Node.NO_AR_NODE_CONTAINER:
+                if arnode_connected_to == Node.NO_REFERENCE:
                     # assumption (1) is violated, we can't find an arnode to link to
                     raise AssertionError("can not activate arnode because a connection can not link into any"
                                          "existent arnode")
@@ -277,7 +277,7 @@ class ARNode(Node):
             for edge_data in node.get_iterator_for_edges_data(direction_of_connection):
                 _, _, _, node_connected_to = edge_data
                 arnode_connected_to = node_connected_to.get_pointer_to_ar_node_nested_in()
-                if arnode_connected_to == Node.NO_AR_NODE_CONTAINER:
+                if arnode_connected_to == Node.NO_REFERENCE:
                     # assumption (1) is violated, we can't find an arnode to link to
                     raise AssertionError("can not activate arnode because an incoming connection can not link into any"
                                          "existent arnode")
@@ -297,7 +297,7 @@ class ARNode(Node):
             for edge_data in node.get_iterator_for_edges_data(direction_of_connection):
                 _, _, _, node_connected_to = edge_data
                 arnode_connected_to = node_connected_to.get_pointer_to_ar_node_nested_in()
-                if arnode_connected_to == Node.NO_AR_NODE_CONTAINER:
+                if arnode_connected_to == Node.NO_REFERENCE:
                     # assumption (1) is violated, we can't find an arnode to link to
                     raise AssertionError("can not activate arnode because an incoming connection can not link into any"
                                          "existent arnode")
