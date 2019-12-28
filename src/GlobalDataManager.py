@@ -1,4 +1,13 @@
 class GlobalDataManager:
+    LOCATION_OF_LARGEST_AVAILABLE_ID = -2
+    LENGTH_OF_SIMPLE_RANGE = 2  # if self.ranges is of that length then its of the form [a, max]
+
+    """
+    currently this class does not support reaching the end of its available id range.
+    if we exhaust the ids, then the class behavior is no defined. it would make errors. 
+    so do not exhaust the id ranges in it!
+    """
+
     def __init__(self, max_id_non_exclusive, marabou_core, input_query):
         """
         this class would give available ids in increasing order
@@ -21,6 +30,32 @@ class GlobalDataManager:
 
     def get_marabou_core_reference(self):
         return self.marabou_core_reference
+
+    def _check_if_ranges_has_holes(self):
+        """
+        :return: true if the range of free ids has holes in it, i.e. if self.ranges is not
+        of the form [a, max_id_non_exclusive]
+        """
+        # since the only time the ranges wont have holes is when it is in the form [a, max_id_non_exclusive]
+        # we simply need to check if its length is different than 2
+        return len(self.ranges) != 2
+
+    def _set_artificial_bounds_on_a_hole_id(self, hole_id):
+        """
+        :param hole_id: an id that is currently in the range of possible ids to give, such that its presence makes
+        a hole in self.ranges
+        it artificially sets a bound of 0,0 on it
+        """
+        self.input_query_reference.setLowerBound(hole_id, 0)
+        self.input_query_reference.setUpperBound(hole_id, 0)
+
+    def _remove_artificial_bounds_on_a_hole_id(self, hole_id):
+        """
+        :param hole_id: an id that is currently in the range of possible ids to give, such that its presence makes
+        a hole in self.ranges
+        removes the artificial bounds that were set on the hole id
+        """
+        self.input_query_reference.removeBounds(hole_id)
 
     def _insert_id_into_ranges(self, id_to_insert):
         """
@@ -53,13 +88,19 @@ class GlobalDataManager:
         if len(self.ranges) == 0:
             raise ValueError('there are no available ids')
 
+        ranges_has_holes = self._check_if_ranges_has_holes()
+
         to_return = self.ranges[0]
         self.ranges[0] += 1
 
-        # check if you
+        # check if the first range is finished, if so, remove it
         if self.ranges[0] == self.ranges[1]:
             self.ranges = self.ranges[2:]
 
+        if ranges_has_holes:
+            # then the id we are going to return is a hole id.
+            # we need to remove the artificial bounds that were set on it
+            self._remove_artificial_bounds_on_a_hole_id(to_return)
         return to_return
 
     def give_id_back(self, id_returned):
@@ -69,6 +110,9 @@ class GlobalDataManager:
         """
         if id_returned >= self.max_id:
             raise ValueError('the id was never given')
+
+        length_of_ranges_before_insertion = len(self.ranges)
+        largest_available_id_before_insertion = self.ranges[GlobalDataManager.LOCATION_OF_LARGEST_AVAILABLE_ID]
 
         index_inserted = self._insert_id_into_ranges(id_returned)
 
@@ -93,12 +137,40 @@ class GlobalDataManager:
                 # delete the irrelevant range end and begin
                 self.ranges = self.ranges[:index_inserted] + self.ranges[index_inserted + 2:]
 
+        # before finishing there are a couple of checks to make.
+        # first check if the id_returned merged the 2 final ranges
+        # (for example ranges was [0,1,5,9,10,max] and we inserted 9 then now ranges is [0,1,5,max])
+        # if that happened then we can reduce the number of variables in the input query
+        # (for example, in the state [0,1,5,9,10,max] we held ids 5,6,7,8 as hole ids, and after inserting 9
+        # we can reduce the number of used variables in the input query to 5 (0,1,2,3,4) (with 0 being a hole id))
+        if length_of_ranges_before_insertion > 2:
+            # if the length_of_ranges_before_insertion was 2 then we couldn't have "merge the 2 final ranges"
+            # since there were no 2 final ranges
+            current_largest_available_id = self.ranges[GlobalDataManager.LOCATION_OF_LARGEST_AVAILABLE_ID]
+            if largest_available_id_before_insertion != current_largest_available_id:
+                # then the final range [a, max] was changed, and the only way it could have changed is by merging
+                # the 2 final ranges. so we get rid of all unnecessary variables
+                # since all the ids we are about to return were hole ids,
+                for i in range(current_largest_available_id, largest_available_id_before_insertion):
+                    self._remove_artificial_bounds_on_a_hole_id(i)
+                # now reset the number of used variables
+                self.reset_number_of_variables_in_input_query()
+        else:
+            # check for holes
+            if len(self.ranges) == GlobalDataManager.LENGTH_OF_SIMPLE_RANGE:
+                # then the id we inserted did not create a new hole, i.e. it was the largest id given
+                # so we can simply reduce the number of used variables by 1 (since we gave up our largest used id)
+                self.reset_number_of_variables_in_input_query()
+            else:
+                # the inserted id should be treated as a hole id
+                self._set_artificial_bounds_on_a_hole_id(id_returned)
+
     def get_maximum_number_used(self):
         """
         :return: the maximum id that was given away
         if no ids were given it returns -1
         """
-        return self.ranges[-2] - 1
+        return self.ranges[GlobalDataManager.LOCATION_OF_LARGEST_AVAILABLE_ID] - 1
 
     def set_number_of_variables(self, number_of_variables):
         self.input_query_reference.setNumberOfVariables(number_of_variables)
