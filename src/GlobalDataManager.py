@@ -25,7 +25,7 @@ class GlobalDataManager:
         """
         self.ranges = [0, max_id_non_exclusive]
 
-        self.input_query_reference = MarabouCore..InputQuery()
+        self.input_query_reference = MarabouCore.InputQuery()
 
     def get_input_query_reference(self):
         """

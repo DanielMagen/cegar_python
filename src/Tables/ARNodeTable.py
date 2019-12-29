@@ -97,9 +97,8 @@ class ARNodeTable(TableSupportsDeletion):
             new_arnode.fully_activate_arnode_and_recalculate_incoming_edges(
                 function_to_calculate_merger_of_incoming_edges, *super()._get_ids_for_new_node(self.global_data_manager))
 
-    def merge_two_arnodes(self,
-                          key_of_arnode1,
-                          key_of_arnode2,
+    def merge_list_of_arnodes(self,
+                          list_of_keys_of_arnodes_to_merge,
                           function_to_calculate_merger_of_incoming_edges,
                           function_to_calculate_merger_of_outgoing_edges):
         """
@@ -110,31 +109,35 @@ class ARNodeTable(TableSupportsDeletion):
         them from here on out.
 
 
-        :param key_of_arnode1: a key of a fully activated arnode
-        :param key_of_arnode2: a key of a fully activated arnode
+        :param list_of_keys_of_arnodes_to_merge: keys of fully activated arnodes which would be merged
+        IMPORTANT:
+        this function assumes that there are no duplicates in the given list
 
         those functions would be used to calculate the edges of each resulting arnode
         :param function_to_calculate_merger_of_incoming_edges:
         :param function_to_calculate_merger_of_outgoing_edges:
         :return: the new merged arnode
         """
-        arnode1 = self.get_node_by_key(key_of_arnode1)
-        arnode2 = self.get_node_by_key(key_of_arnode2)
+        list_of_arnodes = []
+        for key in list_of_keys_of_arnodes_to_merge:
+            list_of_arnodes.append(self.get_node_by_key(key))
 
-        for arnode in [arnode1, arnode2]:
+        for arnode in list_of_arnodes:
             if arnode.get_activation_status() != ARNode.FULLY_ACTIVATED_STATUS:
                 raise Exception("can not merge a non fully activated arnode")
 
-        # from assumption (2) in arnodes both arnodes have the same table_manager
-        arnode1_inner_nodes_set = set(arnode1.inner_nodes)
-        arnode2_inner_nodes_set = set(arnode2.inner_nodes)
-        inner_nodes_for_new_arnode = arnode1_inner_nodes_set.union(arnode2_inner_nodes_set)
-        inner_nodes_for_new_arnode = list(inner_nodes_for_new_arnode)
+        # from assumption (2) in arnodes, all those arnodes have the same table_manager
+        # from assumption (10) in arnodes, all the arnodes would have a unique set of inner_nodes
+        # since there are no duplicates in the list_of_arnodes, to get all the inner nodes, simply concatenate all
+        # the inner nodes to one list
+        inner_nodes_for_new_arnode = []
+        for arnode in list_of_arnodes:
+            inner_nodes_for_new_arnode.extend(arnode.inner_nodes)
 
         # before continuing, delete the arnodes that needs to be merged
         # this would also reset the nodes owner arnode
-        self.delete_node(key_of_arnode1)
-        self.delete_node(key_of_arnode2)
+        for arnode_key in list_of_keys_of_arnodes_to_merge:
+            self.delete_node(arnode_key)
 
         new_arnode = self.create_new_arnode_and_add_to_table(inner_nodes_for_new_arnode)
         # preserve arnode assumption (7)
@@ -144,3 +147,5 @@ class ARNodeTable(TableSupportsDeletion):
                                                                             self.global_data_manager))
 
         return new_arnode
+
+    def decide_set

@@ -62,3 +62,6 @@ an arnode does not necessarily have to be connected to only arnodes with the sam
 on the face of it it seems like this should be the case since table number corresponds to type (pos-inc,...).
 but the problem is that in layer 0 the never categorize (or split) the input nodes, so those nodes and their arnodes,
 would be connected to a plethora of tables.
+
+10)
+an inner node can only be attributed to one arnode at a time. i.e. nodes can not appear in different arnodes
