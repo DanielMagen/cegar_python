@@ -56,6 +56,7 @@ class ARNode(Node):
             number_of_tables_in_previous_layer,
             number_of_tables_in_next_layer,
             table_number, key_in_table,
+            Node.NO_BIAS,
             Node.NO_GLOBAL_ID, Node.NO_GLOBAL_ID, Node.NO_REFERENCE)
 
         self.location_of_ar_node_nested_in = self.get_location()
@@ -80,18 +81,22 @@ class ARNode(Node):
 
         super().destructor()
 
-    def _take_control_over_inner_nodes_global_values(self, global_incoming_id, global_outgoing_id):
+    def _take_control_over_inner_nodes_global_values(self, function_to_calculate_arnode_bias,
+                                                     global_incoming_id, global_outgoing_id):
         """
         this function should only be called once the arnode is fully activated
         it does the following:
         1) it removes all of the inner nodes global variables
-        2) it sets this arnode global variables to be the given values.
+        2) it sets this arnode global variables to be the given values, and uses the given function to calculate the
+        bias for this arnode
         3) it calculates the arnode equation and constraint.
         4) it calculates max (lower bounds for all inner nodes which have bounds)
         and sets it as the arnode lower bound. if no nodes exist, it sets self.has_bounds to false
         5) it calculates min (upper bounds for all inner nodes which have bounds)
         and sets it as the arnode upper bound. if no nodes exist, it sets self.has_bounds to false
 
+        :param function_to_calculate_arnode_bias: this function would receive the list of inner nodes of the
+        ar node, and return a new bias for this arnode.
         :param global_incoming_id:
         :param global_outgoing_id:
         :return:
@@ -100,6 +105,7 @@ class ARNode(Node):
         self.global_outgoing_id = global_outgoing_id
         self.global_data_manager = self.first_node_in_starting_nodes.global_data_manager
 
+        self.bias = function_to_calculate_arnode_bias(self.inner_nodes)
         self.calculate_equation_and_constraints()
 
         # no calculate arnode bounds
@@ -128,6 +134,10 @@ class ARNode(Node):
 
         self.set_lower_and_upper_bound(max_lower_bound, min_upper_bound)
 
+        # finally remove all the of the inner nodes global variables
+        for node in self.inner_nodes:
+            node.remove_from_global_system()
+
     def get_global_incoming_id(self):
         # preserve assumption (8)
         if self.activation_status == ARNode.FULLY_ACTIVATED_STATUS:
@@ -139,6 +149,12 @@ class ARNode(Node):
         if self.activation_status == ARNode.FULLY_ACTIVATED_STATUS:
             return super().get_global_outgoing_id()
         return self.first_node_in_starting_nodes.get_global_outgoing_id()
+
+    def get_node_bias(self):
+        # preserve assumption (8)
+        if self.activation_status == ARNode.FULLY_ACTIVATED_STATUS:
+            return super().get_node_bias()
+        return self.first_node_in_starting_nodes.get_node_bias()
 
     def check_if_have_global_id(self):
         # preserve assumption (8)
@@ -366,7 +382,8 @@ class ARNode(Node):
 
         return True
 
-    def fully_activate_arnode_without_changing_incoming_edges(self, global_incoming_id, global_outgoing_id,
+    def fully_activate_arnode_without_changing_incoming_edges(self, function_to_calculate_arnode_bias,
+                                                              global_incoming_id, global_outgoing_id,
                                                               check_validity_of_activation=True):
         """
         this method fully activates the arnode.
@@ -377,6 +394,9 @@ class ARNode(Node):
 
         :param check_validity_of_activation: this might take a long time to do each time, so if you are sure that
         the activation is valid you can set it to false
+
+        :param function_to_calculate_arnode_bias: this function would receive the list of inner nodes of the
+        ar node, and return a new bias for this arnode.
         """
         self.check_if_killed_and_raise_error_if_is()
 
@@ -398,9 +418,11 @@ class ARNode(Node):
         self.activation_status = ARNode.FULLY_ACTIVATED_STATUS
 
         # finally take control over the global variables
-        self._take_control_over_inner_nodes_global_values(global_incoming_id, global_outgoing_id)
+        self._take_control_over_inner_nodes_global_values(function_to_calculate_arnode_bias, global_incoming_id,
+                                                          global_outgoing_id)
 
     def fully_activate_arnode_and_recalculate_incoming_edges(self, function_to_calculate_merger_of_incoming_edges,
+                                                             function_to_calculate_arnode_bias,
                                                              global_incoming_id, global_outgoing_id):
         """
         this method fully activates the arnode.
@@ -415,6 +437,9 @@ class ARNode(Node):
         1) a reference to an arnode
         2) a list of weights we are connected to the arnode with
         and returns a new weight for that we will connect to the given arnode with
+
+        :param function_to_calculate_arnode_bias: this function would receive the list of inner nodes of the
+        ar node, and return a new bias for this arnode.
 
         :param global_incoming_id:
         :param global_outgoing_id:
@@ -444,4 +469,5 @@ class ARNode(Node):
         self.activation_status = ARNode.FULLY_ACTIVATED_STATUS
 
         # finally take control over the global variables
-        self._take_control_over_inner_nodes_global_values(global_incoming_id, global_outgoing_id)
+        self._take_control_over_inner_nodes_global_values(function_to_calculate_arnode_bias, global_incoming_id,
+                                                          global_outgoing_id)

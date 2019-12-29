@@ -31,10 +31,13 @@ class Network:
 
     NUMBER_OF_TABLES_IN_LAYER = Layer.NUMBER_OF_OVERALL_TABLES
 
-    ################################################################ what data structure would we receive?
-    def __init__(self, number_of_layers_in_network, number_of_nodes_in_network, goal_index):
+    def __init__(self, AcasNnet_object, goal_index):
         """
-        :param number_of_layers_in_network:
+        :param AcasNnet_object:
+        an AcasNnet object which has loaded into itself the network and the requested bounds on the network input nodes.
+        this network class would convert that network into an inner representation of multiple layers, tables and
+        node classes, which are built for the purpose of supporting the abstraction refinement
+
         :param goal_index: either INDEX_OF_NEED_TO_INCREASE_OUTPUT or INDEX_OF_NEED_TO_DECREASE_OUTPUT
         if INDEX_OF_NEED_TO_INCREASE_OUTPUT is given we assume that we want to increase the network output
         """
@@ -43,21 +46,33 @@ class Network:
 
         self.goal_index = goal_index
 
-        self.number_of_layers_in_network = number_of_layers_in_network
+        self.number_of_layers_in_network = len(AcasNnet_object.layerSizes)
 
-        self.global_data_manager = GlobalDataManager(Network.MULTIPLICITY_OF_IDS * number_of_nodes_in_network)
+        self.global_data_manager = GlobalDataManager(Network.MULTIPLICITY_OF_IDS * self.number_of_nodes_in_network)
 
-        self.layers = [None for _ in range(number_of_layers_in_network)]
+        self.layers = [None for _ in range(self.number_of_layers_in_network)]
+        self._initialize_layers()
+
+        # all layers in the network are not preprocessed
+        self.last_layer_not_preprocessed = len(self.layers) - 1
+
+        # now create all the nodes in the network
+        self.number_of_nodes_in_network = 0
+        self._initialize_nodes_in_all_layers(AcasNnet_object)
+
+    def _initialize_layers(self):
         self.layers[0] = Layer(self.global_data_manager, Layer.NO_POINTER_TO_ADJACENT_LAYER,
                                Layer.NO_POINTER_TO_ADJACENT_LAYER)
 
         for i in range(1, len(self.layers)):
             self.layers[i] = self.layers[i - 1].create_next_layer()
 
-        # all layers in the network are not preprocessed
-        self.last_layer_not_preprocessed = len(self.layers) - 1
-
-        #################################################################################### now create all the nodes in the network
+    def _initialize_nodes_in_all_layers(self, AcasNnet_object):
+        """
+        :param AcasNnet_object:
+        creates all the nodes, their relations, their bounds, equations and constraints
+        """
+        pass
 
     def preprocess_more_layers(self, number_of_layers_to_preprocess):
         """

@@ -7,6 +7,7 @@ class ARNodeTable(TableSupportsDeletion):
     def create_new_node_and_add_to_table(self,
                                          number_of_tables_in_previous_layer,
                                          number_of_tables_in_next_layer,
+                                         node_bias,
                                          global_data_manager):
         raise NotImplemented("this class can only contain arnodes")
 
@@ -35,35 +36,46 @@ class ARNodeTable(TableSupportsDeletion):
         return new_node
 
     def fully_activate_table_by_recalculating_incoming_edges(self,
-                                                             function_to_calculate_merger_of_incoming_edges):
+                                                             function_to_calculate_merger_of_incoming_edges,
+                                                             function_to_calculate_arnode_bias):
         """
         if the previous layer was entirely forward activated but you want ot recalculate the incoming edges to
         this layer arnodes, use this function
         :param function_to_calculate_merger_of_incoming_edges:
+
+        :param function_to_calculate_arnode_bias: this function would receive the list of inner nodes of the
+        ar node, and return a new bias for this arnode.
         """
         for arnode in self.get_iterator_for_all_nodes():
             if arnode.get_activation_status() != ARNode.FULLY_ACTIVATED_STATUS:
                 arnode.fully_activate_arnode_and_recalculate_incoming_edges(
                     function_to_calculate_merger_of_incoming_edges,
+                    function_to_calculate_arnode_bias,
                     *super()._get_ids_for_new_node(self.global_data_manager))
 
     def fully_activate_table_without_changing_incoming_edges(self,
+                                                             function_to_calculate_arnode_bias,
                                                              check_validity_of_activation=True):
         """
         if the previous layer was entirely forward activated and you do not want ot recalculate the incoming edges to
         this layer arnodes, use this function
         :param check_validity_of_activation:
+
+        :param function_to_calculate_arnode_bias: this function would receive the list of inner nodes of the
+        ar node, and return a new bias for this arnode.
         """
         for arnode in self.get_iterator_for_all_nodes():
             if arnode.get_activation_status() != ARNode.FULLY_ACTIVATED_STATUS:
                 arnode.fully_activate_arnode_without_changing_incoming_edges(
+                    function_to_calculate_arnode_bias,
                     *super()._get_ids_for_new_node(self.global_data_manager),
                     check_validity_of_activation)
 
     def split_arnode(self, key_of_arnode_to_split,
                      partition_of_arnode_inner_nodes,
                      function_to_calculate_merger_of_incoming_edges,
-                     function_to_calculate_merger_of_outgoing_edges):
+                     function_to_calculate_merger_of_outgoing_edges,
+                     function_to_calculate_arnode_bias):
         """
         :param key_of_arnode_to_split:
         :param partition_of_arnode_inner_nodes: a list of lists which would be a valid partition of the
@@ -74,6 +86,8 @@ class ARNodeTable(TableSupportsDeletion):
         those functions would be used to calculate the edges of each resulting arnode
         :param function_to_calculate_merger_of_incoming_edges:
         :param function_to_calculate_merger_of_outgoing_edges:
+        :param function_to_calculate_arnode_bias: this function would receive the list of inner nodes of the
+        ar node, and return a new bias for this arnode.
 
         removes the arnode from the table its in and inserts the new arnodes created
         """
@@ -95,13 +109,15 @@ class ARNodeTable(TableSupportsDeletion):
             # preserve arnode assumption (7)
             new_arnode.forward_activate_arnode(function_to_calculate_merger_of_outgoing_edges)
             new_arnode.fully_activate_arnode_and_recalculate_incoming_edges(
+                function_to_calculate_arnode_bias,
                 function_to_calculate_merger_of_incoming_edges,
                 *super()._get_ids_for_new_node(self.global_data_manager))
 
     def merge_list_of_arnodes(self,
                               list_of_keys_of_arnodes_to_merge,
                               function_to_calculate_merger_of_incoming_edges,
-                              function_to_calculate_merger_of_outgoing_edges):
+                              function_to_calculate_merger_of_outgoing_edges,
+                              function_to_calculate_arnode_bias):
         """
         this method merges the two arnodes given into a single arnode.
         the merged arnode would contain all the inner nodes that both arnodes contained.
@@ -117,6 +133,8 @@ class ARNodeTable(TableSupportsDeletion):
         those functions would be used to calculate the edges of each resulting arnode
         :param function_to_calculate_merger_of_incoming_edges:
         :param function_to_calculate_merger_of_outgoing_edges:
+        :param function_to_calculate_arnode_bias: this function would receive the list of inner nodes of the
+        ar node, and return a new bias for this arnode.
         :return: the new merged arnode
         """
         list_of_arnodes = []
@@ -144,6 +162,7 @@ class ARNodeTable(TableSupportsDeletion):
         # preserve arnode assumption (7)
         new_arnode.forward_activate_arnode(function_to_calculate_merger_of_outgoing_edges)
         new_arnode.fully_activate_arnode_and_recalculate_incoming_edges(function_to_calculate_merger_of_incoming_edges,
+                                                                        function_to_calculate_arnode_bias,
                                                                         *super()._get_ids_for_new_node(
                                                                             self.global_data_manager))
 

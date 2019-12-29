@@ -34,6 +34,7 @@ class TableDoesntSupportsDeletion(AbstractTable):
     def create_new_node_and_add_to_table(self,
                                          number_of_tables_in_previous_layer,
                                          number_of_tables_in_next_layer,
+                                         node_bias,
                                          global_data_manager):
         """
         :param number_of_tables_in_previous_layer:
@@ -43,6 +44,7 @@ class TableDoesntSupportsDeletion(AbstractTable):
         """
         new_node = super().create_new_node_and_add_to_table(number_of_tables_in_previous_layer,
                                                             number_of_tables_in_next_layer,
+                                                            node_bias,
                                                             global_data_manager)
         new_node.set_in_stone()
         return new_node

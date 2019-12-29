@@ -10,15 +10,20 @@ class Node:
     INCOMING_EDGE_DIRECTION = -1
     OUTGOING_EDGE_DIRECTION = 1
 
+    NO_TABLE_NUMBER = -1
+    NO_KEY_IN_TABLE = -1
+
     NO_GLOBAL_ID = -1
     NO_EQUATION = None
     EMPTY_CONSTRAINT = None
     NO_REFERENCE = None
+    NO_BIAS = 0
 
     def __init__(self,
                  number_of_tables_in_previous_layer,
                  number_of_tables_in_next_layer,
                  table_number, key_in_table,
+                 bias,
                  global_incoming_id, global_outgoing_id,
                  global_data_manager):
         """
@@ -62,6 +67,9 @@ class Node:
 
         # each node would manage the equation that links it to its incoming nodes
         self.equation = Node.NO_EQUATION
+        self.bias = bias  # this variable is NOT considered a global variable. it should not be deleted as long as
+        # the node lives, because the arnodes which take over this node would use this node bias to calculate their own
+
         # each node would manage the constraint between its 2 global IDs. if the ids are the same, no constraint would
         # be added
         self.constraint = Node.EMPTY_CONSTRAINT
@@ -122,6 +130,9 @@ class Node:
 
     def get_global_outgoing_id(self):
         return self.global_outgoing_id
+
+    def get_node_bias(self):
+        return self.bias
 
     def check_if_have_global_id(self):
         return self.global_incoming_id != Node.NO_GLOBAL_ID and self.global_outgoing_id != Node.NO_GLOBAL_ID
@@ -208,7 +219,7 @@ class Node:
             self.equation.addAddend(weight, id_of_incoming_node)
 
         # finally set the equation to equation to 0 and add the equation to the input query
-        self.equation.setScalar(0)
+        self.equation.setScalar(-self.bias)
         input_query_reference.addEquation(self.equation)
 
         # finally set global_equation_is_valid to true since an equation and constraint were updated
@@ -238,7 +249,7 @@ class Node:
         """
         1) removes this node global ids
         2) if the node was given an equation and a constraint it removes them too.
-        3) resets the reference to the marabou_core, input_query and id_manager
+        3) resets the reference to the marabou_core, input_query and id_manager to be null
         """
         if self.global_incoming_id == Node.NO_GLOBAL_ID or self.global_outgoing_id == Node.NO_GLOBAL_ID:
             if self.global_incoming_id == Node.NO_GLOBAL_ID and self.global_outgoing_id == Node.NO_GLOBAL_ID:

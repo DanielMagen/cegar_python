@@ -105,6 +105,7 @@ class AbstractTable:
     def create_new_node_and_add_to_table(self,
                                          number_of_tables_in_previous_layer,
                                          number_of_tables_in_next_layer,
+                                         bias_for_node,
                                          global_data_manager):
         """
         :param number_of_tables_in_previous_layer:
@@ -118,7 +119,9 @@ class AbstractTable:
 
         new_node = Node(number_of_tables_in_previous_layer,
                         number_of_tables_in_next_layer,
-                        -1, -1, global_incoming_id, global_outgoing_id, global_data_manager)
+                        Node.NO_TABLE_NUMBER, Node.NO_KEY_IN_TABLE,
+                        bias_for_node,
+                        global_incoming_id, global_outgoing_id, global_data_manager)
 
         node_key = self._add_node_to_table_without_checking(new_node)
         # change the inserted node location_data so that its table number and index would correspond to its new location

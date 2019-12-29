@@ -110,7 +110,7 @@ class Layer:
         """
         return [('pos', 'inc'), ('pos', 'dec'), ('neg', 'inc'), ('neg', 'dec'), 'unprocessed'].index(type_of_node)
 
-    def create_new_node(self):
+    def create_new_node(self, bias_for_node):
         """
         :return: creates a new node in the unprocessed table (to preserve assumption (4)) and returns it.
         """
@@ -119,6 +119,7 @@ class Layer:
         new_node = self.regular_node_tables[Layer.INDEX_OF_UNPROCESSED_TABLE].create_new_node_and_add_to_table(
             Layer.NUMBER_OF_OVERALL_TABLES,
             Layer.NUMBER_OF_OVERALL_TABLES,
+            bias_for_node,
             self.global_data_manager)
 
         return new_node.get_key_in_table()
@@ -277,6 +278,7 @@ class Layer:
 
         unprocessed_table = self.regular_node_tables[Layer.INDEX_OF_UNPROCESSED_TABLE]
         node = unprocessed_table.get_node_by_key(node_key_in_unprocessed_table)
+        original_node_bias = node.get_node_bias()
 
         # before continuing, since the node is about to be removed, we first remove the node global variables,
         # including the node global id. we do so at this stage to create as little gaps as possible in the id manager
@@ -296,6 +298,7 @@ class Layer:
                 new_node = current_table.create_new_node_and_add_to_table(
                     Layer.NUMBER_OF_OVERALL_TABLES,
                     Layer.NUMBER_OF_OVERALL_TABLES,
+                    original_node_bias,
                     self.global_data_manager)
 
                 nodes_created[i] = new_node
@@ -387,6 +390,7 @@ class Layer:
 
     def fully_activate_table_without_changing_incoming_edges(self,
                                                              table_index,
+                                                             function_to_calculate_arnode_bias,
                                                              check_validity_of_activation=True):
         """
         if the previous layer was entirely forward activated and you do not want ot recalculate the incoming edges to
@@ -396,19 +400,23 @@ class Layer:
         :return:
         """
         self.arnode_tables[table_index].fully_activate_table_without_changing_incoming_edges(
+            function_to_calculate_arnode_bias,
             check_validity_of_activation)
 
     def split_arnode(self, table_number, key_in_table, partition_of_arnode_inner_nodes,
                      function_to_calculate_merger_of_incoming_edges,
-                     function_to_calculate_merger_of_outgoing_edges):
+                     function_to_calculate_merger_of_outgoing_edges,
+                     function_to_calculate_arnode_bias):
 
         self.arnode_tables[table_number].split_arnode(key_in_table, partition_of_arnode_inner_nodes,
                                                       function_to_calculate_merger_of_incoming_edges,
-                                                      function_to_calculate_merger_of_outgoing_edges)
+                                                      function_to_calculate_merger_of_outgoing_edges,
+                                                      function_to_calculate_arnode_bias)
 
     def merge_list_of_arnodes(self, table_number, list_of_keys_of_arnodes_to_merge,
                               function_to_calculate_merger_of_incoming_edges,
-                              function_to_calculate_merger_of_outgoing_edges):
+                              function_to_calculate_merger_of_outgoing_edges,
+                              function_to_calculate_arnode_bias):
         """
 
         :param table_number:
@@ -420,7 +428,8 @@ class Layer:
 
         return self.arnode_tables[table_number].merge_list_of_arnodes(list_of_keys_of_arnodes_to_merge,
                                                                       function_to_calculate_merger_of_incoming_edges,
-                                                                      function_to_calculate_merger_of_outgoing_edges)
+                                                                      function_to_calculate_merger_of_outgoing_edges,
+                                                                      function_to_calculate_arnode_bias)
 
     def decide_list_of_best_arnodes_to_merge(self, function_to_decide_list_of_best_arnodes):
         """
