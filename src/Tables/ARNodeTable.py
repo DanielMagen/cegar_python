@@ -95,12 +95,13 @@ class ARNodeTable(TableSupportsDeletion):
             # preserve arnode assumption (7)
             new_arnode.forward_activate_arnode(function_to_calculate_merger_of_outgoing_edges)
             new_arnode.fully_activate_arnode_and_recalculate_incoming_edges(
-                function_to_calculate_merger_of_incoming_edges, *super()._get_ids_for_new_node(self.global_data_manager))
+                function_to_calculate_merger_of_incoming_edges,
+                *super()._get_ids_for_new_node(self.global_data_manager))
 
     def merge_list_of_arnodes(self,
-                          list_of_keys_of_arnodes_to_merge,
-                          function_to_calculate_merger_of_incoming_edges,
-                          function_to_calculate_merger_of_outgoing_edges):
+                              list_of_keys_of_arnodes_to_merge,
+                              function_to_calculate_merger_of_incoming_edges,
+                              function_to_calculate_merger_of_outgoing_edges):
         """
         this method merges the two arnodes given into a single arnode.
         the merged arnode would contain all the inner nodes that both arnodes contained.
@@ -148,5 +149,41 @@ class ARNodeTable(TableSupportsDeletion):
 
         return new_arnode
 
-    def decide_set_of_best_arnodes_to_merge(self):
-        pass
+    def decide_list_of_best_arnodes_to_merge(self, function_to_decide_list_of_best_arnodes,
+                                             first_iteration_list_of_doubles,
+                                             first_iteration_list_of_arnodes_to_merge):
+        """
+        :param first_iteration_list_of_doubles:
+        :param first_iteration_list_of_arnodes_to_merge:
+
+        :param function_to_decide_list_of_best_arnodes:
+        this function would receive:
+        an arnode from the table, a list of doubles, a list of currently chosen arnodes to merge
+        and would return
+        a boolean, a list of doubles, a list of currently chosen arnodes to merge
+
+        the idea is that we will take turns giving this function each and every arnode in this table,
+        and let it decide which list of arnodes to merge.
+
+        in the first iteration we will feed it the
+        first_iteration_list_of_doubles
+        first_iteration_list_of_arnodes_to_merge
+        and from then onwards, every iteration will get the output of the previous iteration.
+
+        the boolean we expect it to return would be a stop sign.
+        if the boolean is set to true, then we will stop the iterations with the output of that last iteration.
+
+        :return:
+        a list of doubles, a list of chosen arnodes to merge
+        i.e. the output from the last iteration of the given function application
+        """
+        current_list_of_doubles = first_iteration_list_of_doubles
+        current_list_of_arnodes_to_merge = first_iteration_list_of_arnodes_to_merge
+
+        for node in self.nodes:
+            stop_sign, current_list_of_doubles, current_list_of_arnodes_to_merge = \
+                function_to_decide_list_of_best_arnodes(node, current_list_of_doubles, current_list_of_arnodes_to_merge)
+            if stop_sign:
+                return current_list_of_doubles, current_list_of_arnodes_to_merge
+
+        return current_list_of_doubles, current_list_of_arnodes_to_merge

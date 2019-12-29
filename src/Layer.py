@@ -407,8 +407,8 @@ class Layer:
                                                       function_to_calculate_merger_of_outgoing_edges)
 
     def merge_list_of_arnodes(self, table_number, list_of_keys_of_arnodes_to_merge,
-                          function_to_calculate_merger_of_incoming_edges,
-                          function_to_calculate_merger_of_outgoing_edges):
+                              function_to_calculate_merger_of_incoming_edges,
+                              function_to_calculate_merger_of_outgoing_edges):
         """
 
         :param table_number:
@@ -419,8 +419,39 @@ class Layer:
         """
 
         return self.arnode_tables[table_number].merge_list_of_arnodes(list_of_keys_of_arnodes_to_merge,
-                                                                  function_to_calculate_merger_of_incoming_edges,
-                                                                  function_to_calculate_merger_of_outgoing_edges)
+                                                                      function_to_calculate_merger_of_incoming_edges,
+                                                                      function_to_calculate_merger_of_outgoing_edges)
+
+    def decide_list_of_best_arnodes_to_merge(self, function_to_decide_list_of_best_arnodes):
+        """
+        :param function_to_decide_list_of_best_arnodes:
+        this function would receive:
+        an arnode from the table, a list of doubles, a list of currently chosen arnodes to merge
+        and would return
+        a boolean, a list of doubles, a list of currently chosen arnodes to merge
+
+        the idea is that we will take turns giving this function each and every arnode in each table,
+        and let it decide which list of arnodes to merge.
+
+        in the first iteration we will feed it the an empty list of doubles and an empty list of arnodes,
+        and from then onwards, every iteration will get the output of the previous iteration.
+
+        the boolean we expect it to return would be a stop sign.
+        if the boolean is set to true, then we will stop the iterations on the current table its in and move to the next
+        table, with the output of that last iteration.
+
+        :return:
+        a list of doubles, a list of chosen arnodes to merge
+        i.e. the output from the last iteration of the given function application
+        """
+        current_list_of_doubles = []
+        current_list_of_arnodes_to_merge = []
+        for ar_table in self.arnode_tables:
+            current_list_of_doubles, current_list_of_arnodes_to_merge = \
+                ar_table.decide_list_of_best_arnodes_to_merge(function_to_decide_list_of_best_arnodes,
+                                                              current_list_of_doubles,
+                                                              current_list_of_arnodes_to_merge)
+        return current_list_of_arnodes_to_merge
 
     def refresh_layer_global_variables(self, call_calculate_equation_and_constraints=True):
         """
