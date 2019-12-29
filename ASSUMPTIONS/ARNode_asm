@@ -32,8 +32,8 @@ also, all arnode which are created in the process of splitting and merging must 
 8)
 until an arnode is fully activated, its global variables would be determined by the first node in the node group
 it contains. but when its fully activated all of the inner nodes global data would be erased and recalculated only
-for the arnode which contains them. i.e. once the arnode a node is nested in gets fully activated, the inner node loses
-all right to determine what the values of the global data would be.
+for the arnode which contains them. i.e. once the arnode that a node is nested in gets fully activated, the node loses
+all right to determine what the values of its global data would be.
 
 I'll show that this assumption is both necessary for the correct function of the system, does not interfere with
 any other related assumption, and does not have any inner inconsistencies:
@@ -65,3 +65,9 @@ would be connected to a plethora of tables.
 
 10)
 an inner node can only be attributed to one arnode at a time. i.e. nodes can not appear in different arnodes
+
+11)
+-> Table assumption (5)
+
+12)
+-> Node assumption (11)

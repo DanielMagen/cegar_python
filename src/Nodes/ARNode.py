@@ -81,14 +81,12 @@ class ARNode(Node):
 
         super().destructor()
 
-    def _take_control_over_inner_nodes_global_values(self, function_to_calculate_arnode_bias,
-                                                     global_incoming_id, global_outgoing_id):
+    def _take_control_over_inner_nodes_global_values(self, function_to_calculate_arnode_bias):
         """
         this function should only be called once the arnode is fully activated
         it does the following:
         1) it removes all of the inner nodes global variables
-        2) it sets this arnode global variables to be the given values, and uses the given function to calculate the
-        bias for this arnode
+        2) it uses the given function to calculate the bias for this arnode
         3) it calculates the arnode equation and constraint.
         4) it calculates max (lower bounds for all inner nodes which have bounds)
         and sets it as the arnode lower bound. if no nodes exist, it sets self.has_bounds to false
@@ -101,14 +99,50 @@ class ARNode(Node):
         :param global_outgoing_id:
         :return:
         """
-        self.global_incoming_id = global_incoming_id
-        self.global_outgoing_id = global_outgoing_id
+        # I'm going to very carefully design this function because I want to avoid taking more ids than necessary
+        # so I need to delete the inner nodes from the global system before getting a new id.
+        # the problem is that various functions require me to have an id before I call them so I need to delete
+        # the nodes before I get an id, which would happen before I call those functions. but if those functions
+        # rely on the inner_nodes global data its problematic
+
+        # first set our global_data_manager
         self.global_data_manager = self.first_node_in_starting_nodes.global_data_manager
 
+        # now calculate our bias, this should be done before calculating the arnode equation
         self.bias = function_to_calculate_arnode_bias(self.inner_nodes)
+
+        # now save all the inner nodes bound values to use later
+        lower_bounds = []
+        upper_bounds = []
+        input_query_reference = self.global_data_manager.get_input_query_reference()
+        for node in self.inner_nodes:
+            if node.has_bounds:
+                lower_bounds.append(input_query_reference.getLowerBound(node.get_global_incoming_id))
+                upper_bounds.append(input_query_reference.getUpperBound(node.get_global_incoming_id))
+
+        # now check if the arnode should have only 1 id or 2
+        # from assumption (2) all inner nodes are in the same table
+        # from assumption (11) it means that all inner nodes are from the same table
+        # from assumption (12) it means that all inner nodes have 1 id or all inner nodes have 2
+        # so it suffices to check only the first inner node
+        should_create_2_global_ids = (
+                    self.first_node_in_starting_nodes.global_incoming_id !=
+                    self.first_node_in_starting_nodes.global_outgoing_id)
+
+        # now before continuing remove all the of the inner nodes global variables
+        for node in self.inner_nodes:
+            node.remove_from_global_system()
+
+        # now get a new id for us
+        self.global_incoming_id = self.global_data_manager.get_new_id()
+        self.global_outgoing_id = self.global_incoming_id
+        if should_create_2_global_ids:
+            self.global_outgoing_id = self.global_data_manager.get_new_id()
+
+        # calculate the arnode equation and constraints
         self.calculate_equation_and_constraints()
 
-        # no calculate arnode bounds
+        # now calculate arnode bounds
         inner_nodes_which_have_bounds = []
         for node in self.inner_nodes:
             if node.has_bounds:
@@ -116,27 +150,8 @@ class ARNode(Node):
 
         if len(inner_nodes_which_have_bounds) == 0:
             self.has_bounds = False
-            return
-
-        input_query_reference = self.global_data_manager.get_input_query_reference()
-        max_lower_bound = input_query_reference.getLowerBound(inner_nodes_which_have_bounds[0].get_global_incoming_id)
-        min_upper_bound = input_query_reference.getUpperBound(inner_nodes_which_have_bounds[0].get_global_incoming_id)
-
-        for i in range(1, len(inner_nodes_which_have_bounds)):
-            node = inner_nodes_which_have_bounds[i]
-            current_lower_bound = input_query_reference.getLowerBound(node.get_global_incoming_id)
-            current_upper_bound = input_query_reference.getUpperBound(node.get_global_incoming_id)
-
-            if current_lower_bound > max_lower_bound:
-                max_lower_bound = current_lower_bound
-            if current_upper_bound < min_upper_bound:
-                min_upper_bound = current_upper_bound
-
-        self.set_lower_and_upper_bound(max_lower_bound, min_upper_bound)
-
-        # finally remove all the of the inner nodes global variables
-        for node in self.inner_nodes:
-            node.remove_from_global_system()
+        else:
+            self.set_lower_and_upper_bound(max(lower_bounds), min(upper_bounds))
 
     def get_global_incoming_id(self):
         # preserve assumption (8)
@@ -383,7 +398,6 @@ class ARNode(Node):
         return True
 
     def fully_activate_arnode_without_changing_incoming_edges(self, function_to_calculate_arnode_bias,
-                                                              global_incoming_id, global_outgoing_id,
                                                               check_validity_of_activation=True):
         """
         this method fully activates the arnode.
@@ -418,12 +432,10 @@ class ARNode(Node):
         self.activation_status = ARNode.FULLY_ACTIVATED_STATUS
 
         # finally take control over the global variables
-        self._take_control_over_inner_nodes_global_values(function_to_calculate_arnode_bias, global_incoming_id,
-                                                          global_outgoing_id)
+        self._take_control_over_inner_nodes_global_values(function_to_calculate_arnode_bias)
 
     def fully_activate_arnode_and_recalculate_incoming_edges(self, function_to_calculate_merger_of_incoming_edges,
-                                                             function_to_calculate_arnode_bias,
-                                                             global_incoming_id, global_outgoing_id):
+                                                             function_to_calculate_arnode_bias):
         """
         this method fully activates the arnode.
         if the node is already fully activated it does nothing
@@ -469,5 +481,4 @@ class ARNode(Node):
         self.activation_status = ARNode.FULLY_ACTIVATED_STATUS
 
         # finally take control over the global variables
-        self._take_control_over_inner_nodes_global_values(function_to_calculate_arnode_bias, global_incoming_id,
-                                                          global_outgoing_id)
+        self._take_control_over_inner_nodes_global_values(function_to_calculate_arnode_bias)

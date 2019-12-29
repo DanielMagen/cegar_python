@@ -39,4 +39,4 @@ when a node returns a global id, it returns it without any bounds, constraints a
 i.e. "you got a clean id, you will return a clean id"
 
 11)
-inner nodes would have 2 global ids, and outer nodes would have only 1 global id
+inner layers nodes would have 2 global ids, and outer layers nodes would have only 1 global id

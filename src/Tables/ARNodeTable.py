@@ -50,8 +50,7 @@ class ARNodeTable(TableSupportsDeletion):
             if arnode.get_activation_status() != ARNode.FULLY_ACTIVATED_STATUS:
                 arnode.fully_activate_arnode_and_recalculate_incoming_edges(
                     function_to_calculate_merger_of_incoming_edges,
-                    function_to_calculate_arnode_bias,
-                    *super()._get_ids_for_new_node(self.global_data_manager))
+                    function_to_calculate_arnode_bias)
 
     def fully_activate_table_without_changing_incoming_edges(self,
                                                              function_to_calculate_arnode_bias,
@@ -68,7 +67,6 @@ class ARNodeTable(TableSupportsDeletion):
             if arnode.get_activation_status() != ARNode.FULLY_ACTIVATED_STATUS:
                 arnode.fully_activate_arnode_without_changing_incoming_edges(
                     function_to_calculate_arnode_bias,
-                    *super()._get_ids_for_new_node(self.global_data_manager),
                     check_validity_of_activation)
 
     def split_arnode(self, key_of_arnode_to_split,
@@ -110,8 +108,7 @@ class ARNodeTable(TableSupportsDeletion):
             new_arnode.forward_activate_arnode(function_to_calculate_merger_of_outgoing_edges)
             new_arnode.fully_activate_arnode_and_recalculate_incoming_edges(
                 function_to_calculate_arnode_bias,
-                function_to_calculate_merger_of_incoming_edges,
-                *super()._get_ids_for_new_node(self.global_data_manager))
+                function_to_calculate_merger_of_incoming_edges)
 
     def merge_list_of_arnodes(self,
                               list_of_keys_of_arnodes_to_merge,
@@ -162,9 +159,7 @@ class ARNodeTable(TableSupportsDeletion):
         # preserve arnode assumption (7)
         new_arnode.forward_activate_arnode(function_to_calculate_merger_of_outgoing_edges)
         new_arnode.fully_activate_arnode_and_recalculate_incoming_edges(function_to_calculate_merger_of_incoming_edges,
-                                                                        function_to_calculate_arnode_bias,
-                                                                        *super()._get_ids_for_new_node(
-                                                                            self.global_data_manager))
+                                                                        function_to_calculate_arnode_bias)
 
         return new_arnode
 
