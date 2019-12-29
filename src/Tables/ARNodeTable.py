@@ -148,4 +148,5 @@ class ARNodeTable(TableSupportsDeletion):
 
         return new_arnode
 
-    def decide_set
+    def decide_set_of_best_arnodes_to_merge(self):
+        pass

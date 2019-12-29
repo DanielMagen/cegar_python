@@ -90,7 +90,7 @@ print(
 # now lets try to merge 2 arnodes and see what happens
 # merge the first 2 pos-inc nodes in the middle layer
 pos_inc_table = 0
-new_merged_node = layers[1].merge_two_arnodes(pos_inc_table, 0, 1, dummy_function_to_merge_edges,
+new_merged_node = layers[1].merge_list_of_arnodes(pos_inc_table, [0, 1], dummy_function_to_merge_edges,
                                               dummy_function_to_merge_edges)
 
 # now print the resulting layer and check visually that the arnodes were created successfully

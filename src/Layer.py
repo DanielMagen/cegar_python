@@ -406,20 +406,19 @@ class Layer:
                                                       function_to_calculate_merger_of_incoming_edges,
                                                       function_to_calculate_merger_of_outgoing_edges)
 
-    def merge_two_arnodes(self, table_number, key_in_table1, key_in_table2,
+    def merge_list_of_arnodes(self, table_number, list_of_keys_of_arnodes_to_merge,
                           function_to_calculate_merger_of_incoming_edges,
                           function_to_calculate_merger_of_outgoing_edges):
         """
 
         :param table_number:
-        :param key_in_table1:
-        :param key_in_table2:
+        :param list_of_keys_of_arnodes_to_merge:
         :param function_to_calculate_merger_of_incoming_edges:
         :param function_to_calculate_merger_of_outgoing_edges:
         :return: the new merged arnode
         """
 
-        return self.arnode_tables[table_number].merge_two_arnodes(key_in_table1, key_in_table2,
+        return self.arnode_tables[table_number].merge_list_of_arnodes(list_of_keys_of_arnodes_to_merge,
                                                                   function_to_calculate_merger_of_incoming_edges,
                                                                   function_to_calculate_merger_of_outgoing_edges)
 
