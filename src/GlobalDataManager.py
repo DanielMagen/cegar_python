@@ -1,3 +1,6 @@
+from maraboupy import MarabouCore
+
+
 class GlobalDataManager:
     LOCATION_OF_LARGEST_AVAILABLE_ID = -2
     LENGTH_OF_SIMPLE_RANGE = 2  # if self.ranges is of that length then its of the form [a, max]
@@ -8,7 +11,7 @@ class GlobalDataManager:
     so do not exhaust the id ranges in it!
     """
 
-    def __init__(self, max_id_non_exclusive, marabou_core, input_query):
+    def __init__(self, max_id_non_exclusive):
         """
         this class would give available ids in increasing order
         :param max_id_non_exclusive: the maximum id that can be given
@@ -22,14 +25,23 @@ class GlobalDataManager:
         """
         self.ranges = [0, max_id_non_exclusive]
 
-        self.marabou_core_reference = marabou_core
-        self.input_query_reference = input_query
+        self.input_query_reference = MarabouCore..InputQuery()
 
     def get_input_query_reference(self):
+        """
+        all that use this function receive the input_query object that would be saved
+        and unchanged throughout the GlobalDataManager life according to assumption (1)
+        """
         return self.input_query_reference
 
-    def get_marabou_core_reference(self):
-        return self.marabou_core_reference
+    def addReluConstraint(self, id1, id2):
+        return MarabouCore.addReluConstraint(self.input_query_reference, id1, id2)
+
+    def removeReluConstraint(self, constraint):
+        MarabouCore.removeReluConstraint(constraint)
+
+    def get_new_equation(self):
+        return MarabouCore.Equation()
 
     def _check_if_ranges_has_holes(self):
         """

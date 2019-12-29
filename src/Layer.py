@@ -68,6 +68,38 @@ class Layer:
     def set_next_layer(self, pointer_to_next_layer):
         self.next_layer = pointer_to_next_layer
 
+    def create_next_layer(self):
+        """
+        :return: creates a new layer which would be this layer "next layer"
+        it connects this layer to the next layer
+
+        if the layer already has a pointer to the next layer, it raises an exception
+        """
+        if self.next_layer != Layer.NO_POINTER_TO_ADJACENT_LAYER:
+            raise Exception("Layer already has a pointer to the next layer")
+
+        new_layer = Layer(self.global_data_manager, pointer_to_previous_layer=self,
+                          pointer_to_next_layer=Layer.NO_POINTER_TO_ADJACENT_LAYER)
+        self.next_layer = new_layer
+
+        return new_layer
+
+    def create_previous_layer(self):
+        """
+        :return: creates a new layer which would be this layer "previous layer"
+        it connects this layer to the previous layer
+
+        if the layer already has a pointer to the previous layer, it raises an exception
+        """
+        if self.previous_layer != Layer.NO_POINTER_TO_ADJACENT_LAYER:
+            raise Exception("Layer already has a pointer to the previous layer")
+
+        new_layer = Layer(self.global_data_manager, pointer_to_previous_layer=Layer.NO_POINTER_TO_ADJACENT_LAYER,
+                          pointer_to_next_layer=self)
+        self.previous_layer = new_layer
+
+        return new_layer
+
     @staticmethod
     def type_to_number_of_map(type_of_node):
         """

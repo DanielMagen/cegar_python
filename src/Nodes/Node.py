@@ -176,7 +176,6 @@ class Node:
             # so its enough to check if the equation was set or not
             self.remove_equation_and_constraints()
 
-        marabou_core_reference = self.global_data_manager.get_marabou_core_reference()
         input_query_reference = self.global_data_manager.get_input_query_reference()
 
         # before starting, check if the node you are about to add an equation and constraint to is an inner
@@ -190,11 +189,11 @@ class Node:
                 return
         else:
             # initialize the relu constraint between them
-            self.constraint = marabou_core_reference.addReluConstraint(input_query_reference, self.global_incoming_id,
-                                                                       self.global_outgoing_id)
+            self.constraint = self.global_data_manager.addReluConstraint(self.global_incoming_id,
+                                                                         self.global_outgoing_id)
 
         # initialize the equation
-        self.equation = marabou_core_reference.Equation()
+        self.equation = self.global_data_manager.get_new_equation()
         # add -1 * yourself
         self.equation.addAddend(-1, self.global_incoming_id)
 
@@ -227,7 +226,7 @@ class Node:
             return
 
         self.global_data_manager.get_input_query_reference().removeEquation(self.equation)
-        self.global_data_manager.get_marabou_core_reference().removeReluConstraint(self.constraint)
+        self.global_data_manager.removeReluConstraint(self.constraint)
 
         self.equation = Node.NO_EQUATION
         self.constraint = Node.EMPTY_CONSTRAINT

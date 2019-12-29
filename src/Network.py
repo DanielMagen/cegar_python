@@ -1,4 +1,5 @@
 from src.Layer import *
+from src.GlobalDataManager import *
 
 
 class Network:
@@ -9,6 +10,9 @@ class Network:
     # note that we try to find a counter example to the property we want to verify
     # so if we want to verify that y > c we would search for an input which gives us y<=c
     POSSIBLE_VERIFICATION_GOALS = ['>', '<']
+
+    # ratio between number of initial nodes to available ids
+    MULTIPLICITY_OF_IDS = 20  # arbitrarly set it to 20
 
     """
     the idea is such:
@@ -27,9 +31,9 @@ class Network:
 
     NUMBER_OF_TABLES_IN_LAYER = Layer.NUMBER_OF_OVERALL_TABLES
 
-    def __init__(self, number_of_layers_in_network, goal_index):
+    ################################################################ what data structure would we receive?
+    def __init__(self, number_of_layers_in_network, number_of_nodes_in_network, goal_index):
         """
-
         :param number_of_layers_in_network:
         :param goal_index: either INDEX_OF_NEED_TO_INCREASE_OUTPUT or INDEX_OF_NEED_TO_DECREASE_OUTPUT
         if INDEX_OF_NEED_TO_INCREASE_OUTPUT is given we assume that we want to increase the network output
@@ -41,15 +45,19 @@ class Network:
 
         self.number_of_layers_in_network = number_of_layers_in_network
 
-        if number_of_layers_in_network > 1:
-            self.layers = [Layer(0, Network.NUMBER_OF_TABLES_IN_LAYER)]
-            self.layers.extend([Layer(Network.NUMBER_OF_TABLES_IN_LAYER, Network.NUMBER_OF_TABLES_IN_LAYER) for _ in
-                                range(number_of_layers_in_network - 2)])
-            self.layers.append(Layer(Network.NUMBER_OF_TABLES_IN_LAYER, 0))
-        else:
-            self.layers = [Layer(0, 0)]
+        self.global_data_manager = GlobalDataManager(Network.MULTIPLICITY_OF_IDS * number_of_nodes_in_network)
 
-        self.last_layer_not_preprocessed = number_of_layers_in_network - 1
+        self.layers = [None for _ in range(number_of_layers_in_network)]
+        self.layers[0] = Layer(self.global_data_manager, Layer.NO_POINTER_TO_ADJACENT_LAYER,
+                               Layer.NO_POINTER_TO_ADJACENT_LAYER)
+
+        for i in range(1, len(self.layers)):
+            self.layers[i] = self.layers[i - 1].create_next_layer()
+
+        # all layers in the network are not preprocessed
+        self.last_layer_not_preprocessed = len(self.layers) - 1
+
+        #################################################################################### now create all the nodes in the network
 
     def preprocess_more_layers(self, number_of_layers_to_preprocess):
         """
