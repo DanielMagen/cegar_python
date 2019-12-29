@@ -134,6 +134,12 @@ class Node:
     def get_node_bias(self):
         return self.bias
 
+    def set_node_bias(self, bias):
+        self.bias = bias
+        if self.equation != Node.NO_EQUATION:
+            # since we changed the bias the node equation is no longer correct
+            self.global_equation_is_valid = False
+
     def check_if_have_global_id(self):
         return self.global_incoming_id != Node.NO_GLOBAL_ID and self.global_outgoing_id != Node.NO_GLOBAL_ID
 

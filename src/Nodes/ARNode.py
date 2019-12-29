@@ -109,7 +109,7 @@ class ARNode(Node):
         self.global_data_manager = self.first_node_in_starting_nodes.global_data_manager
 
         # now calculate our bias, this should be done before calculating the arnode equation
-        self.bias = function_to_calculate_arnode_bias(self.inner_nodes)
+        self.set_node_bias(function_to_calculate_arnode_bias(self.inner_nodes))
 
         # now save all the inner nodes bound values to use later
         lower_bounds = []
@@ -126,8 +126,8 @@ class ARNode(Node):
         # from assumption (12) it means that all inner nodes have 1 id or all inner nodes have 2
         # so it suffices to check only the first inner node
         should_create_2_global_ids = (
-                    self.first_node_in_starting_nodes.global_incoming_id !=
-                    self.first_node_in_starting_nodes.global_outgoing_id)
+                self.first_node_in_starting_nodes.global_incoming_id !=
+                self.first_node_in_starting_nodes.global_outgoing_id)
 
         # now before continuing remove all the of the inner nodes global variables
         for node in self.inner_nodes:
@@ -170,6 +170,12 @@ class ARNode(Node):
         if self.activation_status == ARNode.FULLY_ACTIVATED_STATUS:
             return super().get_node_bias()
         return self.first_node_in_starting_nodes.get_node_bias()
+
+    def set_node_bias(self, bias):
+        # preserve assumption (8)
+        if self.activation_status == ARNode.FULLY_ACTIVATED_STATUS:
+            return super().set_node_bias(bias)
+        return self.first_node_in_starting_nodes.set_node_bias(bias)
 
     def check_if_have_global_id(self):
         # preserve assumption (8)
