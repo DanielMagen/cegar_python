@@ -14,6 +14,8 @@ class Network:
     # ratio between number of initial nodes to available ids
     MULTIPLICITY_OF_IDS = 20  # arbitrarily set it to 20
 
+    LOCATION_OF_FIRST_LAYER = 0
+
     """
     the idea is such:
     if we want to verify that y > c we would search for an input which gives us y <= c
@@ -83,7 +85,7 @@ class Network:
             :param index_in_layer_of_node:
             :return: the bias for the (index_in_layer_of_node)th node in the given layer
             """
-            if layer_number == 0:
+            if layer_number == Network.LOCATION_OF_FIRST_LAYER:
                 return Node.NO_BIAS
             return matrix[layer_number - 1][LOCATION_OF_BIASES][index_in_layer_of_node][0]
 
@@ -105,6 +107,9 @@ class Network:
         # save those keys, since we wont move any nodes before finishing creating the entire network
         current_layer_nodes_map = {}
         previous_layer_nodes_map = {}
+
+        # save the first layer map for later,we'll need it
+        first_layer_nodes_map = {}
 
         for current_layer_number in range(len(self.layers)):
             current_layer = self.layers[current_layer_number]
@@ -128,18 +133,40 @@ class Network:
                     list_of_pairs_of_keys_and_weights.append((the_key_in_unprocessed_table_of_node_in_previous_layer,
                                                               weight_of_connection))
 
-                # finally add all the connections
-                current_layer.add_or_edit_neighbors_to_node_in_unprocessed_table_by_bulk(current_node_key_in_unprocessed_table,
-                                                                                         Layer.INCOMING_LAYER_DIRECTION,
-                                                                                         list_of_pairs_of_keys_and_weights)
+                # finally add all the connections to the current node
+                current_layer.add_or_edit_neighbors_to_node_in_unprocessed_table_by_bulk(
+                    current_node_key_in_unprocessed_table,
+                    Layer.INCOMING_LAYER_DIRECTION,
+                    list_of_pairs_of_keys_and_weights)
 
             # after finishing creating all connections between this layer and the previous one,
             # set previous_layer_nodes_map to be current_layer_nodes_map before continuing the loop
             previous_layer_nodes_map = current_layer_nodes_map
             current_layer_nodes_map = {}
 
+            if current_layer_number == Network.LOCATION_OF_FIRST_LAYER:
+                first_layer_nodes_map = previous_layer_nodes_map
 
-        ######################################## create equations and bounds
+        # first create the bounds on all input nodes which reside in layer 0
+        first_layer = self.layers[Network.LOCATION_OF_FIRST_LAYER]
+        is_arnode = False
+        table_number = Layer.INDEX_OF_UNPROCESSED_TABLE
+        lower_bounds = AcasNnet_object.mins
+        upper_bounds = AcasNnet_object.maxes
+
+        for node_index_in_layer, node_key_in_unprocessed_table in current_layer_nodes_map.items():
+            first_layer.set_lower_and_upper_bound_for_node(is_arnode, table_number,
+                                                           node_key_in_unprocessed_table,
+                                                           lower_bounds[node_index_in_layer],
+                                                           upper_bounds[node_index_in_layer])
+
+        # now create the equations for all the nodes
+        # we dont create an equation for the input nodes
+        # since all nodes still reside in the unprocessed table we create the equations and constraints only for them
+        is_arnode = False
+        table_number = Layer.INDEX_OF_UNPROCESSED_TABLE
+        for i in range(Network.LOCATION_OF_FIRST_LAYER + 1, len(self.layers)):
+            self.layers[i].calculate_equation_and_constraints_for_all_nodes_in_table(is_arnode, table_number)
 
     def preprocess_more_layers(self, number_of_layers_to_preprocess):
         """

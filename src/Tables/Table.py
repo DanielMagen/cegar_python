@@ -170,6 +170,10 @@ class AbstractTable:
         node_to_add_connection_to = self.get_node_by_key(node_key)
         node_to_add_connection_to.add_or_edit_neighbors_by_bulk(direction_of_connection, list_of_connection_data)
 
+    def calculate_equation_and_constraints_for_all_nodes_in_table(self):
+        for node in self.get_iterator_for_all_nodes():
+            node.calculate_equation_and_constraints()
+
     def __str__(self):
         to_return = ''
         to_return += f'table number {self.table_number}'

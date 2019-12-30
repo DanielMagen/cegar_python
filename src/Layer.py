@@ -124,6 +124,17 @@ class Layer:
 
         return new_node.get_key_in_table()
 
+    def get_iterator_for_all_keys_for_table(self, is_arnode, table_number):
+        """
+        :param is_arnode: a boolean, if true would search for the node in the arnode tables
+        :param table_number:
+        """
+        tables = self.regular_node_tables
+        if is_arnode:
+            tables = self.arnode_tables
+
+        return tables[table_number].get_iterator_for_all_keys()
+
     def get_unprocessed_node_by_key(self, key_of_node_in_unprocessed_table):
         return self.regular_node_tables[Layer.INDEX_OF_UNPROCESSED_TABLE].get_node_by_key(
             key_of_node_in_unprocessed_table)
@@ -164,7 +175,7 @@ class Layer:
         node_to_add_connection_to.add_or_edit_neighbor(direction_of_connection, connection_data)
 
     def add_or_edit_neighbors_to_node_in_unprocessed_table_by_bulk(self, node_key, direction_of_connection,
-                                                                    list_of_pairs_of_keys_and_weights):
+                                                                   list_of_pairs_of_keys_and_weights):
         """
         to preserve assumption (3) we only allow edges to be added to the nodes in the unprocessed table
         to preserve assumption (5) we only allow edges to be added between this layer and one of its adjacent layers
@@ -572,6 +583,27 @@ class Layer:
             arnodes_iter = arnode_table.get_iterator_for_all_nodes()
             for arnode in arnodes_iter:
                 arnode.refresh_global_variables(call_calculate_equation_and_constraints)
+
+    def set_lower_and_upper_bound_for_node(self, is_arnode, table_number, key_in_table, lower_bound, upper_bound):
+        """
+        :param is_arnode: a boolean, if true would search for the node in the arnode tables
+        :param table_number:
+        :param key_in_table:
+        :param lower_bound:
+        :param upper_bound:
+        """
+        tables = self.regular_node_tables
+        if is_arnode:
+            tables = self.arnode_tables
+
+        tables[table_number].get_node_by_key(key_in_table).set_lower_and_upper_bound(lower_bound, upper_bound)
+
+    def calculate_equation_and_constraints_for_all_nodes_in_table(self, is_arnode, table_number):
+        tables = self.regular_node_tables
+        if is_arnode:
+            tables = self.arnode_tables
+
+        tables[table_number].calculate_equation_and_constraints_for_all_nodes_in_table()
 
     def __str__(self):
         to_return = ''
