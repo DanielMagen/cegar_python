@@ -377,7 +377,9 @@ class Layer:
 
     def fully_activate_table_by_recalculating_incoming_edges(self,
                                                              table_index,
-                                                             function_to_calculate_merger_of_incoming_edges):
+                                                             function_to_calculate_merger_of_incoming_edges,
+                                                             should_recalculate_arnodes_bounds,
+                                                             function_to_calculate_arnode_bias):
         """
         if the previous layer was entirely forward activated but you want ot recalculate the incoming edges to
         this layer arnodes, use this function
@@ -386,11 +388,14 @@ class Layer:
         :return:
         """
         self.arnode_tables[table_index].fully_activate_table_by_recalculating_incoming_edges(
-            function_to_calculate_merger_of_incoming_edges)
+            function_to_calculate_merger_of_incoming_edges,
+            should_recalculate_arnodes_bounds,
+            function_to_calculate_arnode_bias)
 
     def fully_activate_table_without_changing_incoming_edges(self,
                                                              table_index,
                                                              function_to_calculate_arnode_bias,
+                                                             should_recalculate_arnodes_bounds,
                                                              check_validity_of_activation=True):
         """
         if the previous layer was entirely forward activated and you do not want ot recalculate the incoming edges to
@@ -401,21 +406,25 @@ class Layer:
         """
         self.arnode_tables[table_index].fully_activate_table_without_changing_incoming_edges(
             function_to_calculate_arnode_bias,
+            should_recalculate_arnodes_bounds,
             check_validity_of_activation)
 
     def split_arnode(self, table_number, key_in_table, partition_of_arnode_inner_nodes,
                      function_to_calculate_merger_of_incoming_edges,
                      function_to_calculate_merger_of_outgoing_edges,
+                     should_recalculate_bounds,
                      function_to_calculate_arnode_bias):
 
         self.arnode_tables[table_number].split_arnode(key_in_table, partition_of_arnode_inner_nodes,
                                                       function_to_calculate_merger_of_incoming_edges,
                                                       function_to_calculate_merger_of_outgoing_edges,
+                                                      should_recalculate_bounds,
                                                       function_to_calculate_arnode_bias)
 
     def merge_list_of_arnodes(self, table_number, list_of_keys_of_arnodes_to_merge,
                               function_to_calculate_merger_of_incoming_edges,
                               function_to_calculate_merger_of_outgoing_edges,
+                              should_recalculate_bounds,
                               function_to_calculate_arnode_bias):
         """
 
@@ -429,6 +438,7 @@ class Layer:
         return self.arnode_tables[table_number].merge_list_of_arnodes(list_of_keys_of_arnodes_to_merge,
                                                                       function_to_calculate_merger_of_incoming_edges,
                                                                       function_to_calculate_merger_of_outgoing_edges,
+                                                                      should_recalculate_bounds,
                                                                       function_to_calculate_arnode_bias)
 
     def decide_list_of_best_arnodes_to_merge(self, function_to_decide_list_of_best_arnodes):

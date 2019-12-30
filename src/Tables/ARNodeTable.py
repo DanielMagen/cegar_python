@@ -37,6 +37,7 @@ class ARNodeTable(TableSupportsDeletion):
 
     def fully_activate_table_by_recalculating_incoming_edges(self,
                                                              function_to_calculate_merger_of_incoming_edges,
+                                                             should_recalculate_arnodes_bounds,
                                                              function_to_calculate_arnode_bias):
         """
         if the previous layer was entirely forward activated but you want ot recalculate the incoming edges to
@@ -50,29 +51,37 @@ class ARNodeTable(TableSupportsDeletion):
             if arnode.get_activation_status() != ARNode.FULLY_ACTIVATED_STATUS:
                 arnode.fully_activate_arnode_and_recalculate_incoming_edges(
                     function_to_calculate_merger_of_incoming_edges,
+                    should_recalculate_arnodes_bounds,
                     function_to_calculate_arnode_bias)
 
     def fully_activate_table_without_changing_incoming_edges(self,
                                                              function_to_calculate_arnode_bias,
+                                                             should_recalculate_arnodes_bounds,
                                                              check_validity_of_activation=True):
         """
         if the previous layer was entirely forward activated and you do not want ot recalculate the incoming edges to
         this layer arnodes, use this function
-        :param check_validity_of_activation:
 
         :param function_to_calculate_arnode_bias: this function would receive the list of inner nodes of the
         ar node, and return a new bias for this arnode.
+
+        :param should_recalculate_arnodes_bounds: if true it would recalculate the arnodes bounds based on its inner
+        nodes.
+
+        :param check_validity_of_activation:
         """
         for arnode in self.get_iterator_for_all_nodes():
             if arnode.get_activation_status() != ARNode.FULLY_ACTIVATED_STATUS:
                 arnode.fully_activate_arnode_without_changing_incoming_edges(
                     function_to_calculate_arnode_bias,
+                    should_recalculate_arnodes_bounds,
                     check_validity_of_activation)
 
     def split_arnode(self, key_of_arnode_to_split,
                      partition_of_arnode_inner_nodes,
                      function_to_calculate_merger_of_incoming_edges,
                      function_to_calculate_merger_of_outgoing_edges,
+                     should_recalculate_bounds,
                      function_to_calculate_arnode_bias):
         """
         :param key_of_arnode_to_split:
@@ -107,6 +116,7 @@ class ARNodeTable(TableSupportsDeletion):
             # preserve arnode assumption (7)
             new_arnode.forward_activate_arnode(function_to_calculate_merger_of_outgoing_edges)
             new_arnode.fully_activate_arnode_and_recalculate_incoming_edges(
+                should_recalculate_bounds,
                 function_to_calculate_arnode_bias,
                 function_to_calculate_merger_of_incoming_edges)
 
@@ -114,6 +124,7 @@ class ARNodeTable(TableSupportsDeletion):
                               list_of_keys_of_arnodes_to_merge,
                               function_to_calculate_merger_of_incoming_edges,
                               function_to_calculate_merger_of_outgoing_edges,
+                              should_recalculate_bounds,
                               function_to_calculate_arnode_bias):
         """
         this method merges the two arnodes given into a single arnode.
@@ -159,6 +170,7 @@ class ARNodeTable(TableSupportsDeletion):
         # preserve arnode assumption (7)
         new_arnode.forward_activate_arnode(function_to_calculate_merger_of_outgoing_edges)
         new_arnode.fully_activate_arnode_and_recalculate_incoming_edges(function_to_calculate_merger_of_incoming_edges,
+                                                                        should_recalculate_bounds,
                                                                         function_to_calculate_arnode_bias)
 
         return new_arnode

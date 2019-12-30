@@ -73,6 +73,7 @@ class Node:
         # each node would manage the constraint between its 2 global IDs. if the ids are the same, no constraint would
         # be added
         self.constraint = Node.EMPTY_CONSTRAINT
+        # if we set bounds on this node, this would be set to true
         self.has_bounds = False
 
         # this variable would be set to false if we know that the equation that the node set is no longer correct
