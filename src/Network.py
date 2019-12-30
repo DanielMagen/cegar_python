@@ -129,9 +129,10 @@ class Network:
                     weight_of_connection = get_weight_of_connection(current_layer_number,
                                                                     current_node_index_in_layer,
                                                                     a_node_index_in_previous_layer)
-
-                    list_of_pairs_of_keys_and_weights.append((the_key_in_unprocessed_table_of_node_in_previous_layer,
-                                                              weight_of_connection))
+                    if weight_of_connection != 0:
+                        list_of_pairs_of_keys_and_weights.append(
+                            (the_key_in_unprocessed_table_of_node_in_previous_layer,
+                             weight_of_connection))
 
                 # finally add all the connections to the current node
                 current_layer.add_or_edit_neighbors_to_node_in_unprocessed_table_by_bulk(
