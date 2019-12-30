@@ -163,7 +163,7 @@ class Layer:
         node_to_add_connection_to = self.get_unprocessed_node_by_key(node_key)
         node_to_add_connection_to.add_or_edit_neighbor(direction_of_connection, connection_data)
 
-    def add_or_edit_connection_to_node_in_unprocessed_table_by_bulk(self, node_key, direction_of_connection,
+    def add_or_edit_neighbors_to_node_in_unprocessed_table_by_bulk(self, node_key, direction_of_connection,
                                                                     list_of_pairs_of_keys_and_weights):
         """
         to preserve assumption (3) we only allow edges to be added to the nodes in the unprocessed table

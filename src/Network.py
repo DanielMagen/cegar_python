@@ -12,7 +12,7 @@ class Network:
     POSSIBLE_VERIFICATION_GOALS = ['>', '<']
 
     # ratio between number of initial nodes to available ids
-    MULTIPLICITY_OF_IDS = 20  # arbitrarly set it to 20
+    MULTIPLICITY_OF_IDS = 20  # arbitrarily set it to 20
 
     """
     the idea is such:
@@ -72,7 +72,74 @@ class Network:
         :param AcasNnet_object:
         creates all the nodes, their relations, their bounds, equations and constraints
         """
-        pass
+        LOCATION_OF_WEIGHTS = 0
+        LOCATION_OF_BIASES = 0
+
+        matrix = AcasNnet_object.getMatrix()
+
+        def get_bias_for_node(layer_number, index_in_layer_of_node):
+            """
+            :param layer_number:
+            :param index_in_layer_of_node:
+            :return: the bias for the (index_in_layer_of_node)th node in the given layer
+            """
+            if layer_number == 0:
+                return Node.NO_BIAS
+            return matrix[layer_number - 1][LOCATION_OF_BIASES][index_in_layer_of_node][0]
+
+        def get_weight_of_connection(layer_number, index_in_layer_of_node, index_in_previous_layer_of_node):
+            """
+            :param layer_number:
+            :param index_in_layer_of_node:
+            :param index_in_previous_layer_of_node:
+            :return: the weight of connection between (index_in_layer_of_node)th node in the given layer
+            and (index_in_next_layer_of_node)th node in the previous layer
+            """
+            return matrix[layer_number][LOCATION_OF_WEIGHTS][index_in_layer_of_node][index_in_previous_layer_of_node]
+
+        # first, initialize all the nodes and their connections
+
+        # those maps would map between index of the node in the layer (as given by the matrix)
+        # to the key of the node in the unprocessed_table in the layer
+        # from assumption (2) all nodes created would be added to the unprocessed table of the layer so its enough to
+        # save those keys, since we wont move any nodes before finishing creating the entire network
+        current_layer_nodes_map = {}
+        previous_layer_nodes_map = {}
+
+        for current_layer_number in range(len(self.layers)):
+            current_layer = self.layers[current_layer_number]
+            number_of_nodes_in_current_layer = AcasNnet_object.layerSizes[current_layer_number]
+
+            # first create all the nodes in the layer
+            for current_node_number in range(number_of_nodes_in_current_layer):
+                current_layer_nodes_map[current_node_number] = current_layer.create_new_node(
+                    get_bias_for_node(current_layer_number, current_node_number))
+
+            # next connect all those nodes, to the nodes from the previous layer
+            # we do not connect nodes which are connected to each other with 0 weight
+            for current_node_index_in_layer, current_node_key_in_unprocessed_table in current_layer_nodes_map.items():
+                list_of_pairs_of_keys_and_weights = []
+                for a_node_index_in_previous_layer, the_key_in_unprocessed_table_of_node_in_previous_layer \
+                        in previous_layer_nodes_map.items():
+                    weight_of_connection = get_weight_of_connection(current_layer_number,
+                                                                    current_node_index_in_layer,
+                                                                    a_node_index_in_previous_layer)
+
+                    list_of_pairs_of_keys_and_weights.append((the_key_in_unprocessed_table_of_node_in_previous_layer,
+                                                              weight_of_connection))
+
+                # finally add all the connections
+                current_layer.add_or_edit_neighbors_to_node_in_unprocessed_table_by_bulk(current_node_key_in_unprocessed_table,
+                                                                                         Layer.INCOMING_LAYER_DIRECTION,
+                                                                                         list_of_pairs_of_keys_and_weights)
+
+            # after finishing creating all connections between this layer and the previous one,
+            # set previous_layer_nodes_map to be current_layer_nodes_map before continuing the loop
+            previous_layer_nodes_map = current_layer_nodes_map
+            current_layer_nodes_map = {}
+
+
+        ######################################## create equations and bounds
 
     def preprocess_more_layers(self, number_of_layers_to_preprocess):
         """
