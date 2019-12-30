@@ -155,7 +155,7 @@ class Network:
         lower_bounds = AcasNnet_object.mins
         upper_bounds = AcasNnet_object.maxes
 
-        for node_index_in_layer, node_key_in_unprocessed_table in current_layer_nodes_map.items():
+        for node_index_in_layer, node_key_in_unprocessed_table in first_layer_nodes_map.items():
             first_layer.set_lower_and_upper_bound_for_node(is_arnode, table_number,
                                                            node_key_in_unprocessed_table,
                                                            lower_bounds[node_index_in_layer],
