@@ -1,4 +1,7 @@
-from maraboupy import MarabouCore
+from src.engine import inputQuery
+from src.engine import Engine
+from src.engine import ReluConstraint
+from src.engine import Equation
 
 
 class GlobalDataManager:
@@ -25,7 +28,9 @@ class GlobalDataManager:
         """
         self.ranges = [0, max_id_non_exclusive]
 
-        self.input_query_reference = MarabouCore.InputQuery()
+        self.input_query_reference = inputQuery()
+
+        self.result_of_last_solution_attempt = None
 
     def get_input_query_reference(self):
         """
@@ -34,14 +39,35 @@ class GlobalDataManager:
         """
         return self.input_query_reference
 
+    def get_result_of_last_solution_attempt(self):
+        return self.result_of_last_solution_attempt
+
     def addReluConstraint(self, id1, id2):
-        return MarabouCore.addReluConstraint(self.input_query_reference, id1, id2)
+        # PiecewiseLinearConstraint* r = new ReluConstraint(var1, var2);
+        r = ReluConstraint(id1, id2)
+        return self.input_query_reference.addPiecewiseLinearConstraint(r)
 
     def removeReluConstraint(self, constraint):
-        MarabouCore.removeReluConstraint(constraint)
+        self.input_query_reference.removeReluConstraint(constraint)
 
     def get_new_equation(self):
-        return MarabouCore.Equation()
+        return Equation()
+
+    def try_to_solve(self, timeoutInSeconds=0):
+        """
+        gives a clone of the input query to the solving engine and returns the result
+        :return: a boolean of wether or not the input query has a solution
+        if it does, the solution would be save and called be retrieved by calling
+        get_result_of_last_solution_attempt
+        """
+        input_query_copy = self.input_query_reference.copy()
+        engine = Engine()
+        engine.add_input_query(input_query_copy)
+        result = engine.solve(timeoutInSeconds)
+        if result:
+            self.result_of_last_solution_attempt = engine.extractSolution(input_query_copy)
+
+        return result
 
     def _check_if_ranges_has_holes(self):
         """
