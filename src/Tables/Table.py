@@ -108,6 +108,7 @@ class AbstractTable:
                                          bias_for_node,
                                          global_data_manager):
         """
+        :param bias_for_node:
         :param number_of_tables_in_previous_layer:
         :param number_of_tables_in_next_layer:
         :param global_data_manager:

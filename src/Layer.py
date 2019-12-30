@@ -385,7 +385,13 @@ class Layer:
         this layer arnodes, use this function
         :param table_index:
         :param function_to_calculate_merger_of_incoming_edges:
-        :return:
+
+        :param should_recalculate_arnodes_bounds: if true it would calculate new bounds to each arnode based on
+        the bounds of their inner nodes
+
+        :param function_to_calculate_arnode_bias: this function would receive the list of inner nodes of the
+        ar node, and return a new bias for this arnode.
+
         """
         self.arnode_tables[table_index].fully_activate_table_by_recalculating_incoming_edges(
             function_to_calculate_merger_of_incoming_edges,
@@ -394,15 +400,20 @@ class Layer:
 
     def fully_activate_table_without_changing_incoming_edges(self,
                                                              table_index,
-                                                             function_to_calculate_arnode_bias,
                                                              should_recalculate_arnodes_bounds,
+                                                             function_to_calculate_arnode_bias,
                                                              check_validity_of_activation=True):
         """
         if the previous layer was entirely forward activated and you do not want ot recalculate the incoming edges to
         this layer arnodes, use this function
         :param table_index:
         :param check_validity_of_activation:
-        :return:
+
+        :param should_recalculate_arnodes_bounds: if true it would calculate new bounds to each arnode based on
+        the bounds of their inner nodes
+
+        :param function_to_calculate_arnode_bias: this function would receive the list of inner nodes of the
+        ar node, and return a new bias for this arnode.
         """
         self.arnode_tables[table_index].fully_activate_table_without_changing_incoming_edges(
             function_to_calculate_arnode_bias,
@@ -432,6 +443,13 @@ class Layer:
         :param list_of_keys_of_arnodes_to_merge:
         :param function_to_calculate_merger_of_incoming_edges:
         :param function_to_calculate_merger_of_outgoing_edges:
+
+        :param should_recalculate_bounds: if true it would calculate new bounds for the arnode based on
+        the bounds of its inner nodes
+
+        :param function_to_calculate_arnode_bias: this function would receive the list of inner nodes of the
+        ar node, and return a new bias for this arnode.
+
         :return: the new merged arnode
         """
 

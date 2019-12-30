@@ -414,11 +414,15 @@ class ARNode(Node):
         the assumption behind this method is that the incoming edges were already set when we forward activated all the
         nodes which have an outgoing connection to this arnode
 
+        :param function_to_calculate_arnode_bias: this function would receive the list of inner nodes of the
+        ar node, and return a new bias for this arnode.
+
+        :param should_recalculate_bounds: if true it would calculate new bounds to the arnode based on the bounds of
+        its inner nodes
+
         :param check_validity_of_activation: this might take a long time to do each time, so if you are sure that
         the activation is valid you can set it to false
 
-        :param function_to_calculate_arnode_bias: this function would receive the list of inner nodes of the
-        ar node, and return a new bias for this arnode.
         """
         self.check_if_killed_and_raise_error_if_is()
 
@@ -459,11 +463,11 @@ class ARNode(Node):
         2) a list of weights we are connected to the arnode with
         and returns a new weight for that we will connect to the given arnode with
 
+        :param should_recalculate_bounds: if true it would calculate new bounds to the arnode based on the bounds of
+        its inner nodes
+
         :param function_to_calculate_arnode_bias: this function would receive the list of inner nodes of the
         ar node, and return a new bias for this arnode.
-
-        :param global_incoming_id:
-        :param global_outgoing_id:
         """
         self.check_if_killed_and_raise_error_if_is()
 
@@ -483,8 +487,8 @@ class ARNode(Node):
         # status is not ARNode.NOT_ACTIVATED_STATUS
         self._recalculate_edges_in_direction(Node.INCOMING_EDGE_DIRECTION,
                                              function_to_calculate_merger_of_incoming_edges,
-                                             function_to_verify_arnode_neighbors_with=lambda
-                                                 node: node.get_activation_status() != ARNode.NOT_ACTIVATED_STATUS)
+                                             function_to_verify_arnode_neighbors_with=lambda node:
+                                             node.get_activation_status() != ARNode.NOT_ACTIVATED_STATUS)
 
         # finally, set the right activation status
         self.activation_status = ARNode.FULLY_ACTIVATED_STATUS

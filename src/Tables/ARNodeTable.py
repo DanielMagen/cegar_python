@@ -44,6 +44,9 @@ class ARNodeTable(TableSupportsDeletion):
         this layer arnodes, use this function
         :param function_to_calculate_merger_of_incoming_edges:
 
+        :param should_recalculate_arnodes_bounds: if true it would calculate new bounds to each arnode based on
+        the bounds of their inner nodes
+
         :param function_to_calculate_arnode_bias: this function would receive the list of inner nodes of the
         ar node, and return a new bias for this arnode.
         """

@@ -103,16 +103,16 @@ class Node:
 
         our_location = self.get_location()
 
-        def remove_from_node_by_direction_and_data(direction_of_connection, neighbor):
+        def remove_from_node_by_direction_and_data(direction_of_connection, neighbor_node):
             # I choose to simply remove the connection data from the neighbor but not from us since we are
             # going to destroy the entire NodeEdges structure after we are done, so there is no need to remove each
             # connection from it one by one.
 
             # if an node is connected to us by an edge that is incoming to us it means that for him we are
             # an outgoing connection
-            neighbor.remove_neighbor_from_neighbors_list(-direction_of_connection,
-                                                         our_location,
-                                                         remove_this_node_from_given_node_neighbors_list=False)
+            neighbor_node.remove_neighbor_from_neighbors_list(-direction_of_connection,
+                                                              our_location,
+                                                              remove_this_node_from_given_node_neighbors_list=False)
 
         for neighbor in self.incoming_edges_manager.get_a_list_of_all_neighbors_pointers():
             remove_from_node_by_direction_and_data(Node.INCOMING_EDGE_DIRECTION, neighbor)

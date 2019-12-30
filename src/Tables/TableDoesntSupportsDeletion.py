@@ -37,6 +37,7 @@ class TableDoesntSupportsDeletion(AbstractTable):
                                          node_bias,
                                          global_data_manager):
         """
+        :param node_bias:
         :param number_of_tables_in_previous_layer:
         :param number_of_tables_in_next_layer:
         :param global_data_manager:
