@@ -33,20 +33,22 @@ class Network:
 
     NUMBER_OF_TABLES_IN_LAYER = Layer.NUMBER_OF_OVERALL_TABLES
 
-    def __init__(self, AcasNnet_object, goal_index):
+    def __init__(self, AcasNnet_object, which_acas_output):
         """
         :param AcasNnet_object:
         an AcasNnet object which has loaded into itself the network and the requested bounds on the network input nodes.
         this network class would convert that network into an inner representation of multiple layers, tables and
         node classes, which are built for the purpose of supporting the abstraction refinement
 
-        :param goal_index: either INDEX_OF_NEED_TO_INCREASE_OUTPUT or INDEX_OF_NEED_TO_DECREASE_OUTPUT
-        if INDEX_OF_NEED_TO_INCREASE_OUTPUT is given we assume that we want to increase the network output
-        """
-        if goal_index not in Network.POSSIBLE_GOALS:
-            raise Exception("can not initialize network with illegal goal index")
 
-        self.goal_index = goal_index
+        :param which_acas_output:
+        for now the network class does not support adding arbitrary output bounds (for cegar to work on such bounds
+        the network class would need to convert the bounds to a single bound of the form >).
+        we do support adding the output bounds for the AcasNnet, which are hardcoded into this class.
+        """
+        # for now the goal of the network would always be to increase its output
+        # TODO check if its ok, maybe it needs to be the opposite
+        self.goal_index = Network.INDEX_OF_NEED_TO_INCREASE_OUTPUT
 
         self.number_of_layers_in_network = len(AcasNnet_object.layerSizes)
 
@@ -101,8 +103,8 @@ class Network:
 
         # first, initialize all the nodes and their connections
 
-        # those maps would map between index of the node in the layer (as given by the matrix)
-        # to the key of the node in the unprocessed_table in the layer
+        # those maps would map between index of the node in the conceptual layer (as given by the matrix)
+        # to the key of the node in the unprocessed_table in the layer object
         # from assumption (2) all nodes created would be added to the unprocessed table of the layer so its enough to
         # save those keys, since we wont move any nodes before finishing creating the entire network
         current_layer_nodes_map = {}

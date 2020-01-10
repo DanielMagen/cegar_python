@@ -1,5 +1,9 @@
 from src.GlobalDataManager import GlobalDataManager
 
+"""
+tests only the id manager part of the global data manager
+"""
+
 id_giver = GlobalDataManager(501)
 for i in range(11):
     id_giver.get_new_id()

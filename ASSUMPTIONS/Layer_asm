@@ -47,6 +47,9 @@ we will arbitrarily decide that the nodes in it are pos-inc and would move them 
 is being preprocessed. this entails that their arnodes would also count as pos-inc.
 for the last layer, in accordance to the paper, we catalog it as a pos-inc node
 
+10)
+-> Node assumptions (12)
+
 
 
 Layer conclusions:

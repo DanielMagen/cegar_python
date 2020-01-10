@@ -56,8 +56,8 @@ class GlobalDataManager:
     def try_to_solve(self, timeoutInSeconds=0):
         """
         gives a clone of the input query to the solving engine and returns the result
-        :return: a boolean of wether or not the input query has a solution
-        if it does, the solution would be save and called be retrieved by calling
+        :return: a boolean of whether or not the input query has a solution
+        if it does, the solution would be saved and could be retrieved by calling
         get_result_of_last_solution_attempt
         """
         input_query_copy = self.input_query_reference.copy()
@@ -144,7 +144,8 @@ class GlobalDataManager:
     def give_id_back(self, id_returned):
         """
         :param id_returned: an id that should be marked as available
-        for now this function trusts the user that a correct id was returned (i.e. an id that was given before)
+        for now this function almost completely trusts the user that a correct id is given back
+        (i.e. we only get an id that was given before)
         """
         if id_returned >= self.max_id:
             raise ValueError('the id was never given')
@@ -181,9 +182,10 @@ class GlobalDataManager:
         # if that happened then we can reduce the number of variables in the input query
         # (for example, in the state [0,1,5,9,10,max] we held ids 5,6,7,8 as hole ids, and after inserting 9
         # we can reduce the number of used variables in the input query to 5 (0,1,2,3,4) (with 0 being a hole id))
-        if length_of_ranges_before_insertion > 2:
+        if length_of_ranges_before_insertion > GlobalDataManager.LENGTH_OF_SIMPLE_RANGE:
             # if the length_of_ranges_before_insertion was 2 then we couldn't have "merge the 2 final ranges"
-            # since there were no 2 final ranges
+            # since there were no 2 final ranges.
+            # so this subsequence would only run when there is a possibility of merger.
             current_largest_available_id = self.ranges[GlobalDataManager.LOCATION_OF_LARGEST_AVAILABLE_ID]
             if largest_available_id_before_insertion != current_largest_available_id:
                 # then the final range [a, max] was changed, and the only way it could have changed is by merging
@@ -196,7 +198,8 @@ class GlobalDataManager:
         else:
             # check for holes
             if len(self.ranges) == GlobalDataManager.LENGTH_OF_SIMPLE_RANGE:
-                # then the id we inserted did not create a new hole, i.e. it was the largest id given
+                # then the id we inserted did not create a new hole,
+                # the only way it could happen is if the id returned was the largest id given
                 # so we can simply reduce the number of used variables by 1 (since we gave up our largest used id)
                 self.reset_number_of_variables_in_input_query()
             else:

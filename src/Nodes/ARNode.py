@@ -149,10 +149,11 @@ class ARNode(Node):
         self.calculate_equation_and_constraints()
 
         # now calculate arnode bounds
-        if len(lower_bounds) == 0 or len(upper_bounds) == 0:
-            self.has_bounds = False
-        else:
-            self.set_lower_and_upper_bound(max(lower_bounds), min(upper_bounds))
+        if should_recalculate_bounds:
+            if len(lower_bounds) == 0 or len(upper_bounds) == 0:
+                self.has_bounds = False
+            else:
+                self.set_lower_and_upper_bound(max(lower_bounds), min(upper_bounds))
 
     def get_global_incoming_id(self):
         # preserve assumption (8)

@@ -341,7 +341,7 @@ class Layer:
             if nodes_created[i] is not None:
                 self._create_arnode_for_node(nodes_created[i])
 
-    def handle_preprocess_of_outer_layers(self):
+    def _handle_preprocess_of_outer_layers(self):
         # from assumption (9) we will simply move the nodes to the pos-inc table
         table_to_move_to = self.regular_node_tables[Layer.INDEX_OF_POS_INC_TABLE]
 
@@ -369,10 +369,9 @@ class Layer:
         :return:
         """
         unprocessed_table = self.regular_node_tables[Layer.INDEX_OF_UNPROCESSED_TABLE]
-        if self.previous_layer == Layer.NO_POINTER_TO_ADJACENT_LAYER or \
-                self.next_layer == Layer.NO_POINTER_TO_ADJACENT_LAYER:
+        if not self.layer_is_inner:
             # from assumption (9) we will simply move the nodes to the pos-inc table
-            self.handle_preprocess_of_outer_layers()
+            self._handle_preprocess_of_outer_layers()
 
         else:
             for node_key in unprocessed_table.get_list_of_all_keys():
@@ -389,7 +388,6 @@ class Layer:
     def fully_activate_table_by_recalculating_incoming_edges(self,
                                                              table_index,
                                                              function_to_calculate_merger_of_incoming_edges,
-                                                             should_recalculate_arnodes_bounds,
                                                              function_to_calculate_arnode_bias):
         """
         if the previous layer was entirely forward activated but you want ot recalculate the incoming edges to
@@ -397,13 +395,16 @@ class Layer:
         :param table_index:
         :param function_to_calculate_merger_of_incoming_edges:
 
-        :param should_recalculate_arnodes_bounds: if true it would calculate new bounds to each arnode based on
-        the bounds of their inner nodes
-
         :param function_to_calculate_arnode_bias: this function would receive the list of inner nodes of the
         ar node, and return a new bias for this arnode.
 
         """
+        # according to assumption (10) only outer layers nodes should have bounds
+        # so no need to recalculate bounds if layer is inner
+        should_recalculate_arnodes_bounds = True
+        if self.layer_is_inner:
+            should_recalculate_arnodes_bounds = False
+
         self.arnode_tables[table_index].fully_activate_table_by_recalculating_incoming_edges(
             function_to_calculate_merger_of_incoming_edges,
             should_recalculate_arnodes_bounds,
@@ -411,7 +412,6 @@ class Layer:
 
     def fully_activate_table_without_changing_incoming_edges(self,
                                                              table_index,
-                                                             should_recalculate_arnodes_bounds,
                                                              function_to_calculate_arnode_bias,
                                                              check_validity_of_activation=True):
         """
@@ -420,12 +420,15 @@ class Layer:
         :param table_index:
         :param check_validity_of_activation:
 
-        :param should_recalculate_arnodes_bounds: if true it would calculate new bounds to each arnode based on
-        the bounds of their inner nodes
-
         :param function_to_calculate_arnode_bias: this function would receive the list of inner nodes of the
         ar node, and return a new bias for this arnode.
         """
+        # according to assumption (10) only outer layers nodes should have bounds
+        # so no need to recalculate bounds if layer is inner
+        should_recalculate_arnodes_bounds = True
+        if self.layer_is_inner:
+            should_recalculate_arnodes_bounds = False
+
         self.arnode_tables[table_index].fully_activate_table_without_changing_incoming_edges(
             function_to_calculate_arnode_bias,
             should_recalculate_arnodes_bounds,
@@ -434,8 +437,13 @@ class Layer:
     def split_arnode(self, table_number, key_in_table, partition_of_arnode_inner_nodes,
                      function_to_calculate_merger_of_incoming_edges,
                      function_to_calculate_merger_of_outgoing_edges,
-                     should_recalculate_bounds,
                      function_to_calculate_arnode_bias):
+
+        # according to assumption (10) only outer layers nodes should have bounds
+        # so no need to recalculate bounds if layer is inner
+        should_recalculate_bounds = True
+        if self.layer_is_inner:
+            should_recalculate_bounds = False
 
         self.arnode_tables[table_number].split_arnode(key_in_table, partition_of_arnode_inner_nodes,
                                                       function_to_calculate_merger_of_incoming_edges,
@@ -446,7 +454,6 @@ class Layer:
     def merge_list_of_arnodes(self, table_number, list_of_keys_of_arnodes_to_merge,
                               function_to_calculate_merger_of_incoming_edges,
                               function_to_calculate_merger_of_outgoing_edges,
-                              should_recalculate_bounds,
                               function_to_calculate_arnode_bias):
         """
 
@@ -455,14 +462,16 @@ class Layer:
         :param function_to_calculate_merger_of_incoming_edges:
         :param function_to_calculate_merger_of_outgoing_edges:
 
-        :param should_recalculate_bounds: if true it would calculate new bounds for the arnode based on
-        the bounds of its inner nodes
-
         :param function_to_calculate_arnode_bias: this function would receive the list of inner nodes of the
         ar node, and return a new bias for this arnode.
 
         :return: the new merged arnode
         """
+        # according to assumption (10) only outer layers nodes should have bounds
+        # so no need to recalculate bounds if layer is inner
+        should_recalculate_bounds = True
+        if self.layer_is_inner:
+            should_recalculate_bounds = False
 
         return self.arnode_tables[table_number].merge_list_of_arnodes(list_of_keys_of_arnodes_to_merge,
                                                                       function_to_calculate_merger_of_incoming_edges,
@@ -592,6 +601,11 @@ class Layer:
         :param lower_bound:
         :param upper_bound:
         """
+        if self.layer_is_inner:
+            # violation of assumption 10
+            raise Exception("can not set bounds on inner layer nodes, the bounds should only be set "
+                            "on outer layers nodes, and marabou would propagate the bounds throughout the network")
+
         tables = self.regular_node_tables
         if is_arnode:
             tables = self.arnode_tables
