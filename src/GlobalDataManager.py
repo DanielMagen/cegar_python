@@ -1,7 +1,4 @@
-from src.engine import inputQuery
-from src.engine import Engine
-from src.engine import ReluConstraint
-from src.engine import Equation
+from maraboupy import MarabouCore
 
 
 class GlobalDataManager:
@@ -31,7 +28,7 @@ class GlobalDataManager:
         """
         self.ranges = [0, max_id_non_exclusive]
 
-        self.input_query_reference = inputQuery()
+        self.input_query_reference = MarabouCore.InputQuery()
         self.input_query_of_original_network = None
 
         self.counter_example_input_query_of_last_solution_attempt = None
@@ -57,15 +54,13 @@ class GlobalDataManager:
         return self.input_query_reference
 
     def addReluConstraint(self, id1, id2):
-        # PiecewiseLinearConstraint* r = new ReluConstraint(var1, var2);
-        r = ReluConstraint(id1, id2)
-        return self.input_query_reference.addPiecewiseLinearConstraint(r)
+        MarabouCore.addReluConstraint(self.input_query_reference, id1, id2)
 
-    def removeReluConstraint(self, constraint):
-        self.input_query_reference.removeReluConstraint(constraint)
+    def removeReluConstraint(self, constraint, id1, id2):
+        MarabouCore.removeReluConstraint(self.input_query_reference, id1, id2)
 
     def get_new_equation(self):
-        return Equation()
+        return MarabouCore.Equation()
 
     def get_counter_example_input_query_of_last_solution_attempt(self):
         return self.counter_example_input_query_of_last_solution_attempt

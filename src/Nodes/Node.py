@@ -15,7 +15,6 @@ class Node:
 
     NO_GLOBAL_ID = -1
     NO_EQUATION = None
-    EMPTY_CONSTRAINT = None
     NO_REFERENCE = None
     NO_BIAS = 0
 
@@ -72,7 +71,7 @@ class Node:
 
         # each node would manage the constraint between its 2 global IDs. if the ids are the same, no constraint would
         # be added
-        self.constraint = Node.EMPTY_CONSTRAINT
+        self.has_constraint = False
         # if we set bounds on this node, this would be set to true
         self.has_bounds = False
 
@@ -207,10 +206,11 @@ class Node:
                 return
         else:
             # initialize the relu constraint between them
-            self.constraint = self.global_data_manager.addReluConstraint(self.global_incoming_id,
-                                                                         self.global_outgoing_id)
+            self.global_data_manager.addReluConstraint(self.global_incoming_id,
+                                                       self.global_outgoing_id)
+            self.has_constraint = True
 
-        # initialize the equation
+            # initialize the equation
         self.equation = self.global_data_manager.get_new_equation()
         # add -1 * yourself
         self.equation.addAddend(-1, self.global_incoming_id)
@@ -244,10 +244,11 @@ class Node:
             return
 
         self.global_data_manager.get_input_query_reference().removeEquation(self.equation)
-        self.global_data_manager.removeReluConstraint(self.constraint)
+        if self.has_constraint:
+            self.global_data_manager.removeReluConstraint(self.global_incoming_id, self.global_outgoing_id)
 
         self.equation = Node.NO_EQUATION
-        self.constraint = Node.EMPTY_CONSTRAINT
+        self.has_constraint = False
 
         # finally set global_equation_is_valid to True since the equation and constraint were removed
         self.global_equation_is_valid = True

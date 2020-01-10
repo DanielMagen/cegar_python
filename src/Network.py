@@ -291,4 +291,4 @@ class Network:
         if result == GlobalDataManager.UNSAT:
             return result
 
-        counter_example = self.global_data_manager.get_result_of_last_solution_attempt()
+        result_is_valid = self.global_data_manager.evaluate_if_result_of_last_solution_attempt_is_a_valid_counterexample()
