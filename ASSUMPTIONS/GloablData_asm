@@ -3,3 +3,20 @@ each node would have a unique set of ids that would not intersect any other node
 
 2)
 Marabou can handle gaps in ids (no sure about that one, but I asked guy)
+
+3)
+-> ARNode assumption (8)
+
+4)
+-> Layer assumptions (11)
+
+5)
+input nodes would never return their global id until the program is finished.
+this is very important, because the global data manager relies on it.
+because of this assumption the manager can save a copy of the first network data and be sure that
+when we tell it that for example variable number 5 is an input node, that its really an input node and the same
+one as the one of the current network.
+even if the input node is wrapped inside an arnode, from assumption (3) and assumption (4)
+we know that the input node id will never be returned.
+this is because from assumption (3) we know that an id is returned when the arnode which wraps the node is
+fully activated. but from assumption (4) we know that an input arnode would never be fully activated.

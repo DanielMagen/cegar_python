@@ -64,7 +64,7 @@ but the problem is that in layer 0 the never categorize (or split) the input nod
 would be connected to a plethora of tables.
 
 10)
-an inner node can only be attributed to one arnode at a time. i.e. nodes can not appear in different arnodes
+a node can only be attributed to one arnode at a time. i.e. nodes can not appear in different arnodes
 
 11)
 -> Table assumption (5)

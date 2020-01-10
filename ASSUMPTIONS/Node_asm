@@ -44,3 +44,6 @@ inner layers nodes would have 2 global ids, and outer layers nodes would have on
 12)
 only input and output nodes would have a bounds set on them
 other nodes would have their bounds calculated by the marabou system
+
+13)
+-> GlobalDataManager assumption (3)

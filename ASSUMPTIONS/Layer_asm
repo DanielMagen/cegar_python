@@ -50,7 +50,9 @@ for the last layer, in accordance to the paper, we catalog it as a pos-inc node
 10)
 -> Node assumptions (12)
 
-
+11)
+the input layer would never be fully activated.
+the global data manager relies on this assumption.
 
 Layer conclusions:
 1)

@@ -399,6 +399,10 @@ class Layer:
         ar node, and return a new bias for this arnode.
 
         """
+        if self.previous_layer == Layer.NO_POINTER_TO_ADJACENT_LAYER:
+            # violation of assumption (11)
+            raise Exception("can not fully activate input layer")
+
         # according to assumption (10) only outer layers nodes should have bounds
         # so no need to recalculate bounds if layer is inner
         should_recalculate_arnodes_bounds = True
@@ -423,6 +427,10 @@ class Layer:
         :param function_to_calculate_arnode_bias: this function would receive the list of inner nodes of the
         ar node, and return a new bias for this arnode.
         """
+        if self.previous_layer == Layer.NO_POINTER_TO_ADJACENT_LAYER:
+            # violation of assumption (11)
+            raise Exception("can not fully activate input layer")
+
         # according to assumption (10) only outer layers nodes should have bounds
         # so no need to recalculate bounds if layer is inner
         should_recalculate_arnodes_bounds = True

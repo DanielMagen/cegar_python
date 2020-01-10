@@ -67,6 +67,10 @@ class Network:
         # INDEX_OF_NEED_TO_INCREASE_OUTPUT or INDEX_OF_NEED_TO_DECREASE_OUTPUT
         self.hard_code_acas_output_properties(which_acas_output)
 
+        # finally, before starting to act upon the Network, save the starting network
+        # state as the state that would be used to check possible sat solutions
+        self.global_data_manager.save_current_input_query_as_original_network()
+
     def _initialize_layers(self):
         self.layers[0] = Layer(self.global_data_manager, Layer.NO_POINTER_TO_ADJACENT_LAYER,
                                Layer.NO_POINTER_TO_ADJACENT_LAYER)
@@ -276,3 +280,15 @@ class Network:
         """
         # for now it seems that the function is sum all the times
         return lambda node, lis: sum(lis)
+
+    def get_decide_list_of_best_arnodes_to_merge(self, a_boolean, list_of_doubles,
+                                                 list_of_currently_chosen_arnodes_to_merge):
+        pass
+
+    def run_cegar(self):
+        timeoutInSeconds = 0
+        result = self.global_data_manager.verify(timeoutInSeconds)
+        if result == GlobalDataManager.UNSAT:
+            return result
+
+        counter_example = self.global_data_manager.get_result_of_last_solution_attempt()

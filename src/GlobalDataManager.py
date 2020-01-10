@@ -8,6 +8,9 @@ class GlobalDataManager:
     LOCATION_OF_LARGEST_AVAILABLE_ID = -2
     LENGTH_OF_SIMPLE_RANGE = 2  # if self.ranges is of that length then its of the form [a, max]
 
+    UNSAT = False
+    SAT = True
+
     """
     currently this class does not support reaching the end of its available id range.
     if we exhaust the ids, then the class behavior is no defined. it would make errors. 
@@ -29,8 +32,22 @@ class GlobalDataManager:
         self.ranges = [0, max_id_non_exclusive]
 
         self.input_query_reference = inputQuery()
+        self.input_query_of_original_network = None
 
-        self.result_of_last_solution_attempt = None
+        self.counter_example_input_query_of_last_solution_attempt = None
+
+    def save_current_input_query_as_original_network(self):
+        """
+        this function copies the current self.input_query_reference and saves it to
+        self.input_query_of_original_network
+
+        input_query_of_original_network would be used to evaluate possible sat
+        results later on.
+        from assumption (5) we know that the input nodes wont change their id throughout the program life,
+        so we can use this old input query knowing that when a possible solution would tell us to. for example, set
+        input node with global id 5 to be 1.2, then it would be the input node with global id 5 from the start
+        """
+        self.input_query_of_original_network = self.input_query_reference.copy()
 
     def get_input_query_reference(self):
         """
@@ -38,9 +55,6 @@ class GlobalDataManager:
         and unchanged throughout the GlobalDataManager life according to assumption (1)
         """
         return self.input_query_reference
-
-    def get_result_of_last_solution_attempt(self):
-        return self.result_of_last_solution_attempt
 
     def addReluConstraint(self, id1, id2):
         # PiecewiseLinearConstraint* r = new ReluConstraint(var1, var2);
@@ -53,21 +67,35 @@ class GlobalDataManager:
     def get_new_equation(self):
         return Equation()
 
-    def try_to_solve(self, timeoutInSeconds=0):
+    def get_counter_example_input_query_of_last_solution_attempt(self):
+        return self.counter_example_input_query_of_last_solution_attempt
+
+    def evaluate_if_result_of_last_solution_attempt_is_a_valid_counterexample(self):
+        #########################################################################################################
+        # I dont know how to evaluate the sat result on the original network
+        # I sent a mail about it to Yitzhak on 10.1
+        # anyway you can use self.input_query_of_original_network to do it when you get an answer
+        pass
+
+    def verify(self, timeoutInSeconds=0):
         """
         gives a clone of the input query to the solving engine and returns the result
-        :return: a boolean of whether or not the input query has a solution
-        if it does, the solution would be saved and could be retrieved by calling
-        get_result_of_last_solution_attempt
+        :return: SAT or UN-SAT indicating whether or not the input query has a counter example
+        if it does, the counter example would be saved.
+
+        the counter example could be retrieved by calling get_counter_example_input_query_of_last_solution_attempt
+        the counter example could also be checked if its a correct counter example or not.
         """
         input_query_copy = self.input_query_reference.copy()
         engine = Engine()
         engine.add_input_query(input_query_copy)
         result = engine.solve(timeoutInSeconds)
-        if result:
-            self.result_of_last_solution_attempt = engine.extractSolution(input_query_copy)
+        if result == GlobalDataManager.SAT:
+            engine.extractSolution(input_query_copy)
+            self.counter_example_input_query_of_last_solution_attempt = input_query_copy
+            return GlobalDataManager.SAT
 
-        return result
+        return GlobalDataManager.UNSAT
 
     def _check_if_ranges_has_holes(self):
         """
