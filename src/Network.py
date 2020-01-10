@@ -26,6 +26,7 @@ class Network:
     so if we want to verify that y > c we will enlarge the output of the network
     and if we want to verify that y < c we will dwindle the output of the network
     """
+    UNINITIALIZED_GOAL_INDEX = -1
     INDEX_OF_NEED_TO_INCREASE_OUTPUT = POSSIBLE_VERIFICATION_GOALS.index('>')
     INDEX_OF_NEED_TO_DECREASE_OUTPUT = POSSIBLE_VERIFICATION_GOALS.index('<')
 
@@ -46,10 +47,6 @@ class Network:
         the network class would need to convert the bounds to a single bound of the form >).
         we do support adding the output bounds for the AcasNnet, which are hardcoded into this class.
         """
-        # for now the goal of the network would always be to increase its output
-        # TODO check if its ok, maybe it needs to be the opposite
-        self.goal_index = Network.INDEX_OF_NEED_TO_INCREASE_OUTPUT
-
         self.number_of_layers_in_network = len(AcasNnet_object.layerSizes)
 
         self.global_data_manager = GlobalDataManager(Network.MULTIPLICITY_OF_IDS * self.number_of_nodes_in_network)
@@ -63,6 +60,12 @@ class Network:
         # now create all the nodes in the network
         self.number_of_nodes_in_network = 0
         self._initialize_nodes_in_all_layers(AcasNnet_object)
+
+        # for now the goal of the network would always be to increase its output
+        self.goal_index = Network.UNINITIALIZED_GOAL_INDEX
+        # this function would set self.goal_index to either
+        # INDEX_OF_NEED_TO_INCREASE_OUTPUT or INDEX_OF_NEED_TO_DECREASE_OUTPUT
+        self.hard_code_acas_output_properties(which_acas_output)
 
     def _initialize_layers(self):
         self.layers[0] = Layer(self.global_data_manager, Layer.NO_POINTER_TO_ADJACENT_LAYER,
@@ -170,6 +173,20 @@ class Network:
         table_number = Layer.INDEX_OF_UNPROCESSED_TABLE
         for i in range(Network.LOCATION_OF_FIRST_LAYER + 1, len(self.layers)):
             self.layers[i].calculate_equation_and_constraints_for_all_nodes_in_table(is_arnode, table_number)
+
+    #################################################################################################################################################################
+    def hard_code_acas_output_properties(self, which_acas_output):
+        """
+        sent a mail to guy in 10.1 asking him which set of properties to hardcode
+
+        :param which_acas_output:
+        which of the 4/11 properties should be added to the network
+
+        this function would set self.goal_index to either
+        INDEX_OF_NEED_TO_INCREASE_OUTPUT or INDEX_OF_NEED_TO_DECREASE_OUTPUT
+        """
+        # TODO implement
+        pass
 
     def preprocess_more_layers(self, number_of_layers_to_preprocess):
         """
