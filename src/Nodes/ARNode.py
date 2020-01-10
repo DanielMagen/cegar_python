@@ -416,6 +416,15 @@ class ARNode(Node):
         nodes which have an outgoing connection which is incoming to this arnode.
         (because when we forward activated all those nodes they created an outgoing edge that is incoming to us,
         so all of our incoming connections were already set)
+        or so it would seem...
+        but the activation process is not commutative. i.e. we get different weights for an edge depending on the node
+        we activate (the node at the beginning or the end of the edge).
+        btw, note that we only care about the incoming edges since the node outgoing edges were "put into the game",
+        when the arnode was forward activated (think on what happens when the forward activated node is connected to a
+        fully activated node which was merged or split).
+        when first activating an arnode it shouldn't matter much which full activation function we choose, one that
+        recalculates the incoming edges or not, but when we are in the middle of the program and we are activating an
+        arnode that was just split or merged, it matters a great deal which full activation function ae choose.
 
         :param function_to_calculate_arnode_bias: this function would receive the list of inner nodes of the
         ar node, and return a new bias for this arnode.

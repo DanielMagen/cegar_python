@@ -252,8 +252,7 @@ class Network:
             self.last_layer_not_forward_activated -= 1
 
     def fully_activate_more_layers(self, number_of_layers_to_fully_activate,
-                                   raise_error_if_overflow=False,
-                                   recalculate_incoming_edges=True):
+                                   raise_error_if_overflow=False):
         """
         :param number_of_layers_to_fully_activate:
         fully activates 'number_of_layers_to_fully_activate' network layers which were not already fully activated
@@ -268,20 +267,6 @@ class Network:
         trying to fully activate it would count as something that we would raise an error about.
 
         if its false, it simply fully activates as many layers as it can. note that this number could be 0.
-
-        :param recalculate_incoming_edges: is set to true by default.
-        when we forward activated layer number k, all the arnodes in that layer connected themselves to all the arnodes
-        in layer k+1. as such when we want to fully activate all the nodes in layer k+1, there is no need to recalculate
-        the edges between layer k and layer k+1.
-        or so it would seem...
-        but the activation process is not commutative. i.e. we get different weights for an edge depending on the node
-        we activate (the node at the beginning or the end of the edge).
-        btw, note that we only care about the incoming edges since the node outgoing edges were "put into the game",
-        when the arnode was forward activated (think on what happens when the forward activated node is connected to a
-        fully activated node which was merged or split).
-        but to summarize, setting this variable to true would recalculate the incoming edges based on the
-        function_to_calculate_merger_of_incoming_edges which we would get from the
-        get_function_to_calc_weight_for_incoming_edges_for_arnode function.
         """
         up_to = self.last_layer_not_fully_activated - number_of_layers_to_fully_activate
         if raise_error_if_overflow:
@@ -301,18 +286,13 @@ class Network:
                        max(self.last_layer_not_forward_activated + 1, up_to), -1):
             current_layer = self.layers[i]
             for table_number in Layer.OVERALL_ARNODE_TABLES:
-                if recalculate_incoming_edges:
-                    function_to_calculate_merger_of_incoming_edges = self. \
-                        get_function_to_calc_weight_for_incoming_edges_for_arnode(table_number)
-                    current_layer.fully_activate_table_by_recalculating_incoming_edges(
-                        table_number,
-                        function_to_calculate_merger_of_incoming_edges,
-                        function_to_calculate_arnode_bias)
-                else:
-                    current_layer.fully_activate_table_without_changing_incoming_edges(
-                        table_number,
-                        function_to_calculate_arnode_bias,
-                        check_validity_of_activation=True)
+                # since this is the first time the arnode is being activated (we are not activating a node which was
+                # just split or merged), we don't need to recalculate the incoming edges to the arnode, those were
+                # calculated by the arnodes which were forward activated
+                current_layer.fully_activate_table_without_changing_incoming_edges(
+                    table_number,
+                    self.get_function_to_calc_bias_for_arnode(table_number),
+                    check_validity_of_activation=True)
 
             self.last_layer_not_fully_activated -= 1
 
@@ -393,6 +373,16 @@ class Network:
         """
         # for now it seems that the function is sum all the times
         return lambda node, lis: sum(lis)
+
+    ######################## ask Yithzak about this
+    def get_function_to_calc_bias_for_arnode(self,
+                                             table_number_of_arnode):
+        def function_to_calc_bias_for_arnode(list_of_inner_nodes):
+            if len(list_of_inner_nodes) == 1:
+                return list_of_inner_nodes[0].get_node_bias()
+            return 0
+
+        return function_to_calc_bias_for_arnode
 
     def get_decide_list_of_best_arnodes_to_merge(self, a_boolean, list_of_doubles,
                                                  list_of_currently_chosen_arnodes_to_merge):
