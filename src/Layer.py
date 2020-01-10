@@ -19,6 +19,9 @@ class Layer:
     INDEX_OF_NEG_INC_TABLE = 2
     INDEX_OF_NEG_DEC_TABLE = 3
 
+    OVERALL_ARNODE_TABLES = [INDEX_OF_POS_INC_TABLE, INDEX_OF_POS_DEC_TABLE, INDEX_OF_NEG_INC_TABLE,
+                             INDEX_OF_NEG_DEC_TABLE]
+
     # the unprocessed_table would be added after all the tables which do not support deletion
     INDEX_OF_UNPROCESSED_TABLE = NUMBER_OF_REGULAR_TABLES_THAT_DO_NOT_SUPPORT_DELETION
 
@@ -378,21 +381,21 @@ class Layer:
                 self.split_unprocessed_node_to_tables(node_key, Layer.get_split_edge_data_by_types)
 
     def forward_activate_arnode_table(self,
-                                      table_index,
+                                      table_number,
                                       function_to_calculate_merger_of_outgoing_edges):
-        arnode_iterator = self.arnode_tables[table_index].get_iterator_for_all_nodes()
+        arnode_iterator = self.arnode_tables[table_number].get_iterator_for_all_nodes()
         for arnode in arnode_iterator:
             if arnode.get_activation_status() != ARNode.FULLY_ACTIVATED_STATUS:
                 arnode.forward_activate_arnode(function_to_calculate_merger_of_outgoing_edges)
 
     def fully_activate_table_by_recalculating_incoming_edges(self,
-                                                             table_index,
+                                                             table_number,
                                                              function_to_calculate_merger_of_incoming_edges,
                                                              function_to_calculate_arnode_bias):
         """
         if the previous layer was entirely forward activated but you want ot recalculate the incoming edges to
         this layer arnodes, use this function
-        :param table_index:
+        :param table_number:
         :param function_to_calculate_merger_of_incoming_edges:
 
         :param function_to_calculate_arnode_bias: this function would receive the list of inner nodes of the
@@ -409,19 +412,19 @@ class Layer:
         if self.layer_is_inner:
             should_recalculate_arnodes_bounds = False
 
-        self.arnode_tables[table_index].fully_activate_table_by_recalculating_incoming_edges(
+        self.arnode_tables[table_number].fully_activate_table_by_recalculating_incoming_edges(
             function_to_calculate_merger_of_incoming_edges,
             should_recalculate_arnodes_bounds,
             function_to_calculate_arnode_bias)
 
     def fully_activate_table_without_changing_incoming_edges(self,
-                                                             table_index,
+                                                             table_number,
                                                              function_to_calculate_arnode_bias,
                                                              check_validity_of_activation=True):
         """
         if the previous layer was entirely forward activated and you do not want ot recalculate the incoming edges to
         this layer arnodes, use this function
-        :param table_index:
+        :param table_number:
         :param check_validity_of_activation:
 
         :param function_to_calculate_arnode_bias: this function would receive the list of inner nodes of the
@@ -437,7 +440,7 @@ class Layer:
         if self.layer_is_inner:
             should_recalculate_arnodes_bounds = False
 
-        self.arnode_tables[table_index].fully_activate_table_without_changing_incoming_edges(
+        self.arnode_tables[table_number].fully_activate_table_without_changing_incoming_edges(
             function_to_calculate_arnode_bias,
             should_recalculate_arnodes_bounds,
             check_validity_of_activation)

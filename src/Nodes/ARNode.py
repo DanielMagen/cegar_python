@@ -413,7 +413,9 @@ class ARNode(Node):
         if the node is already fully activated it does nothing
 
         the assumption behind this method is that the incoming edges were already set when we forward activated all the
-        nodes which have an outgoing connection to this arnode
+        nodes which have an outgoing connection which is incoming to this arnode.
+        (because when we forward activated all those nodes they created an outgoing edge that is incoming to us,
+        so all of our incoming connections were already set)
 
         :param function_to_calculate_arnode_bias: this function would receive the list of inner nodes of the
         ar node, and return a new bias for this arnode.

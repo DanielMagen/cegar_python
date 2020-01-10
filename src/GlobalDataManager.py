@@ -1,4 +1,5 @@
 from maraboupy import MarabouCore
+from maraboupy.Marabou import createOptions
 
 
 class GlobalDataManager:
@@ -66,13 +67,11 @@ class GlobalDataManager:
         return self.counter_example_input_query_of_last_solution_attempt
 
     def evaluate_if_result_of_last_solution_attempt_is_a_valid_counterexample(self):
-        #########################################################################################################
-        # I dont know how to evaluate the sat result on the original network
-        # I sent a mail about it to Yitzhak on 10.1
-        # anyway you can use self.input_query_of_original_network to do it when you get an answer
+        ############################################################################################################
+        # TODO implement this function
         pass
 
-    def verify(self, timeoutInSeconds=0):
+    def verify(self):
         """
         gives a clone of the input query to the solving engine and returns the result
         :return: SAT or UN-SAT indicating whether or not the input query has a counter example
@@ -82,12 +81,12 @@ class GlobalDataManager:
         the counter example could also be checked if its a correct counter example or not.
         """
         input_query_copy = self.input_query_reference.copy()
-        engine = Engine()
-        engine.add_input_query(input_query_copy)
-        result = engine.solve(timeoutInSeconds)
-        if result == GlobalDataManager.SAT:
-            engine.extractSolution(input_query_copy)
-            self.counter_example_input_query_of_last_solution_attempt = input_query_copy
+        options = createOptions()  # check what are those options
+        self.counter_example_input_query_of_last_solution_attempt, stats = \
+            MarabouCore.solve(input_query_copy, options, "")
+
+        if len(self.counter_example_input_query_of_last_solution_attempt) > 0:
+            # there is a SAT solution
             return GlobalDataManager.SAT
 
         return GlobalDataManager.UNSAT

@@ -55,7 +55,12 @@ class Network:
         self._initialize_layers()
 
         # all layers in the network are not preprocessed
+        # note that currently we do not use the full potential of the layer class capabilities
+        # the layer class can be preprocessed, forward activated and fully activated with much more finer control
+        # but for now we treat the layers as a single block that need to change states all at once
         self.last_layer_not_preprocessed = len(self.layers) - 1
+        self.last_layer_not_forward_activated = len(self.layers) - 1
+        self.last_layer_not_fully_activated = len(self.layers) - 1
 
         # now create all the nodes in the network
         self.number_of_nodes_in_network = 0
@@ -192,16 +197,124 @@ class Network:
         # TODO implement
         pass
 
-    def preprocess_more_layers(self, number_of_layers_to_preprocess):
+    def preprocess_more_layers(self, number_of_layers_to_preprocess, raise_error_if_overflow=False):
         """
         :param number_of_layers_to_preprocess:
         preprocess 'number_of_layers_to_preprocess' network layers which were not already preprocessed
         the preprocess procedure is carried from end to start
+
+        :param raise_error_if_overflow: is set to false by default.
+        if true, the function would raise an exception if
+        last_layer_not_preprocessed - number_of_layers_to_preprocess < -1
+        i.e. it would raise an exception if the number of requested layers to activate is more than those which are
+        left.
+        if its false, it simply preprocess as many layers as it can. note that this number could be 0.
         """
+        up_to = self.last_layer_not_preprocessed - number_of_layers_to_preprocess
+        if raise_error_if_overflow:
+            if up_to < -1:
+                raise Exception("requested to preprocess more layers than there are available")
+
         for i in range(self.last_layer_not_preprocessed,
-                       max(-1, self.last_layer_not_preprocessed - number_of_layers_to_preprocess), -1):
+                       max(-1, up_to), -1):
             self.layers[i].preprocess_entire_layer()
             self.last_layer_not_preprocessed -= 1
+
+    def forward_activate_more_layers(self, number_of_layers_to_forward_activate, raise_error_if_overflow=False):
+        """
+        :param number_of_layers_to_forward_activate:
+        forward activates 'number_of_layers_to_forward_activate' network layers which were not already forward activated
+        the forward activation procedure is carried from end to start
+
+        :param raise_error_if_overflow: is set to false by default.
+        if true, the function would raise an exception if
+        we request to forward activate more layers than there are available.
+        layers are available for forward activation only if they have been preprocessed before.
+
+        if its false, it simply forward activates as many layers as it can. note that this number could be 0.
+
+        """
+        up_to = self.last_layer_not_forward_activated - number_of_layers_to_forward_activate
+        if raise_error_if_overflow:
+            if up_to < self.last_layer_not_preprocessed:
+                raise Exception("requested to forward activate more layers than there are available")
+
+        for i in range(self.last_layer_not_forward_activated,
+                       max(self.last_layer_not_preprocessed, up_to), -1):
+            current_layer = self.layers[i]
+            for table_number in Layer.OVERALL_ARNODE_TABLES:
+                function_to_calculate_merger_of_outgoing_edges = self. \
+                    get_function_to_calc_weight_for_outgoing_edges_for_arnode(table_number)
+                current_layer.forward_activate_arnode_table(
+                    table_number,
+                    function_to_calculate_merger_of_outgoing_edges)
+
+            self.last_layer_not_forward_activated -= 1
+
+    def fully_activate_more_layers(self, number_of_layers_to_fully_activate,
+                                   raise_error_if_overflow=False,
+                                   recalculate_incoming_edges=True):
+        """
+        :param number_of_layers_to_fully_activate:
+        fully activates 'number_of_layers_to_fully_activate' network layers which were not already fully activated
+        the full activation procedure is carried from end to start
+
+        :param raise_error_if_overflow: is set to false by default.
+        if true, the function would raise an exception if
+        we request to fully activate more layers than there are available.
+        layers are available for full activation only if they and the layer immediately prior to them have been
+        forward activated before.
+        also note that the input layer should never be fully activated (to preserve assumption (3)), so
+        trying to fully activate it would count as something that we would raise an error about.
+
+        if its false, it simply fully activates as many layers as it can. note that this number could be 0.
+
+        :param recalculate_incoming_edges: is set to true by default.
+        when we forward activated layer number k, all the arnodes in that layer connected themselves to all the arnodes
+        in layer k+1. as such when we want to fully activate all the nodes in layer k+1, there is no need to recalculate
+        the edges between layer k and layer k+1.
+        or so it would seem...
+        but the activation process is not commutative. i.e. we get different weights for an edge depending on the node
+        we activate (the node at the beginning or the end of the edge).
+        btw, note that we only care about the incoming edges since the node outgoing edges were "put into the game",
+        when the arnode was forward activated (think on what happens when the forward activated node is connected to a
+        fully activated node which was merged or split).
+        but to summarize, setting this variable to true would recalculate the incoming edges based on the
+        function_to_calculate_merger_of_incoming_edges which we would get from the
+        get_function_to_calc_weight_for_incoming_edges_for_arnode function.
+        """
+        up_to = self.last_layer_not_fully_activated - number_of_layers_to_fully_activate
+        if raise_error_if_overflow:
+            # to be fully activated a layer needs to have the layer before it forward activated, hence the +1
+            if up_to < self.last_layer_not_forward_activated + 1:
+                raise Exception("requested to fully activate more layers than there are available")
+            elif up_to == -1:
+                # i.e. te user wants to fully activate the input which is forbidden according to assumption (3)
+                raise Exception("requested to fully activate more layers than there are available")
+
+        # in a bit of serendipity, the fact that we allow only layers to be fully activated if
+        # their immediate previous layer has been forward activate, means that the input layer could never be
+        # fully activated, because the "previous layer to it" (which does not exist), have not been forward activated,
+        # this comes into effect in the '+ 1' in the loop.
+        # to preserve assumption (3) the input layer could never be fully activated.
+        for i in range(self.last_layer_not_fully_activated,
+                       max(self.last_layer_not_forward_activated + 1, up_to), -1):
+            current_layer = self.layers[i]
+            for table_number in Layer.OVERALL_ARNODE_TABLES:
+                if recalculate_incoming_edges:
+                    function_to_calculate_merger_of_incoming_edges = self. \
+                        get_function_to_calc_weight_for_incoming_edges_for_arnode(table_number)
+                    current_layer.fully_activate_table_by_recalculating_incoming_edges(
+                        table_number,
+                        function_to_calculate_merger_of_incoming_edges,
+                        function_to_calculate_arnode_bias)
+                else:
+                    current_layer.fully_activate_table_without_changing_incoming_edges(
+                        table_number,
+                        function_to_calculate_arnode_bias,
+                        check_validity_of_activation=True)
+
+            self.last_layer_not_fully_activated -= 1
 
     """
     we would merge nodes with the same type of positivity/incrementality in a way that would
@@ -286,9 +399,12 @@ class Network:
         pass
 
     def run_cegar(self):
-        timeoutInSeconds = 0
-        result = self.global_data_manager.verify(timeoutInSeconds)
+        result = self.global_data_manager.verify()
         if result == GlobalDataManager.UNSAT:
             return result
 
-        result_is_valid = self.global_data_manager.evaluate_if_result_of_last_solution_attempt_is_a_valid_counterexample()
+        result_is_valid = self.global_data_manager. \
+            evaluate_if_result_of_last_solution_attempt_is_a_valid_counterexample()
+
+        if result_is_valid:
+            return GlobalDataManager.SAT
