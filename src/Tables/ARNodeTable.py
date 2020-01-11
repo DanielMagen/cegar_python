@@ -89,7 +89,7 @@ class ARNodeTable(TableSupportsDeletion):
         """
         :param key_of_arnode_to_split:
         :param partition_of_arnode_inner_nodes: a list of lists which would be a valid partition of the
-        arnode inner nodes.
+        arnode inner nodes. (each inner list would be a list of nodes)
         each sub list would contain a list of nodes references all of which are currently owned by
         the given arnodes_to_split
 

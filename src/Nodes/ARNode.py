@@ -155,6 +155,9 @@ class ARNode(Node):
             else:
                 self.set_lower_and_upper_bound(max(lower_bounds), min(upper_bounds))
 
+    def get_inner_nodes(self):
+        return self.inner_nodes
+
     def get_global_incoming_id(self):
         # preserve assumption (8)
         if self.activation_status == ARNode.FULLY_ACTIVATED_STATUS:
@@ -272,7 +275,7 @@ class ARNode(Node):
         # as such the arnode_location is a unique identifier for it
         map_of_weights = {}
         for node in self.inner_nodes:
-            for edge_data in node.get_iterator_for_edges_data(direction_of_connection):
+            for edge_data in node.get_iterator_for_connections_data(direction_of_connection):
                 _, _, weight, node_connected_to = edge_data
                 arnode_connected_to = node_connected_to.get_pointer_to_ar_node_nested_in()
                 if arnode_connected_to == Node.NO_REFERENCE:
@@ -365,7 +368,7 @@ class ARNode(Node):
         our_location = self.get_location()
         direction_of_connection = Node.INCOMING_EDGE_DIRECTION
         for node in self.inner_nodes:
-            for edge_data in node.get_iterator_for_edges_data(direction_of_connection):
+            for edge_data in node.get_iterator_for_connections_data(direction_of_connection):
                 _, _, _, node_connected_to = edge_data
                 arnode_connected_to = node_connected_to.get_pointer_to_ar_node_nested_in()
                 if arnode_connected_to == Node.NO_REFERENCE:
@@ -385,7 +388,7 @@ class ARNode(Node):
 
         direction_of_connection = Node.OUTGOING_EDGE_DIRECTION
         for node in self.inner_nodes:
-            for edge_data in node.get_iterator_for_edges_data(direction_of_connection):
+            for edge_data in node.get_iterator_for_connections_data(direction_of_connection):
                 _, _, _, node_connected_to = edge_data
                 arnode_connected_to = node_connected_to.get_pointer_to_ar_node_nested_in()
                 if arnode_connected_to == Node.NO_REFERENCE:

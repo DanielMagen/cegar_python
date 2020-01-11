@@ -426,7 +426,7 @@ class Network:
             current_layer_number = i + 1
             previous_layer = self.layers[i]
             # I would save a map that would tell me for each pair of nodes in the current_layer the value of m
-            # a pair would be accessible using (table_num1, index_in_table1, table_num2, index_in_table2)
+            # a pair would be accessible using (table_num1, key_in_table1, table_num2, key_in_table2)
             map_of_pairs_to_m = {}
 
             for table_number in Layer.OVERALL_ARNODE_TABLES:
@@ -483,6 +483,85 @@ class Network:
         pairs_indices_in_table = [best_pair[0], best_pair[2]]
 
         return layer_of_best_pair, table_number, pairs_indices_in_table
+
+    def decide_best_arnodes_to_split(self):
+        """
+        this is my implementation of algorithm 3 "weight based refinement"
+
+        :return:
+        the attributes needed to know which arnodes to split
+        a layer number
+        a table number
+        the key inside this table
+        a list of lists which would be a valid partition of the
+        arnode inner nodes.
+
+        if no arnode is found that is legible for splitting, this function would raise an error
+        """
+        # the output arnode wont be split to preserve assumption (4) so we check to see if we fully activated
+        # a layer before the output layer
+        if self.last_layer_not_fully_activated >= len(self.layers) - 2:
+            raise Exception("can not decide which arnodes to merge since not enough layers are "
+                            "fully activated")
+
+        best_arnode_to_split = None
+        best_arnode_to_split_m = 0
+        index_of_node_to_take_out_of_arnode_in_inner_nodes = -1
+        layer_number_of_best_arnode = -1
+
+        # to preserve assumption (4) we should't check if (or even try to) split arnodes in the output or input layers.
+        # so we start from len(self.layers) - 2
+        # from assumption (3) we know that self.last_layer_not_fully_activated must be at least 0, so the loop is
+        # sound, I will never go below 1. this also means that that we wont ever try to merge or split the input layer
+        # so assumption (4) is again preserved
+        for i in range(len(self.layers) - 2, self.last_layer_not_fully_activated, -1):
+            for table_number in Layer.OVERALL_ARNODE_TABLES:
+                for current_arnode in self.layers[i].get_iterator_for_all_nodes_for_table(True, table_number):
+                    inner_nodes = current_arnode.get_inner_nodes()
+                    if len(inner_nodes) == 1:
+                        # this arnode is not comprised of multiple nodes, hence we skip over it
+                        continue
+
+                    for j in range(len(inner_nodes)):
+                        node = inner_nodes[j]
+                        # measure the difference between the weight of incoming connection of this node
+                        # to its neighbor x, and the weight of connection of the arnode to the
+                        # arnode that contains x.
+                        for incoming_connection_data in node.get_iterator_for_connections_data():
+                            incoming_node = incoming_connection_data[
+                                NodeEdges.INDEX_OF_REFERENCE_TO_NODE_CONNECTED_TO_IN_DATA]
+                            weight_of_connection_between_the_nodes = incoming_connection_data[
+                                NodeEdges.INDEX_OF_WEIGHT_IN_DATA]
+
+                            arnode_incoming_is_nested_in = incoming_node.get_pointer_to_ar_node_nested_in()
+                            weight_of_connection_between_the_arnodes = \
+                                arnode_incoming_is_nested_in.get_weight_of_connection_to_neighbor(
+                                    Node.OUTGOING_EDGE_DIRECTION, current_arnode.get_location())
+
+                            diff = abs(
+                                weight_of_connection_between_the_arnodes - weight_of_connection_between_the_nodes)
+
+                            if diff > best_arnode_to_split_m:
+                                best_arnode_to_split_m = diff
+                                best_arnode_to_split = current_arnode
+                                index_of_node_to_take_out_of_arnode_in_inner_nodes = j
+                                layer_number_of_best_arnode = i
+
+        if best_arnode_to_split is None:
+            raise Exception("no arnode found that is legible for splitting")
+        # now you have the best arnode to split, but you need to create a valid partition
+        # for this arnode
+        partition = [[]]
+        best_arnode_to_split_inner_nodes = best_arnode_to_split.get_inner_nodes()
+        for i in range(len(best_arnode_to_split_inner_nodes)):
+            if i != index_of_node_to_take_out_of_arnode_in_inner_nodes:
+                partition[0].append(best_arnode_to_split_inner_nodes[i])
+
+        partition.append([best_arnode_to_split_inner_nodes[index_of_node_to_take_out_of_arnode_in_inner_nodes]])
+
+        table, key = best_arnode_to_split.get_location()
+
+        return layer_number_of_best_arnode, table, key, partition
 
     def run_cegar(self):
         result = self.global_data_manager.verify()

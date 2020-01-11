@@ -238,7 +238,7 @@ class Layer:
         data_for_nodes_we_are_pos_linked_to = []
         data_for_nodes_we_are_neg_linked_to = []
 
-        for outgoing_edges_data in node.get_iterator_for_edges_data(Node.OUTGOING_EDGE_DIRECTION):
+        for outgoing_edges_data in node.get_iterator_for_connections_data(Node.OUTGOING_EDGE_DIRECTION):
             weight_of_connection = outgoing_edges_data[weight_location_in_data]
             if weight_of_connection >= 0:
                 data_for_nodes_we_are_pos_linked_to.append(outgoing_edges_data)

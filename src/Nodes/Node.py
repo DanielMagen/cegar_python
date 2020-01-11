@@ -342,7 +342,7 @@ class Node:
             self.calculate_equation_and_constraints()
 
         # now tell all our outgoing connections that their global data is invalid
-        outgoing_connections_iter = self.get_iterator_for_edges_data(Node.OUTGOING_EDGE_DIRECTION)
+        outgoing_connections_iter = self.get_iterator_for_connections_data(Node.OUTGOING_EDGE_DIRECTION)
         for connection_data in outgoing_connections_iter:
             node = connection_data[NodeEdges.INDEX_OF_REFERENCE_TO_NODE_CONNECTED_TO_IN_DATA]
             node.set_global_equation_to_invalid()
@@ -494,7 +494,7 @@ class Node:
         if direction_of_connection == Node.OUTGOING_EDGE_DIRECTION:
             return self.outgoing_edges_manager.check_if_connection_exist(table_number, key_in_table)
 
-    def get_connection_data_for_neighbor(self, direction_of_connection, neighbor_location_data):
+    def get_connection_data_to_neighbor(self, direction_of_connection, neighbor_location_data):
         self.check_if_killed_and_raise_error_if_is()
 
         if direction_of_connection == Node.INCOMING_EDGE_DIRECTION:
@@ -505,6 +505,44 @@ class Node:
             raise Exception("invalid direction_of_connection")
 
         return edges_manager_to_work_with.get_connection_data_for_neighbor(*neighbor_location_data)
+
+    def get_weight_of_connection_to_neighbor(self, direction_of_connection, neighbor_location_data):
+        self.check_if_killed_and_raise_error_if_is()
+
+        if direction_of_connection == Node.INCOMING_EDGE_DIRECTION:
+            edges_manager_to_work_with = self.incoming_edges_manager
+        elif direction_of_connection == Node.OUTGOING_EDGE_DIRECTION:
+            edges_manager_to_work_with = self.outgoing_edges_manager
+        else:
+            raise Exception("invalid direction_of_connection")
+
+        return edges_manager_to_work_with.find_weight_of_connection(*neighbor_location_data)
+
+    def get_number_of_connections(self, direction):
+        if direction == Node.INCOMING_EDGE_DIRECTION:
+            return self.incoming_edges_manager.get_number_of_connections()
+        elif direction == Node.OUTGOING_EDGE_DIRECTION:
+            return self.outgoing_edges_manager.get_number_of_connections()
+
+    def get_iterator_for_connections_data(self, direction):
+        self.check_if_killed_and_raise_error_if_is()
+
+        if direction == Node.INCOMING_EDGE_DIRECTION:
+            return self.incoming_edges_manager.get_iterator_over_connections()
+        elif direction == Node.OUTGOING_EDGE_DIRECTION:
+            return self.outgoing_edges_manager.get_iterator_over_connections()
+
+    def get_a_list_of_all_connections_data(self, direction):
+        if direction == Node.INCOMING_EDGE_DIRECTION:
+            return self.incoming_edges_manager.get_a_list_of_all_connections()
+        elif direction == Node.OUTGOING_EDGE_DIRECTION:
+            return self.outgoing_edges_manager.get_a_list_of_all_connections()
+
+    def get_combinations_iterator_over_connections(self, direction, r):
+        if direction == Node.INCOMING_EDGE_DIRECTION:
+            return self.incoming_edges_manager.get_combinations_iterator_over_connections(r)
+        elif direction == Node.OUTGOING_EDGE_DIRECTION:
+            return self.outgoing_edges_manager.get_combinations_iterator_over_connections(r)
 
     def remove_neighbor_from_neighbors_list(self, direction_of_connection, neighbor_location_data,
                                             remove_this_node_from_given_node_neighbors_list=True):
@@ -593,32 +631,6 @@ class Node:
             reference_to_node_connected_to.get_notified_that_neighbor_location_changed(direction_of_connection,
                                                                                        previous_location,
                                                                                        new_location)
-
-    def get_number_of_connections(self, direction):
-        if direction == Node.INCOMING_EDGE_DIRECTION:
-            return self.incoming_edges_manager.get_number_of_connections()
-        elif direction == Node.OUTGOING_EDGE_DIRECTION:
-            return self.outgoing_edges_manager.get_number_of_connections()
-
-    def get_iterator_for_edges_data(self, direction):
-        self.check_if_killed_and_raise_error_if_is()
-
-        if direction == Node.INCOMING_EDGE_DIRECTION:
-            return self.incoming_edges_manager.get_iterator_over_connections()
-        elif direction == Node.OUTGOING_EDGE_DIRECTION:
-            return self.outgoing_edges_manager.get_iterator_over_connections()
-
-    def get_a_list_of_all_connections_data(self, direction):
-        if direction == Node.INCOMING_EDGE_DIRECTION:
-            return self.incoming_edges_manager.get_a_list_of_all_connections()
-        elif direction == Node.OUTGOING_EDGE_DIRECTION:
-            return self.outgoing_edges_manager.get_a_list_of_all_connections()
-
-    def get_combinations_iterator_over_connections(self, direction, r):
-        if direction == Node.INCOMING_EDGE_DIRECTION:
-            return self.incoming_edges_manager.get_combinations_iterator_over_connections(r)
-        elif direction == Node.OUTGOING_EDGE_DIRECTION:
-            return self.outgoing_edges_manager.get_combinations_iterator_over_connections(r)
 
     def __str__(self):
         def remove_node_pointer_from_list_of_all_connections(all_connections):

@@ -102,7 +102,7 @@ def t_remove_connection(node_object):
 def t_get_iterator_for_edges_data(node_object):
     possible_direction_of_connection = [Node.INCOMING_EDGE_DIRECTION, Node.OUTGOING_EDGE_DIRECTION]
     for direction_of_connection in possible_direction_of_connection:
-        iterator_for_edges_data = node_object.get_iterator_for_edges_data(direction_of_connection)
+        iterator_for_edges_data = node_object.get_iterator_for_connections_data(direction_of_connection)
         for data in iterator_for_edges_data:
             # print(data)
             pass
@@ -136,7 +136,7 @@ def t_get_notified_when_neighbor_changes(node_object):
         assert new_node.check_if_neighbor_exists(-direction_of_connection, node_object.get_location()) == True
 
         # now try and see if the node knows that the new node changed location
-        data = node_object.get_connection_data_for_neighbor(direction_of_connection, new_node.get_location())
+        data = node_object.get_connection_data_to_neighbor(direction_of_connection, new_node.get_location())
         assert data[NodeEdges.INDEX_OF_REFERENCE_TO_NODE_CONNECTED_TO_IN_DATA] == new_node
 
 
