@@ -16,6 +16,10 @@ class Network:
 
     LOCATION_OF_FIRST_LAYER = 0
 
+    CODE_FOR_SAT = 0
+    CODE_FOR_UNSAT = 1
+    CODE_FOR_SPURIOUS_COUNTEREXAMPLE = 2
+
     """
     the idea is such:
     if we want to verify that y > c we would search for an input which gives us y <= c
@@ -296,6 +300,14 @@ class Network:
 
             self.last_layer_not_fully_activated -= 1
 
+    def fully_activate_the_entire_network(self):
+        """
+        this function preprocess, and fully activates all of the layers in the network
+        """
+        self.preprocess_more_layers(len(self.layers), raise_error_if_overflow=False)
+        self.forward_activate_more_layers(len(self.layers), raise_error_if_overflow=False)
+        self.fully_activate_more_layers(len(self.layers), raise_error_if_overflow=False)
+
     """
     we would merge nodes with the same type of positivity/incrementality in a way that would
     enlarge/dwindle the network output according to the needed goal.
@@ -400,6 +412,8 @@ class Network:
         a layer number
         a table number
         a list_of_keys_of_arnodes_to_merge inside this table
+
+        if no arnode set is found that is legible for merging, this function would raise an error
         """
         # the output arnode wont be merged to preserve assumption (4) so we check to see if we fully activated
         # a layer before the output layer
@@ -475,6 +489,9 @@ class Network:
                 best_pair_m = m_of_best_pair_in_layer
                 best_pair = best_pair_in_layer
                 layer_of_best_pair = current_layer_number
+
+        if best_pair is None:
+            raise Exception("no arnode set found that is legible for merging")
 
         # now you have the best pair to merge in the network so return the pair attributes
         # best_pair data is of the form (table_num1, index_in_table1, table_num2, index_in_table2)
@@ -563,13 +580,46 @@ class Network:
 
         return layer_number_of_best_arnode, table, key, partition
 
-    def run_cegar(self):
+    def merge_list_of_arnodes(self, layer_number, table_number, list_of_keys_of_arnodes_to_merge):
+        function_to_calculate_merger_of_incoming_edges = self.get_function_to_calc_weight_for_incoming_edges_for_arnode(
+            table_number)
+        function_to_calculate_merger_of_outgoing_edges = self.get_function_to_calc_weight_for_outgoing_edges_for_arnode(
+            table_number)
+        function_to_calculate_arnode_bias = self.get_function_to_calc_bias_for_arnode(table_number)
+
+        self.layers[layer_number].merge_list_of_arnodes(table_number, list_of_keys_of_arnodes_to_merge,
+                                                        function_to_calculate_merger_of_incoming_edges,
+                                                        function_to_calculate_merger_of_outgoing_edges,
+                                                        function_to_calculate_arnode_bias)
+
+    def split_arnode(self, layer_number, table_number, key_in_table, partition_of_arnode_inner_nodes):
+        function_to_calculate_merger_of_incoming_edges = self.get_function_to_calc_weight_for_incoming_edges_for_arnode(
+            table_number)
+        function_to_calculate_merger_of_outgoing_edges = self.get_function_to_calc_weight_for_outgoing_edges_for_arnode(
+            table_number)
+        function_to_calculate_arnode_bias = self.get_function_to_calc_bias_for_arnode(table_number)
+
+        self.layers[layer_number].split_arnode(table_number, key_in_table, partition_of_arnode_inner_nodes,
+                                               function_to_calculate_merger_of_incoming_edges,
+                                               function_to_calculate_merger_of_outgoing_edges,
+                                               function_to_calculate_arnode_bias)
+
+    def check_if_network_is_sat_or_unsat(self):
+        """
+        this function check whether the network is sat, unsat, or has a spurious counter example
+        :return: one of
+        CODE_FOR_SAT
+        CODE_FOR_UNSAT
+        CODE_FOR_SPURIOUS_COUNTEREXAMPLE
+        """
         result = self.global_data_manager.verify()
         if result == GlobalDataManager.UNSAT:
-            return result
+            return Network.CODE_FOR_UNSAT
 
         result_is_valid = self.global_data_manager. \
             evaluate_if_result_of_last_solution_attempt_is_a_valid_counterexample()
 
         if result_is_valid:
-            return GlobalDataManager.SAT
+            return Network.CODE_FOR_SAT
+
+        return Network.CODE_FOR_SPURIOUS_COUNTEREXAMPLE
