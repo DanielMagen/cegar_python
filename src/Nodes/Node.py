@@ -614,6 +614,12 @@ class Node:
         elif direction == Node.OUTGOING_EDGE_DIRECTION:
             return self.outgoing_edges_manager.get_a_list_of_all_connections()
 
+    def get_combinations_iterator_over_connections(self, direction, r):
+        if direction == Node.INCOMING_EDGE_DIRECTION:
+            return self.incoming_edges_manager.get_combinations_iterator_over_connections(r)
+        elif direction == Node.OUTGOING_EDGE_DIRECTION:
+            return self.outgoing_edges_manager.get_combinations_iterator_over_connections(r)
+
     def __str__(self):
         def remove_node_pointer_from_list_of_all_connections(all_connections):
             return list(map(lambda lis: lis[:-1], all_connections))

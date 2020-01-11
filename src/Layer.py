@@ -138,6 +138,17 @@ class Layer:
 
         return tables[table_number].get_iterator_for_all_keys()
 
+    def get_iterator_for_all_nodes_for_table(self, is_arnode, table_number):
+        """
+        :param is_arnode: a boolean, if true would search for the node in the arnode tables
+        :param table_number:
+        """
+        tables = self.regular_node_tables
+        if is_arnode:
+            tables = self.arnode_tables
+
+        return tables[table_number].get_iterator_for_all_nodes()
+
     def get_unprocessed_node_by_key(self, key_of_node_in_unprocessed_table):
         return self.regular_node_tables[Layer.INDEX_OF_UNPROCESSED_TABLE].get_node_by_key(
             key_of_node_in_unprocessed_table)

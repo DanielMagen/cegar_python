@@ -1,4 +1,5 @@
 # maybe make this an inner class inside the node class
+import itertools
 
 
 class NodeEdges:
@@ -133,6 +134,45 @@ class NodeEdges:
                 weight = data[NodeEdges.LOCATION_OF_WEIGHT_IN_MAP]
                 reference_to_node_connected_to = data[NodeEdges.LOCATION_OF_REFERENCE_IN_MAP]
                 yield [current_table_number, key_in_table, weight, reference_to_node_connected_to]
+
+    def get_combinations_iterator_over_connections(self, r):
+        """
+
+        :param r: the r that would be given to itertools.combinations
+        :return:
+        an iterator on the connections data of the following form:
+        for each table, it would go over all unique combinations of size r
+        and return this combination connections data.
+        for example, if table 1 holds the connection data for nodes 1,2,3
+        and we set r = 2, then for table 1 we would return the connection data for the pairs
+        (1, 2)
+        (1, 3)
+        (2, 3)
+
+        couple of important notes:
+        1) note that the combinations do NOT include 2 nodes from different tables.
+        2) we are using itertools.combinations. as such, if for example table 1 has only 1 node
+        in it, but r = 2, then we would skip table 1 and not return any pair from it.
+        this is dictated by itertools.combinations since itertools.combinations([a],2) = null iterator
+        3) the source code for itertools.combinations in c is here:
+        https://github.com/python/cpython/blob/master/Modules/itertoolsmodule.c
+        so when transferring the code to cpp, you could just copy it from there if you want.
+        but I think that this kind of function should have multiple implementations in cpp.
+        """
+        for current_table_number in range(len(self.list_of_tables)):
+            current_table_map = self.list_of_tables[current_table_number]
+            # a map is an iterable in python which iterate through its keys
+            for r_tuple_of_keys in itertools.combinations(current_table_map, r):
+                list_of_r_connection_data = []
+
+                for key_in_table in r_tuple_of_keys:
+                    data = current_table_map[key_in_table]
+                    weight = data[NodeEdges.LOCATION_OF_WEIGHT_IN_MAP]
+                    reference_to_node_connected_to = data[NodeEdges.LOCATION_OF_REFERENCE_IN_MAP]
+                    list_of_r_connection_data.append(
+                        [current_table_number, key_in_table, weight, reference_to_node_connected_to])
+
+                yield list_of_r_connection_data
 
     def get_a_list_of_all_connections(self):
         to_return = []

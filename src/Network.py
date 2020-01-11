@@ -386,6 +386,15 @@ class Network:
 
     def decide_best_arnodes_to_merge(self):
         """
+        this is my efficient implementation of algorithm 2 "create initial abstraction"
+        the problem with the original psudo code is that its working backwards, for each pair
+        of arnodes it finds an arnode which is connected to both of them and continues from there.
+        its fine if the network is fully connected. but my implementation does not assume that,
+        so it would be costly to go "for each pair of arnodes find the intersection of the arnodes
+        they are connected to using incoming connections". so instead I go the other way around. to check what arnodes
+        should be merged in layer k I look at layer k-1, and for each node a in layer k-1, for each pair of arnodes
+        its connected to by an outgoing connection.
+
         :return:
         the attributes needed to know which arnodes to merge
 
@@ -399,12 +408,29 @@ class Network:
             raise Exception("can not decide which arnodes to merge since not enough layers are "
                             "fully activated")
 
-        # preserve assumption (4) and so not try to check if there are arnodes in the output layer to merge
-        # note that from assumption (3) we know that self.last_layer_not_fully_activated must be at least 0
-        # so in this following loop we would never check if there are arnodes in the input layer
-        # so assumption (4) is still preserved
-        for i in range(len(self.layers) - 2, self.last_layer_not_fully_activated, -1):
-            current_layer = self.layers[i]
+        # to preserve assumption (4) we should't check if (or even try to) merge arnodes in the output or input layers.
+        # in this implementation, to check what arnodes should be merged in layer k I look at layer k-1.
+        # so when you do the math, I must go through a loop from len(self.layers) - 3 (the second layer from the last)
+        # up to (and including) self.last_layer_not_fully_activated. since the loop is exclusive up to
+        # self.last_layer_not_fully_activated - 1.
+        # from assumption (3) we know that self.last_layer_not_fully_activated must be at least 0, so the loop is
+        # sound, I will never go below 0. this also means that that we wont ever try to merge or split the input layer
+        # (since if we wanted to act upon layer 0 we need to use layer -1 which does not exist)
+        # so assumption (4) is again preserved
+        for i in range(len(self.layers) - 3, self.last_layer_not_fully_activated - 1, -1):
+            assert i > -1  # just in case, but it should never happen
+            current_layer = self.layers[i + 1]
+            previous_layer = self.layers[i]
+            # I would save a map that would tell me for each pair of nodes in the current_layer the value of m
+            # a pair would be accessible using (table_num1, index_in_table1, table_num2, index_in_table2)
+            map_of_pairs_to_m = {}
+
+            # note that at this point we assume that arnodes in the pos-inc table
+            # connects only to arnodes in a pos-inc table
+            # I'm sure it should follow from the way the system operates,
+            # if you disagree you could assert that the table number as returned
+            # in the connection data, is never changing and always equal to Layer.INDEX_OF_POS_INC_TABLE
+
             delta = float("inf")  # infinity
             best_pair = None
             for table_number in Layer.OVERALL_ARNODE_TABLES:
