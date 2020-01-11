@@ -384,9 +384,32 @@ class Network:
 
         return function_to_calc_bias_for_arnode
 
-    def get_decide_list_of_best_arnodes_to_merge(self, a_boolean, list_of_doubles,
-                                                 list_of_currently_chosen_arnodes_to_merge):
-        pass
+    def decide_best_arnodes_to_merge(self):
+        """
+        :return:
+        the attributes needed to know which arnodes to merge
+
+        a layer number
+        a table number
+        a list_of_keys_of_arnodes_to_merge inside this table
+        """
+        # the output arnode wont be merged to preserve assumption (4) so we check to see if we fully activated
+        # a layer before the output layer
+        if self.last_layer_not_fully_activated >= len(self.layers) - 2:
+            raise Exception("can not decide which arnodes to merge since not enough layers are "
+                            "fully activated")
+
+        # preserve assumption (4) and so not try to check if there are arnodes in the output layer to merge
+        # note that from assumption (3) we know that self.last_layer_not_fully_activated must be at least 0
+        # so in this following loop we would never check if there are arnodes in the input layer
+        # so assumption (4) is still preserved
+        for i in range(len(self.layers) - 2, self.last_layer_not_fully_activated, -1):
+            current_layer = self.layers[i]
+            delta = float("inf")  # infinity
+            best_pair = None
+            for table_number in Layer.OVERALL_ARNODE_TABLES:
+                pass
+
 
     def run_cegar(self):
         result = self.global_data_manager.verify()
