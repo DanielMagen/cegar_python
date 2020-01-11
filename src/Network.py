@@ -397,7 +397,6 @@ class Network:
 
         :return:
         the attributes needed to know which arnodes to merge
-
         a layer number
         a table number
         a list_of_keys_of_arnodes_to_merge inside this table
@@ -417,25 +416,73 @@ class Network:
         # sound, I will never go below 0. this also means that that we wont ever try to merge or split the input layer
         # (since if we wanted to act upon layer 0 we need to use layer -1 which does not exist)
         # so assumption (4) is again preserved
+
+        best_pair = None
+        best_pair_m = float("inf")  # m would indicate maximum difference between weights.
+        layer_of_best_pair = -1
+        # i.e. weight of a->ar1 and weight of a->ar2 would differ most.
         for i in range(len(self.layers) - 3, self.last_layer_not_fully_activated - 1, -1):
             assert i > -1  # just in case, but it should never happen
-            current_layer = self.layers[i + 1]
+            current_layer_number = i + 1
             previous_layer = self.layers[i]
             # I would save a map that would tell me for each pair of nodes in the current_layer the value of m
             # a pair would be accessible using (table_num1, index_in_table1, table_num2, index_in_table2)
             map_of_pairs_to_m = {}
 
-            # note that at this point we assume that arnodes in the pos-inc table
-            # connects only to arnodes in a pos-inc table
-            # I'm sure it should follow from the way the system operates,
-            # if you disagree you could assert that the table number as returned
-            # in the connection data, is never changing and always equal to Layer.INDEX_OF_POS_INC_TABLE
-
-            delta = float("inf")  # infinity
-            best_pair = None
             for table_number in Layer.OVERALL_ARNODE_TABLES:
-                pass
+                for arnode in previous_layer.get_iterator_for_all_nodes_for_table(True, table_number):
+                    for connection_data_pair in arnode.get_combinations_iterator_over_connections(
+                            Node.OUTGOING_EDGE_DIRECTION, 2):
 
+                        connection_data_1, connection_data_2 = connection_data_pair
+                        weight_of_connection_1 = connection_data_1[NodeEdges.INDEX_OF_WEIGHT_IN_DATA]
+                        weight_of_connection_2 = connection_data_2[NodeEdges.INDEX_OF_WEIGHT_IN_DATA]
+
+                        # note that at this point we assume that arnodes in one type of table (for example pos-inc)
+                        # connects only to arnodes that reside in the same type of table
+                        # I'm sure it should follow from the layer assumptions.
+                        # if you disagree you could assert that the table number as returned
+                        # in the connection data, is never changing and always equal to Layer.INDEX_OF_POS_INC_TABLE
+
+                        """
+                        if you wish to test
+                        assert connection_data_1[NodeEdges.INDEX_OF_TABLE_NUMBER_IN_DATA] == \
+                               weight_of_connection_2[NodeEdges.INDEX_OF_TABLE_NUMBER_IN_DATA] == table_number
+                        """
+
+                        m = abs(weight_of_connection_1 - weight_of_connection_2)
+
+                        key_of_pair_in_map_of_pairs = (connection_data_1[NodeEdges.INDEX_OF_TABLE_NUMBER_IN_DATA],
+                                                       connection_data_1[NodeEdges.INDEX_OF_KEY_IN_TABLE_IN_DATA],
+                                                       connection_data_2[NodeEdges.INDEX_OF_TABLE_NUMBER_IN_DATA],
+                                                       connection_data_2[NodeEdges.INDEX_OF_KEY_IN_TABLE_IN_DATA])
+
+                        if key_of_pair_in_map_of_pairs not in map_of_pairs_to_m:
+                            map_of_pairs_to_m[key_of_pair_in_map_of_pairs] = m
+                        elif m > map_of_pairs_to_m[key_of_pair_in_map_of_pairs]:
+                            map_of_pairs_to_m[key_of_pair_in_map_of_pairs] = m
+
+            # now search map_of_pairs_to_m for the best pair
+            best_pair_in_layer = None
+            m_of_best_pair_in_layer = float("inf")  # infinity
+            for current_pair, m_of_current_pair in map_of_pairs_to_m.items():
+                if m_of_current_pair < m_of_best_pair_in_layer:
+                    m_of_best_pair_in_layer = m_of_current_pair
+                    best_pair_in_layer = current_pair
+
+            # now compare the best pair from this layer to the best pair overall
+            if m_of_best_pair_in_layer < best_pair_m:
+                best_pair_m = m_of_best_pair_in_layer
+                best_pair = best_pair_in_layer
+                layer_of_best_pair = current_layer_number
+
+        # now you have the best pair to merge in the network so return the pair attributes
+        # best_pair data is of the form (table_num1, index_in_table1, table_num2, index_in_table2)
+        # and they should have the same table number
+        table_number = best_pair[1]
+        pairs_indices_in_table = [best_pair[0], best_pair[2]]
+
+        return layer_of_best_pair, table_number, pairs_indices_in_table
 
     def run_cegar(self):
         result = self.global_data_manager.verify()
