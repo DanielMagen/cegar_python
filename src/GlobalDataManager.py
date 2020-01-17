@@ -127,9 +127,13 @@ class GlobalDataManager:
         the trick to implement this function
         is to run the marabou solving function on the input nodes
         where for each input node we have upper_bound_i=lower_bound_i=k
-        
+
         :return:
         """
+
+        # from assumption (6) we now that the inputs and output global ids would never change once given
+        # so we now that the input and output that are saved inside self.counter_example_of_last_solution_attempt
+        # are correct (each input is mapped to itself amd only itself, and each input is mapped to. the same for output)
 
     def verify(self):
         """
@@ -230,6 +234,11 @@ class GlobalDataManager:
         :param id_returned: an id that should be marked as available
         for now this function almost completely trusts the user that a correct id is given back
         (i.e. we only get an id that was given before)
+
+        also, this function assumes that the user "cleaned" the id before returning it.
+        i.e. no bounds, relu constraints, or any other kind of things are related to the id.
+        so the user should not expect that this function will "clean" the id for him. this fact is used in outside
+        classes, so be very careful if you want to change it.
         """
         if id_returned >= self.max_id:
             raise ValueError('the id was never given')

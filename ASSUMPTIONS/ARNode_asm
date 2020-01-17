@@ -71,3 +71,7 @@ a node can only be attributed to one arnode at a time. i.e. nodes can not appear
 
 12)
 -> Node assumption (11)
+
+13)
+when an output node would be wrapped in an arnode, and this arnode fully activated, the output arnode global id
+should be the same as the global id of the inner node.

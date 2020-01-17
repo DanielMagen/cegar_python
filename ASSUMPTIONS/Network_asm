@@ -8,4 +8,4 @@ the network input query object would be the same throughout the network lifetime
 -> Layer assumptions (11)
 
 4)
-no merge or split operations would be performed on the input or output layers
+-> Layer assumptions (13)

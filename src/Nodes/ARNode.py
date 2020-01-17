@@ -135,14 +135,19 @@ class ARNode(Node):
                 self.first_node_in_starting_nodes.global_outgoing_id)
 
         # now before continuing remove all the of the inner nodes global variables
-        for node in self.inner_nodes:
-            node.remove_from_global_system()
+        if len(self.inner_nodes) > 1:
+            for node in self.inner_nodes:
+                node.remove_from_global_system()
 
-        # now get a new id for us
-        self.global_incoming_id = self.global_data_manager.get_new_id()
-        self.global_outgoing_id = self.global_incoming_id
-        if should_create_2_global_ids:
-            self.global_outgoing_id = self.global_data_manager.get_new_id()
+            # now get a new id for us
+            self.global_incoming_id = self.global_data_manager.get_new_id()
+            self.global_outgoing_id = self.global_incoming_id
+            if should_create_2_global_ids:
+                self.global_outgoing_id = self.global_data_manager.get_new_id()
+        else:
+            # this is important if we ever want to preform
+            self.global_incoming_id, self.global_outgoing_id = self.inner_nodes[0].remove_from_global_system(
+                return_id=False)
 
         # calculate the arnode equation and constraints
         self.calculate_equation_and_constraints()

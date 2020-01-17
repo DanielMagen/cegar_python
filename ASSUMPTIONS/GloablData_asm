@@ -20,3 +20,6 @@ even if the input node is wrapped inside an arnode, from assumption (3) and assu
 we know that the input node id will never be returned.
 this is because from assumption (3) we know that an id is returned when the arnode which wraps the node is
 fully activated. but from assumption (4) we know that an input arnode would never be fully activated.
+
+6)
+-> Layer conclusion (3)

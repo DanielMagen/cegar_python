@@ -249,11 +249,18 @@ class Node:
         # finally set global_equation_is_valid to True since the equation and constraint were removed
         self.global_equation_is_valid = True
 
-    def remove_from_global_system(self):
+    def remove_from_global_system(self, return_id=True):
         """
         1) removes this node global ids
         2) if the node was given an equation and a constraint it removes them too.
         3) resets the reference to the marabou_core, input_query and id_manager to be null
+
+        :param return_id: true by default, should not be changed unless you know what you're doing
+        if its set to true, the function always returns -1,-1.
+        otherwise, this function does not give back the ids of the node to the global system,
+        but simply returns the pair of ids.
+        notice that no matter what, the id should be clean when this function is finished,
+        i.e. no bounds, relu constraints, or any other kind of things should be related to the id of this node.
         """
         if self.global_incoming_id == Node.NO_GLOBAL_ID or self.global_outgoing_id == Node.NO_GLOBAL_ID:
             if self.global_incoming_id == Node.NO_GLOBAL_ID and self.global_outgoing_id == Node.NO_GLOBAL_ID:
@@ -275,14 +282,23 @@ class Node:
             self.remove_node_bounds()
             self.has_bounds = False
 
-        self.global_data_manager.give_id_back(self.global_incoming_id)
-        if self.global_incoming_id != self.global_outgoing_id:
-            self.global_data_manager.give_id_back(self.global_outgoing_id)
+        # since the give_id_back function does not clean the id, the id should be clean by this stage
+        global_incoming_id_to_return = -1
+        global_outgoing_id_to_return = -1
+        if return_id:
+            self.global_data_manager.give_id_back(self.global_incoming_id)
+            if self.global_incoming_id != self.global_outgoing_id:
+                self.global_data_manager.give_id_back(self.global_outgoing_id)
+        else:
+            global_incoming_id_to_return = self.global_incoming_id
+            global_outgoing_id_to_return = self.global_outgoing_id
 
         self.global_incoming_id = Node.NO_GLOBAL_ID
         self.global_outgoing_id = Node.NO_GLOBAL_ID
 
         self.global_data_manager = Node.NO_REFERENCE
+
+        return global_incoming_id_to_return, global_outgoing_id_to_return
 
     def refresh_global_variables(self, call_calculate_equation_and_constraints=True):
         """
