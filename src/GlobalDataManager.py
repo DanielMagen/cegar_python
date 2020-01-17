@@ -46,7 +46,7 @@ class GlobalDataManager:
         self.input_query_reference = MarabouCore.InputQuery()
         self.input_query_of_original_network = None
 
-        self.counter_example_input_query_of_last_solution_attempt = None
+        self.counter_example_of_last_solution_attempt = None
 
     def save_current_input_query_as_original_network(self):
         """
@@ -118,13 +118,18 @@ class GlobalDataManager:
     def get_new_equation(self):
         return MarabouCore.Equation()
 
-    def get_counter_example_input_query_of_last_solution_attempt(self):
-        return self.counter_example_input_query_of_last_solution_attempt
+    def get_counter_example_of_last_solution_attempt(self):
+        return self.counter_example_of_last_solution_attempt
 
     def evaluate_if_result_of_last_solution_attempt_is_a_valid_counterexample(self):
-        ############################################################################################################
-        # TODO implement this function
-        pass
+        #######################################################################################################################
+        """
+        the trick to implement this function
+        is to run the marabou solving function on the input nodes
+        where for each input node we have upper_bound_i=lower_bound_i=k
+        
+        :return:
+        """
 
     def verify(self):
         """
@@ -136,11 +141,13 @@ class GlobalDataManager:
         the counter example could also be checked if its a correct counter example or not.
         """
         input_query_copy = self.input_query_reference.copy()
-        options = createOptions()  # check what are those options
-        self.counter_example_input_query_of_last_solution_attempt, stats = \
-            MarabouCore.solve(input_query_copy, options, "")
+        options = None  ########################### check what are those options
+        filename_to_save_log_in = ""
 
-        if len(self.counter_example_input_query_of_last_solution_attempt) > 0:
+        self.counter_example_of_last_solution_attempt, stats = \
+            MarabouCore.solve(input_query_copy, options, filename_to_save_log_in)
+
+        if len(self.counter_example_of_last_solution_attempt) > 0:
             # there is a SAT solution
             return GlobalDataManager.SAT
 
