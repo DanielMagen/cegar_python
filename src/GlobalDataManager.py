@@ -48,19 +48,6 @@ class GlobalDataManager:
 
         self.counter_example_of_last_solution_attempt = None
 
-    def save_current_input_query_as_original_network(self):
-        """
-        this function copies the current self.input_query_reference and saves it to
-        self.input_query_of_original_network
-
-        input_query_of_original_network would be used to evaluate possible sat
-        results later on.
-        from assumption (5) we know that the input nodes wont change their id throughout the program life,
-        so we can use this old input query knowing that when a possible solution would tell us to. for example, set
-        input node with global id 5 to be 1.2, then it would be the input node with global id 5 from the start
-        """
-        self.input_query_of_original_network = self.input_query_reference.copy()
-
     def addEquation(self, equation):
         self.input_query_reference.addEquation(equation)
 
@@ -118,11 +105,31 @@ class GlobalDataManager:
     def get_new_equation(self):
         return MarabouCore.Equation()
 
+    def save_current_input_query_as_original_network(self):
+        """
+        this function copies the current self.input_query_reference and saves it to
+        self.input_query_of_original_network
+        IMPORTANT:
+        assumption (7)
+        it assumes that the output bounds were already set on all of the output nodes
+
+        input_query_of_original_network would be used to evaluate possible sat
+        results later on.
+        from assumption (5) we know that the input nodes wont change their global id throughout the program life,
+        so we can use this old input query knowing that when a possible solution would tell us to. for example, set
+        input node with global id 5 to be 1.2, then it would be the input node with global id 5 from the start
+
+        also from assumption (6) we now that the output nodes global id would remain the same (this assumption also
+        gives us the same guarantee for the input nodes so with assumption 5 we are double sure that input nodes
+        ids wont change)
+
+        """
+        self.input_query_of_original_network = self.input_query_reference.copy()
+
     def get_counter_example_of_last_solution_attempt(self):
         return self.counter_example_of_last_solution_attempt
 
     def evaluate_if_result_of_last_solution_attempt_is_a_valid_counterexample(self):
-        #######################################################################################################################
         """
         the trick to implement this function
         is to run the marabou solving function on the input nodes

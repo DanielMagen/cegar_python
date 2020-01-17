@@ -74,11 +74,17 @@ class Network:
         self.goal_index = Network.UNINITIALIZED_GOAL_INDEX
         # this function would set self.goal_index to either
         # INDEX_OF_NEED_TO_INCREASE_OUTPUT or INDEX_OF_NEED_TO_DECREASE_OUTPUT
+        self.output_bounds_were_set = False
         self.hard_code_acas_output_properties(which_acas_output)
 
         # finally, before starting to act upon the Network, save the starting network
         # state as the state that would be used to check possible sat solutions
-        self.global_data_manager.save_current_input_query_as_original_network()
+        if not self.output_bounds_were_set:
+            # violation of assumption (5)
+            raise Exception("the programmer either forgot to set output_bounds_were_set to true, or they "
+                            "really were not set.")
+        else:
+            self.global_data_manager.save_current_input_query_as_original_network()
 
     def _initialize_layers(self):
         self.layers[0] = Layer(self.global_data_manager, Layer.NO_POINTER_TO_ADJACENT_LAYER,
