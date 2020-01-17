@@ -1,6 +1,20 @@
 from maraboupy import MarabouCore
 from maraboupy.Marabou import createOptions
 
+"""
+manage all global data which is required for the marabou system
+- global ids : can automatically reduce the number of used variables or set bounds on 
+"artificial variables" which are not being used.
+
+- input query
+
+- equation
+
+- solving and evaluating the network - would be used to save the original network input query
+and use it to evaluate a proposed solution
+
+"""
+
 
 class GlobalDataManager:
     LOCATION_OF_LARGEST_AVAILABLE_ID = -2
@@ -47,17 +61,58 @@ class GlobalDataManager:
         """
         self.input_query_of_original_network = self.input_query_reference.copy()
 
-    def get_input_query_reference(self):
+    def addEquation(self, equation):
+        self.input_query_reference.addEquation(equation)
+
+    def removeEquation(self, equation):
+        self.input_query_reference.removeEquation(equation)
+
+    def setLowerBound(self, node_global_incoming_id, lower_bound):
         """
-        all that use this function receive the input_query object that would be saved
-        and unchanged throughout the GlobalDataManager life according to assumption (1)
+        given a node global incoming id, it places the given lower bound on it
+        :param node_global_incoming_id:
+        :param lower_bound:
+        :return:
         """
-        return self.input_query_reference
+        return self.input_query_reference.setLowerBound(node_global_incoming_id, lower_bound)
+
+    def setUpperBound(self, node_global_incoming_id, upper_bound):
+        """
+        given a node global incoming id, it places the given upper bound on it
+        :param node_global_incoming_id:
+        :param upper_bound:
+        :return:
+        """
+        return self.input_query_reference.setUpperBound(node_global_incoming_id, upper_bound)
+
+    def getLowerBound(self, node_global_incoming_id):
+        """
+        given a node global incoming id, it returns the lower bound placed on it
+        :param node_global_incoming_id:
+        :return:
+        """
+        return self.input_query_reference.getLowerBound(node_global_incoming_id)
+
+    def getUpperBound(self, node_global_incoming_id):
+        """
+        given a node global incoming id, it returns the upper bound placed on it
+        :param node_global_incoming_id:
+        :return:
+        """
+        return self.input_query_reference.getUpperBound(node_global_incoming_id)
+
+    def removeBounds(self, node_global_incoming_id):
+        """
+        given a node global incoming id, it removes the upper and lower bounds set on it
+        :param node_global_incoming_id:
+        :return:
+        """
+        return self.input_query_reference.removeBounds(node_global_incoming_id)
 
     def addReluConstraint(self, id1, id2):
         MarabouCore.addReluConstraint(self.input_query_reference, id1, id2)
 
-    def removeReluConstraint(self, constraint, id1, id2):
+    def removeReluConstraint(self, id1, id2):
         MarabouCore.removeReluConstraint(self.input_query_reference, id1, id2)
 
     def get_new_equation(self):
@@ -228,7 +283,7 @@ class GlobalDataManager:
                 # the inserted id should be treated as a hole id
                 self._set_artificial_bounds_on_a_hole_id(id_returned)
 
-    def get_maximum_number_used(self):
+    def get_maximum_id_used(self):
         """
         :return: the maximum id that was given away
         if no ids were given it returns -1
@@ -244,7 +299,7 @@ class GlobalDataManager:
         it + 1
         :return: how many variables there are in the system right now
         """
-        num_of_variables_in_system = self.get_maximum_number_used() + 1
+        num_of_variables_in_system = self.get_maximum_id_used() + 1
         self.input_query_reference.setNumberOfVariables(num_of_variables_in_system)
 
         return num_of_variables_in_system

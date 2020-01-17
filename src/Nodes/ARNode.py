@@ -120,11 +120,10 @@ class ARNode(Node):
         upper_bounds = []
         if should_recalculate_bounds:
             # now save all the inner nodes bound values to use later
-            input_query_reference = self.global_data_manager.get_input_query_reference()
             for node in self.inner_nodes:
                 if node.has_bounds:
-                    lower_bounds.append(input_query_reference.getLowerBound(node.get_global_incoming_id))
-                    upper_bounds.append(input_query_reference.getUpperBound(node.get_global_incoming_id))
+                    lower_bounds.append(self.global_data_manager.getLowerBound(node.get_global_incoming_id))
+                    upper_bounds.append(self.global_data_manager.getUpperBound(node.get_global_incoming_id))
 
         # now check if the arnode should have only 1 id or 2
         # from assumption (2) all inner nodes are in the same table

@@ -60,7 +60,7 @@ class Node:
         #  if a node is an input or output node, the incoming_id should be equal to the outgoing_id
         self.global_incoming_id = global_incoming_id
         self.global_outgoing_id = global_outgoing_id
-        # each node would a reference to the id_manager object which is responsible for the system.
+        # each node would a reference to the global_data_manager object which is responsible for the system.
         # the node destructor would call it if need be
         self.global_data_manager = global_data_manager
 
@@ -159,19 +159,17 @@ class Node:
         if self.global_incoming_id == Node.NO_GLOBAL_ID:
             raise Exception("can not set lower and upper bound without a valid global id")
 
-        input_query_reference = self.global_data_manager.get_input_query_reference()
-        input_query_reference.setLowerBound(self.global_incoming_id, lower_bound)
-        input_query_reference.setUpperBound(self.global_incoming_id, upper_bound)
+        self.global_data_manager.setLowerBound(self.global_incoming_id, lower_bound)
+        self.global_data_manager.setUpperBound(self.global_incoming_id, upper_bound)
 
         self.has_bounds = True
 
     def remove_node_bounds(self):
         if self.global_incoming_id == Node.NO_GLOBAL_ID:
             raise Exception("can not remove lower and upper bound without a valid global id")
-        input_query_reference = self.global_data_manager.get_input_query_reference()
         # for now this function does not exist, but I think that creating one should be ok, its just a map object
         # and we can delete form it at ease
-        input_query_reference.removeBounds(self.global_incoming_id)
+        self.global_data_manager.removeBounds(self.global_incoming_id)
 
         self.has_bounds = False
 
@@ -192,8 +190,6 @@ class Node:
             # from assumption (9) the equation and constraint should be set or removed together,
             # so its enough to check if the equation was set or not
             self.remove_equation_and_constraints()
-
-        input_query_reference = self.global_data_manager.get_input_query_reference()
 
         # before starting, check if the node you are about to add an equation and constraint to is an inner
         # or an outer node. according to assumption (11) an outer node can only have 1 global id
@@ -227,7 +223,7 @@ class Node:
 
         # finally set the equation to equation to 0 and add the equation to the input query
         self.equation.setScalar(-self.bias)
-        input_query_reference.addEquation(self.equation)
+        self.global_data_manager.addEquation(self.equation)
 
         # finally set global_equation_is_valid to true since an equation and constraint were updated
         self.global_equation_is_valid = True
@@ -243,7 +239,7 @@ class Node:
             # not much to do, since no equation was set
             return
 
-        self.global_data_manager.get_input_query_reference().removeEquation(self.equation)
+        self.global_data_manager.removeEquation(self.equation)
         if self.has_constraint:
             self.global_data_manager.removeReluConstraint(self.global_incoming_id, self.global_outgoing_id)
 
