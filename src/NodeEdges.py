@@ -11,6 +11,7 @@ class NodeEdges:
     LOCATION_OF_WEIGHT_IN_MAP = 0
     LOCATION_OF_REFERENCE_IN_MAP = 1
 
+    # I rely on that order in the rest of the program, so don't change those numbers
     INDEX_OF_TABLE_NUMBER_IN_DATA = 0
     INDEX_OF_KEY_IN_TABLE_IN_DATA = 1
     INDEX_OF_WEIGHT_IN_DATA = 2
