@@ -234,7 +234,7 @@ class Network:
         to the key of the node in the unprocessed_table in the layer object
 
         :param which_acas_output:
-        which of the 4/11 properties should be added to the network
+        which of the 4 properties should be added to the network
 
         this function would set self.goal_index to either
         INDEX_OF_NEED_TO_INCREASE_OUTPUT or INDEX_OF_NEED_TO_DECREASE_OUTPUT
