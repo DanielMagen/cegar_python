@@ -46,7 +46,10 @@ class AbstractTable:
         raise NotImplemented("this is an abstract class")
 
     def get_list_of_all_keys(self):
-        raise NotImplemented("this is an abstract class")
+        return list(self.get_iterator_for_all_keys())
+
+    def get_list_of_all_nodes(self):
+        raise list(self.get_iterator_for_all_nodes())
 
     def _reset_key_of_node_currently_being_removed_from_table(self):
         self.key_of_node_currently_being_removed_from_table = AbstractTable.NO_NODE_IS_CURRENTLY_BEING_REMOVED

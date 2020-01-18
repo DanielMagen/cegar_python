@@ -149,6 +149,28 @@ class Layer:
 
         return tables[table_number].get_iterator_for_all_nodes()
 
+    def get_list_of_all_keys_for_table(self, is_arnode, table_number):
+        """
+        :param is_arnode: a boolean, if true would search for the node in the arnode tables
+        :param table_number:
+        """
+        tables = self.regular_node_tables
+        if is_arnode:
+            tables = self.arnode_tables
+
+        return tables[table_number].get_list_of_all_keys()
+
+    def get_list_of_all_nodes_for_table(self, is_arnode, table_number):
+        """
+        :param is_arnode: a boolean, if true would search for the node in the arnode tables
+        :param table_number:
+        """
+        tables = self.regular_node_tables
+        if is_arnode:
+            tables = self.arnode_tables
+
+        return tables[table_number].get_list_of_all_nodes()
+
     def get_unprocessed_node_by_key(self, key_of_node_in_unprocessed_table):
         return self.regular_node_tables[Layer.INDEX_OF_UNPROCESSED_TABLE].get_node_by_key(
             key_of_node_in_unprocessed_table)
@@ -360,9 +382,9 @@ class Layer:
         table_to_move_to = self.regular_node_tables[Layer.INDEX_OF_POS_INC_TABLE]
 
         unprocessed_table = self.regular_node_tables[Layer.INDEX_OF_UNPROCESSED_TABLE]
-        for unprocessed_node in unprocessed_table.get_iterator_for_all_nodes():
+        for unprocessed_node_key in unprocessed_table.get_iterator_for_all_keys():
             new_node_key = unprocessed_table.remove_node_from_table_and_relocate_to_other_table(
-                unprocessed_node.get_key_in_table(),
+                unprocessed_node_key,
                 table_to_move_to)
 
             node = table_to_move_to.get_node_by_key(new_node_key)

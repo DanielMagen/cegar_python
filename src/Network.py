@@ -20,9 +20,6 @@ class Network:
     CODE_FOR_UNSAT = 1
     CODE_FOR_SPURIOUS_COUNTEREXAMPLE = 2
 
-    UNSAT = GlobalDataManager.UNSAT
-    SAT = GlobalDataManager.SAT
-
     """
     the idea is such:
     if we want to verify that y > c we would search for an input which gives us y <= c
@@ -242,7 +239,27 @@ class Network:
         :return: a list of te output nodes global incoming ids
         """
         # TODO implement
-        pass
+
+        # y0 = coc
+        # y2 =
+        # y3 =
+        # y4 =
+        # y5 =
+
+        last_layer = self.layers[-1]
+        list_of_nodes = last_layer.get_list_of_all_nodes_for_table(False, Layer.INDEX_OF_UNPROCESSED_TABLE)
+        if len(list_of_nodes) != 5:
+            raise Exception("acas should have exactly 5 outputs")
+
+        if which_acas_output == 1:
+            # y0 >= 3.9911256459
+
+            list_of_nodes[0].set_lower_and_upper_bound(3.9911256459, float('inf'))
+
+            return [list_of_nodes[0].get_global_incoming_id()]
+
+        elif which_acas_output == 2:
+            pass
 
     def preprocess_more_layers(self, number_of_layers_to_preprocess, raise_error_if_overflow=False):
         """
@@ -447,7 +464,7 @@ class Network:
         its fine if the network is fully connected. but my implementation does not assume that,
         so it would be costly to go "for each pair of arnodes find the intersection of the arnodes
         they are connected to using incoming connections". so instead I go the other way around. to check what arnodes
-        should be merged in layer k I look at layer k-1, and for each node a in layer k-1, for each pair of arnodes
+        should be merged in layer k, I look at layer k-1, and for each node in layer k-1, I check each pair of arnodes
         its connected to by an outgoing connection.
 
         :return:
@@ -656,13 +673,13 @@ class Network:
         CODE_FOR_SPURIOUS_COUNTEREXAMPLE
         """
         result = self.global_data_manager.verify()
-        if result == Network.UNSAT:
+        if result == GlobalDataManager.UNSAT:
             return Network.CODE_FOR_UNSAT
 
         result_is_valid = self.global_data_manager. \
             evaluate_if_result_of_last_verification_attempt_is_a_valid_counterexample()
 
-        if result_is_valid:
+        if result_is_valid == GlobalDataManager.SAT:
             return Network.CODE_FOR_SAT
 
         return Network.CODE_FOR_SPURIOUS_COUNTEREXAMPLE

@@ -63,19 +63,21 @@ class GlobalDataManager:
         """
         given a node global incoming id, it places the given lower bound on it
         :param node_global_incoming_id:
-        :param lower_bound:
+        :param lower_bound: if its -infinity it does not set any bound
         :return:
         """
-        return self.input_query_reference.setLowerBound(node_global_incoming_id, lower_bound)
+        if lower_bound != float('-inf'):
+            self.input_query_reference.setLowerBound(node_global_incoming_id, lower_bound)
 
     def setUpperBound(self, node_global_incoming_id, upper_bound):
         """
         given a node global incoming id, it places the given upper bound on it
         :param node_global_incoming_id:
-        :param upper_bound:
+        :param upper_bound: if its infinity it does not set any bound
         :return:
         """
-        return self.input_query_reference.setUpperBound(node_global_incoming_id, upper_bound)
+        if upper_bound != float('inf'):
+            self.input_query_reference.setUpperBound(node_global_incoming_id, upper_bound)
 
     def getLowerBound(self, node_global_incoming_id):
         """

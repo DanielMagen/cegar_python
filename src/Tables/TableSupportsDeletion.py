@@ -21,9 +21,6 @@ class TableSupportsDeletion(AbstractTable):
         for key in self.nodes:
             yield key
 
-    def get_list_of_all_keys(self):
-        return list(self.get_iterator_for_all_keys())
-
     def get_number_of_nodes_in_table(self):
         return len(self.nodes)
 

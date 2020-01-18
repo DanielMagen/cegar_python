@@ -19,9 +19,6 @@ class TableDoesntSupportsDeletion(AbstractTable):
         for i in range(len(self.nodes)):
             yield i
 
-    def get_list_of_all_keys(self):
-        return list(self.get_iterator_for_all_keys())
-
     def get_number_of_nodes_in_table(self):
         return len(self.nodes)
 
