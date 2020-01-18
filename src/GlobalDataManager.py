@@ -140,7 +140,7 @@ class GlobalDataManager:
     def get_counter_example_of_last_solution_attempt(self):
         return self.counter_example_of_last_solution_attempt
 
-    def evaluate_if_result_of_last_solution_attempt_is_a_valid_counterexample(self):
+    def evaluate_if_result_of_last_verification_attempt_is_a_valid_counterexample(self):
         """
         :return:
         if the evaluation is SAT it returns SAT and saves the result in result_of_last_evaluation

@@ -660,7 +660,7 @@ class Network:
             return Network.CODE_FOR_UNSAT
 
         result_is_valid = self.global_data_manager. \
-            evaluate_if_result_of_last_solution_attempt_is_a_valid_counterexample()
+            evaluate_if_result_of_last_verification_attempt_is_a_valid_counterexample()
 
         if result_is_valid:
             return Network.CODE_FOR_SAT
