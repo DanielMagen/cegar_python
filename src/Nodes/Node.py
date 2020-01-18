@@ -21,6 +21,7 @@ class Node:
     def __init__(self,
                  number_of_tables_in_previous_layer,
                  number_of_tables_in_next_layer,
+                 layer_number,
                  table_number, key_in_table,
                  bias,
                  global_incoming_id, global_outgoing_id,
@@ -43,6 +44,7 @@ class Node:
         :param global_outgoing_id:
         :param global_data_manager:
         """
+        self.layer_number = layer_number
         self.table_number = table_number
         self.key_in_table = key_in_table
 

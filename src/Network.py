@@ -106,7 +106,7 @@ class Network:
         return to_return
 
     def _initialize_layers(self):
-        self.layers[0] = Layer(self.global_data_manager, Layer.NO_POINTER_TO_ADJACENT_LAYER,
+        self.layers[0] = Layer(0, self.global_data_manager, Layer.NO_POINTER_TO_ADJACENT_LAYER,
                                Layer.NO_POINTER_TO_ADJACENT_LAYER)
 
         for i in range(1, len(self.layers)):

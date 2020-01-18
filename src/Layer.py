@@ -1,6 +1,5 @@
 from src.Nodes.Node import Node
 from src.NodeEdges import NodeEdges
-from src.Tables.Table import AbstractTable
 from src.Tables.TableDoesntSupportsDeletion import TableDoesntSupportsDeletion
 from src.Tables.ARNodeTable import *
 
@@ -29,13 +28,14 @@ class Layer:
     INCOMING_LAYER_DIRECTION = Node.INCOMING_EDGE_DIRECTION
     OUTGOING_LAYER_DIRECTION = Node.OUTGOING_EDGE_DIRECTION
 
-    def __init__(self, global_data_manager, pointer_to_previous_layer=NO_POINTER_TO_ADJACENT_LAYER,
+    def __init__(self, layer_number, global_data_manager, pointer_to_previous_layer=NO_POINTER_TO_ADJACENT_LAYER,
                  pointer_to_next_layer=NO_POINTER_TO_ADJACENT_LAYER):
         """
         :param pointer_to_previous_layer:
         :param pointer_to_next_layer:
         """
         # to preserve assumption (1) and (2)
+        self.layer_number = layer_number
         self.global_data_manager = global_data_manager
         self.regular_node_tables = []
         self.arnode_tables = []
@@ -52,7 +52,8 @@ class Layer:
                 pointer_to_next_layer == Layer.NO_POINTER_TO_ADJACENT_LAYER:
             self.layer_is_inner = False
 
-        self.regular_node_tables.append(TableDoesntSupportsDeletion(0, self.layer_is_inner, self.global_data_manager))
+        self.regular_node_tables.append(
+            TableDoesntSupportsDeletion(self.layer_number, 0, self.layer_is_inner, self.global_data_manager))
         for i in range(1, Layer.NUMBER_OF_REGULAR_TABLES_THAT_DO_NOT_SUPPORT_DELETION):
             self.regular_node_tables.append(self.regular_node_tables[i - 1].create_table_below_of_same_type())
 
@@ -61,7 +62,7 @@ class Layer:
         self.regular_node_tables.append(unprocessed_table)
 
         # now initialize the arnode_tables
-        self.arnode_tables.append(ARNodeTable(0, self.layer_is_inner, self.global_data_manager))
+        self.arnode_tables.append(ARNodeTable(self.layer_number, 0, self.layer_is_inner, self.global_data_manager))
         for i in range(1, Layer.NUMBER_OF_REGULAR_TABLES_THAT_DO_NOT_SUPPORT_DELETION):
             self.arnode_tables.append(self.arnode_tables[i - 1].create_table_below_of_same_type())
 
@@ -81,7 +82,7 @@ class Layer:
         if self.next_layer != Layer.NO_POINTER_TO_ADJACENT_LAYER:
             raise Exception("Layer already has a pointer to the next layer")
 
-        new_layer = Layer(self.global_data_manager, pointer_to_previous_layer=self,
+        new_layer = Layer(self.layer_number + 1, self.global_data_manager, pointer_to_previous_layer=self,
                           pointer_to_next_layer=Layer.NO_POINTER_TO_ADJACENT_LAYER)
         self.next_layer = new_layer
 
@@ -97,7 +98,8 @@ class Layer:
         if self.previous_layer != Layer.NO_POINTER_TO_ADJACENT_LAYER:
             raise Exception("Layer already has a pointer to the previous layer")
 
-        new_layer = Layer(self.global_data_manager, pointer_to_previous_layer=Layer.NO_POINTER_TO_ADJACENT_LAYER,
+        new_layer = Layer(self.layer_number - 1, self.global_data_manager,
+                          pointer_to_previous_layer=Layer.NO_POINTER_TO_ADJACENT_LAYER,
                           pointer_to_next_layer=self)
         self.previous_layer = new_layer
 

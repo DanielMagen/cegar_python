@@ -2,8 +2,8 @@ from src.Tables.Table import AbstractTable
 
 
 class TableSupportsDeletion(AbstractTable):
-    def __init__(self, table_number, layer_is_inner, global_data_manager):
-        super().__init__(table_number, layer_is_inner, global_data_manager)
+    def __init__(self, layer_number, table_number, layer_is_inner, global_data_manager):
+        super().__init__(layer_number, table_number, layer_is_inner, global_data_manager)
         self.nodes = {}
         self.key_for_new_node = 0 # this would serve as the key of the next node that would be added to the table
         # later we might expand this concept to have a full id system

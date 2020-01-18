@@ -4,12 +4,13 @@ from src.Nodes.Node import Node
 class AbstractTable:
     NO_NODE_IS_CURRENTLY_BEING_REMOVED = None
 
-    def __init__(self, table_number, layer_is_inner, global_data_manager):
+    def __init__(self, layer_number, table_number, layer_is_inner, global_data_manager):
         """
         :param table_number: the number of the table in the overall table order.
         :param layer_is_inner: a boolean which should be true if the layer this table resides in is an inner layer
         (not the first or the last layer)
         """
+        self.layer_number = layer_number
         self.table_number = table_number
 
         self.layer_is_inner = layer_is_inner
@@ -24,7 +25,7 @@ class AbstractTable:
         """
         :return: a tuple of arguments needed to create a table below this table
         """
-        return self.table_number + 1, self.layer_is_inner, self.global_data_manager
+        return self.layer_number, self.table_number + 1, self.layer_is_inner, self.global_data_manager
 
     def create_table_below_of_same_type(self):
         """
@@ -123,6 +124,7 @@ class AbstractTable:
 
         new_node = Node(number_of_tables_in_previous_layer,
                         number_of_tables_in_next_layer,
+                        self.layer_number,
                         Node.NO_TABLE_NUMBER, Node.NO_KEY_IN_TABLE,
                         bias_for_node,
                         global_incoming_id, global_outgoing_id, global_data_manager)

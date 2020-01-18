@@ -22,6 +22,7 @@ class ARNode(Node):
 
     def __init__(self,
                  starting_nodes,
+                 layer_number,
                  table_number,
                  key_in_table):
         """
@@ -55,6 +56,7 @@ class ARNode(Node):
         super().__init__(
             number_of_tables_in_previous_layer,
             number_of_tables_in_next_layer,
+            layer_number,
             table_number, key_in_table,
             Node.NO_BIAS,
             Node.NO_GLOBAL_ID, Node.NO_GLOBAL_ID, Node.NO_REFERENCE)

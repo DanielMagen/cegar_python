@@ -2,8 +2,8 @@ from src.Tables.Table import AbstractTable
 
 
 class TableDoesntSupportsDeletion(AbstractTable):
-    def __init__(self, table_number, layer_is_inner, global_data_manager):
-        super().__init__(table_number, layer_is_inner, global_data_manager)
+    def __init__(self, layer_number, table_number, layer_is_inner, global_data_manager):
+        super().__init__(layer_number, table_number, layer_is_inner, global_data_manager)
         self.nodes = []
 
     def create_table_below_of_same_type(self):

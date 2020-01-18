@@ -1,4 +1,3 @@
-from src.Tables.Table import AbstractTable
 from src.Tables.TableSupportsDeletion import TableSupportsDeletion
 from src.Nodes.ARNode import ARNode
 
@@ -22,7 +21,7 @@ class ARNodeTable(TableSupportsDeletion):
         :param starting_nodes:
         :return: the arnode created
         """
-        new_node = ARNode(starting_nodes, -1, -1)
+        new_node = ARNode(starting_nodes, self.layer_number, -1, -1)
 
         node_key = self._add_node_to_table_without_checking(new_node)
         # change the inserted node location_data so that its table number and index would correspond to its new location
