@@ -44,9 +44,14 @@ class GlobalDataManager:
         self.ranges = [0, max_id_non_exclusive]
 
         self.input_query_reference = MarabouCore.InputQuery()
+
         self.input_query_of_original_network = None
+        self.input_nodes_global_incoming_ids = []
+        self.output_nodes_global_incoming_ids = []
 
         self.counter_example_of_last_solution_attempt = None
+        self.result_of_last_evaluation = {}  # this would save the result of the evaluation of the network on the
+        # counter example, as given by the marabou_core solve function.
 
     def addEquation(self, equation):
         self.input_query_reference.addEquation(equation)
@@ -105,7 +110,8 @@ class GlobalDataManager:
     def get_new_equation(self):
         return MarabouCore.Equation()
 
-    def save_current_input_query_as_original_network(self):
+    def save_current_input_query_as_original_network(self, input_nodes_global_incoming_ids,
+                                                     output_nodes_global_incoming_ids):
         """
         this function copies the current self.input_query_reference and saves it to
         self.input_query_of_original_network
@@ -123,24 +129,49 @@ class GlobalDataManager:
         gives us the same guarantee for the input nodes so with assumption 5 we are double sure that input nodes
         ids wont change)
 
+        :param input_nodes_global_incoming_ids:
+        :param output_nodes_global_incoming_ids:
+
         """
         self.input_query_of_original_network = self.input_query_reference.copy()
+        self.input_nodes_global_incoming_ids = input_nodes_global_incoming_ids
+        self.output_nodes_global_incoming_ids = output_nodes_global_incoming_ids
 
     def get_counter_example_of_last_solution_attempt(self):
         return self.counter_example_of_last_solution_attempt
 
     def evaluate_if_result_of_last_solution_attempt_is_a_valid_counterexample(self):
         """
-        the trick to implement this function
-        is to run the marabou solving function on the input nodes
-        where for each input node we have upper_bound_i=lower_bound_i=k
-
         :return:
+        if the evaluation is SAT it returns SAT and saves the result in result_of_last_evaluation
+        otherwise it returns UNSAT
         """
 
         # from assumption (6) we now that the inputs and output global ids would never change once given
         # so we now that the input and output that are saved inside self.counter_example_of_last_solution_attempt
         # are correct (each input is mapped to itself amd only itself, and each input is mapped to. the same for output)
+
+        # the trick to implement this function
+        # is to run the marabou solving function on the input nodes
+        # where for each input node we have upper_bound_i=lower_bound_i=k
+        # since the output bounds were set already, all we'll need to do is to see if its SAT.
+
+        input_query_to_eval = self.input_query_of_original_network.copy()
+        for node_global_id in self.input_nodes_global_incoming_ids:
+            value_given = self.counter_example_of_last_solution_attempt[node_global_id]
+            input_query_to_eval.setLowerBound(node_global_id, value_given)
+            input_query_to_eval.setUpperBound(node_global_id, value_given)
+
+        options = None  ########################### check what are those options
+        filename_to_save_log_in = ""
+        map_of_node_to_value, stats = MarabouCore.solve(input_query_to_eval, options, filename_to_save_log_in)
+
+        if len(self.counter_example_of_last_solution_attempt) > 0:
+            # there is a SAT solution
+            self.result_of_last_evaluation = map_of_node_to_value
+            return GlobalDataManager.SAT
+        else:
+            return GlobalDataManager.UNSAT
 
     def verify(self):
         """
@@ -155,6 +186,7 @@ class GlobalDataManager:
         options = None  ########################### check what are those options
         filename_to_save_log_in = ""
 
+        # if I understand correctly this is a map of "node_global_id -> value it got"
         self.counter_example_of_last_solution_attempt, stats = \
             MarabouCore.solve(input_query_copy, options, filename_to_save_log_in)
 

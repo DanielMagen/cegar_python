@@ -20,6 +20,9 @@ class Network:
     CODE_FOR_UNSAT = 1
     CODE_FOR_SPURIOUS_COUNTEREXAMPLE = 2
 
+    UNSAT = GlobalDataManager.UNSAT
+    SAT = GlobalDataManager.SAT
+
     """
     the idea is such:
     if we want to verify that y > c we would search for an input which gives us y <= c
@@ -68,23 +71,44 @@ class Network:
 
         # now create all the nodes in the network
         self.number_of_nodes_in_network = 0
-        self._initialize_nodes_in_all_layers(AcasNnet_object)
 
-        # for now the goal of the network would always be to increase its output
+        first_layer_nodes_map, last_layer_nodes_map = self._initialize_nodes_in_all_layers(AcasNnet_object)
+
+        input_nodes_global_incoming_ids = self._layer_node_map_to_global_ids(Network.LOCATION_OF_FIRST_LAYER,
+                                                                             first_layer_nodes_map)
+
         self.goal_index = Network.UNINITIALIZED_GOAL_INDEX
         # this function would set self.goal_index to either
         # INDEX_OF_NEED_TO_INCREASE_OUTPUT or INDEX_OF_NEED_TO_DECREASE_OUTPUT
         self.output_bounds_were_set = False
-        self.hard_code_acas_output_properties(which_acas_output)
+        output_nodes_global_incoming_ids = self.hard_code_acas_output_properties(last_layer_nodes_map,
+                                                                                 which_acas_output)
 
         # finally, before starting to act upon the Network, save the starting network
         # state as the state that would be used to check possible sat solutions
         if not self.output_bounds_were_set:
             # violation of assumption (5)
-            raise Exception("the programmer either forgot to set output_bounds_were_set to true, or they "
-                            "really were not set.")
+            raise Exception("the output bounds were not set")
         else:
-            self.global_data_manager.save_current_input_query_as_original_network()
+            self.global_data_manager.save_current_input_query_as_original_network(input_nodes_global_incoming_ids,
+                                                                                  output_nodes_global_incoming_ids)
+
+    def _layer_node_map_to_global_ids(self, layer_number, layer_nodes_map):
+        """
+        :param layer_number:
+        :param layer_nodes_map:
+        map between index of the node in the conceptual layer (as given by the AcasNnet_object)
+        to the key of the node in the unprocessed_table in the layer object
+
+        :return: a list of the incoming global ids of the nodes
+        """
+        to_return = []
+        current_layer = self.layers[layer_number]
+        for _, key_in_the_unprocessed_table in layer_nodes_map.items():
+            node = current_layer.get_unprocessed_node_by_key(key_in_the_unprocessed_table)
+            to_return.append(node.get_global_incoming_id)
+
+        return to_return
 
     def _initialize_layers(self):
         self.layers[0] = Layer(self.global_data_manager, Layer.NO_POINTER_TO_ADJACENT_LAYER,
@@ -97,6 +121,10 @@ class Network:
         """
         :param AcasNnet_object:
         creates all the nodes, their relations, their bounds, equations and constraints
+
+        :return: 2 maps, 1 for the input nodes and 1 for the output nodes.
+        those maps would map between index of the node in the conceptual layer (as given by the AcasNnet_object)
+        to the key of the node in the unprocessed_table in the layer object
         """
         LOCATION_OF_WEIGHTS = 0
         LOCATION_OF_BIASES = 0
@@ -132,8 +160,9 @@ class Network:
         current_layer_nodes_map = {}
         previous_layer_nodes_map = {}
 
-        # save the first layer map for later,we'll need it
+        # save the first, last layer map for later,we'll need it
         first_layer_nodes_map = {}
+        last_layer_nodes_map = {}
 
         for current_layer_number in range(len(self.layers)):
             current_layer = self.layers[current_layer_number]
@@ -171,6 +200,8 @@ class Network:
 
             if current_layer_number == Network.LOCATION_OF_FIRST_LAYER:
                 first_layer_nodes_map = previous_layer_nodes_map
+            if current_layer_number == len(self.layers) - 1:
+                last_layer_nodes_map = previous_layer_nodes_map
 
         # first create the bounds on all input nodes which reside in layer 0
         first_layer = self.layers[Network.LOCATION_OF_FIRST_LAYER]
@@ -193,16 +224,22 @@ class Network:
         for i in range(Network.LOCATION_OF_FIRST_LAYER + 1, len(self.layers)):
             self.layers[i].calculate_equation_and_constraints_for_all_nodes_in_table(is_arnode, table_number)
 
+        return first_layer_nodes_map, last_layer_nodes_map
+
     #################################################################################################################################################################
-    def hard_code_acas_output_properties(self, which_acas_output):
+    def hard_code_acas_output_properties(self, last_layer_nodes_map, which_acas_output):
         """
-        sent a mail to guy in 10.1 asking him which set of properties to hardcode
+        :param last_layer_nodes_map:
+        map between index of the node in the conceptual layer (as given by the AcasNnet_object)
+        to the key of the node in the unprocessed_table in the layer object
 
         :param which_acas_output:
         which of the 4/11 properties should be added to the network
 
         this function would set self.goal_index to either
         INDEX_OF_NEED_TO_INCREASE_OUTPUT or INDEX_OF_NEED_TO_DECREASE_OUTPUT
+
+        :return: a list of te output nodes global incoming ids
         """
         # TODO implement
         pass
@@ -619,7 +656,7 @@ class Network:
         CODE_FOR_SPURIOUS_COUNTEREXAMPLE
         """
         result = self.global_data_manager.verify()
-        if result == GlobalDataManager.UNSAT:
+        if result == Network.UNSAT:
             return Network.CODE_FOR_UNSAT
 
         result_is_valid = self.global_data_manager. \
