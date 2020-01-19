@@ -1,10 +1,10 @@
-from src.MarabouDataManagers.GlobalDataManager import GlobalDataManager
+from src.MarabouDataManagers.IDManager import IDManager
 
 """
 tests only the id manager part of the global data manager
 """
 
-id_giver = GlobalDataManager(501)
+id_giver = IDManager(501)
 for i in range(11):
     id_giver.get_new_id()
 
