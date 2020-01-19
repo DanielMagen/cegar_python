@@ -53,7 +53,7 @@ class Network:
 
         self.global_data_manager = GlobalDataManager(Network.MULTIPLICITY_OF_IDS * self.number_of_nodes_in_network)
 
-        self.layers = [None for _ in range(self.number_of_layers_in_network)]
+        self.layers = []
         self._initialize_layers()
 
         # all layers in the network are not preprocessed
@@ -106,11 +106,13 @@ class Network:
         return to_return
 
     def _initialize_layers(self):
-        self.layers[0] = Layer(0, self.global_data_manager, Layer.NO_POINTER_TO_ADJACENT_LAYER,
-                               Layer.NO_POINTER_TO_ADJACENT_LAYER)
+        self.layers[Network.LOCATION_OF_FIRST_LAYER] = Layer(Network.LOCATION_OF_FIRST_LAYER,
+                                                             self.global_data_manager,
+                                                             Layer.NO_POINTER_TO_ADJACENT_LAYER,
+                                                             Layer.NO_POINTER_TO_ADJACENT_LAYER)
 
-        for i in range(1, len(self.layers)):
-            self.layers[i] = self.layers[i - 1].create_next_layer()
+        for i in range(1, self.number_of_layers_in_network):
+            self.layers.append(self.layers[i - 1].create_next_layer())
 
     def _initialize_nodes_in_all_layers(self, AcasNnet_object):
         """
