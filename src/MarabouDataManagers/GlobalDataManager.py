@@ -39,6 +39,11 @@ class GlobalDataManager(IDManager):
         self.input_nodes_global_incoming_ids = []
         self.output_nodes_global_incoming_ids = []
 
+        # those sets would hold triplets of the form (layer_number, table_number, key_in_table)
+        # for nodes that dont have valid equations
+        # if those sets are not empty, then the solving process can not take place
+        self.set_of_nodes_locations_that_dont_have_valid_equations = set([])
+
         self.counter_example_of_last_solution_attempt = None
         self.result_of_last_evaluation = {}  # this would save the result of the evaluation of the network on the
         # counter example, as given by the marabou_core solve function.
@@ -48,6 +53,16 @@ class GlobalDataManager(IDManager):
 
     def removeEquation(self, equation):
         self.input_query_reference.removeEquation(equation)
+
+    def add_location_of_node_that_dont_have_valid_equation(self, layer_number, table_number, key_in_table):
+        self.set_of_nodes_locations_that_dont_have_valid_equations.add((layer_number, table_number, key_in_table))
+
+    def check_if_node_has_invalid_equations(self, layer_number, table_number, key_in_table):
+        return (layer_number, table_number, key_in_table) in self.set_of_nodes_locations_that_dont_have_valid_equations
+
+    def remove_location_of_node_that_dont_have_valid_equation(self, layer_number, table_number, key_in_table):
+        # discard ignores removal of items that are not in the set
+        self.set_of_nodes_locations_that_dont_have_valid_equations.discard((layer_number, table_number, key_in_table))
 
     def setLowerBound(self, node_global_incoming_id, lower_bound):
         """
