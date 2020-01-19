@@ -1,5 +1,5 @@
 from src.Layer import *
-from src.GlobalDataManager import *
+from src.MarabouDataManagers.GlobalDataManager import *
 
 
 class Network:

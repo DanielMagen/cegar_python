@@ -1,4 +1,4 @@
-from src.GlobalDataManager import GlobalDataManager
+from src.MarabouDataManagers.GlobalDataManager import GlobalDataManager
 
 """
 tests only the id manager part of the global data manager
