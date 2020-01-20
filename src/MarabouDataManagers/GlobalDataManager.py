@@ -23,6 +23,9 @@ class GlobalDataManager(IDManager):
     CODE_FOR_NODE = 0
     CODE_FOR_ARNODE = 1
 
+    CODE_FOR_ORIGINAL_NETWORK = 0
+    CODE_FOR_CURRENT_NETWORK = 1
+
     """
     currently this class does not support reaching the end of its available id range.
     if we exhaust the ids, then the class behavior is no defined. it would make errors. 
@@ -48,9 +51,11 @@ class GlobalDataManager(IDManager):
         # if this set is not empty, then the solving process can not take place
         self.set_of_nodes_locations_that_dont_have_valid_equations = set([])
 
-        self.counter_example_of_last_solution_attempt = None
-        self.result_of_last_evaluation = {}  # this would save the result of the evaluation of the network on the
+        self.counter_example_of_last_verification_attempt = None
+
+        # this would save the result of the evaluation of the network on the
         # counter example, as given by the marabou_core solve function.
+        self.result_of_counter_example_of_last_verification_attempt_applied_to_original_network = {}
 
     def addEquation(self, equation):
         self.input_query_reference.addEquation(equation)
@@ -142,8 +147,8 @@ class GlobalDataManager(IDManager):
     def get_new_equation(self):
         return MarabouCore.Equation()
 
-    def save_current_input_query_as_original_network(self, input_nodes_global_incoming_ids,
-                                                     output_nodes_global_incoming_ids):
+    def save_network_query_as_original_network(self, input_nodes_global_incoming_ids,
+                                               output_nodes_global_incoming_ids):
         """
         this function copies the current self.input_query_reference and saves it to
         self.input_query_of_original_network
@@ -169,11 +174,12 @@ class GlobalDataManager(IDManager):
         self.input_nodes_global_incoming_ids = input_nodes_global_incoming_ids
         self.output_nodes_global_incoming_ids = output_nodes_global_incoming_ids
 
-    def check_if_can_verify(self):
+    def check_if_can_run_current_network(self):
         """
         :return: true if you can start verifying the network
         and false otherwise.
         for now, its false iff there are nodes in the network that don't have a valid equation
+        (for example one for their neighbors was deleted)
 
         you can get an iterator over all the nodes which dont have a valid equation using the function
         get_list_of_nodes_that_dont_have_valid_equations
@@ -190,16 +196,54 @@ class GlobalDataManager(IDManager):
         """
         return list(self.set_of_nodes_locations_that_dont_have_valid_equations)
 
+    def run_network_on_input(self, code_for_network_to_run_eval_on,
+                             map_of_input_nodes_global_ids_to_values):
+        """
+        :param code_for_network_to_run_eval_on:
+        if CODE_FOR_CURRENT_NETWORK it would run the evaluation on the current network
+        else if its CODE_FOR_ORIGINAL_NETWORK it would run the evaluation on the network saved in the last call to
+        save_network_query_as_original_network
+
+        :param map_of_input_nodes_global_ids_to_values:
+        a map of the form (input_node_global_id -> value to give it)
+
+        :return:
+        the map_of_node_to_value which we get from the MarabouCore.solve function
+        note that if the given input is unsat then the map would be empty
+
+        IMPORTANT: This function does not save any data to the global data manager
+        it simply evaluates the network you want on the input you want and returns the output
+        """
+        if code_for_network_to_run_eval_on == GlobalDataManager.CODE_FOR_CURRENT_NETWORK:
+            if not self.check_if_can_run_current_network():
+                raise Exception("can not run the network there are nodes with invalid equations")
+            input_query_to_eval = self.input_query_reference.copy()
+        elif code_for_network_to_run_eval_on == GlobalDataManager.CODE_FOR_ORIGINAL_NETWORK:
+            input_query_to_eval = self.input_query_of_original_network.copy()
+        else:
+            raise ValueError("illegal code for network")
+
+        for node_global_id in self.input_nodes_global_incoming_ids:
+            value_given = map_of_input_nodes_global_ids_to_values[node_global_id]
+            input_query_to_eval.setLowerBound(node_global_id, value_given)
+            input_query_to_eval.setUpperBound(node_global_id, value_given)
+
+        options = None  ########################### check what are those options
+        filename_to_save_log_in = ""
+        map_of_node_to_value, stats = MarabouCore.solve(input_query_to_eval, options, filename_to_save_log_in)
+
+        return map_of_node_to_value
+
     def verify(self):
         """
-        gives a clone of the input query to the solving engine and returns the result
+        gives a clone of the current input query to the solving engine
         :return: SAT or UN-SAT indicating whether or not the input query has a counter example
-        if it does, the counter example would be saved.
+        if it does, the counter example would be saved in counter_example_of_last_verification_attempt
 
         the counter example could be retrieved by calling get_counter_example_input_query_of_last_solution_attempt
         the counter example could also be checked if its a correct counter example or not.
         """
-        if not self.check_if_can_verify():
+        if not self.check_if_can_run_current_network():
             raise Exception("can not verify since there are nodes with invalid equations")
 
         input_query_copy = self.input_query_reference.copy()
@@ -207,22 +251,31 @@ class GlobalDataManager(IDManager):
         filename_to_save_log_in = ""
 
         # if I understand correctly this is a map of "node_global_id -> value it got"
-        self.counter_example_of_last_solution_attempt, stats = \
+        self.counter_example_of_last_verification_attempt, stats = \
             MarabouCore.solve(input_query_copy, options, filename_to_save_log_in)
 
-        if len(self.counter_example_of_last_solution_attempt) > 0:
+        if len(self.counter_example_of_last_verification_attempt) > 0:
             # there is a SAT solution
             return GlobalDataManager.SAT
 
         return GlobalDataManager.UNSAT
 
-    def get_counter_example_of_last_solution_attempt(self):
-        return self.counter_example_of_last_solution_attempt
+    def get_input_nodes_global_incoming_ids(self):
+        # copy is slow
+        return [self.input_nodes_global_incoming_ids[i] for i in range(len(self.input_nodes_global_incoming_ids))]
+
+    def get_output_nodes_global_incoming_ids(self):
+        # copy is slow
+        return [self.output_nodes_global_incoming_ids[i] for i in range(len(self.output_nodes_global_incoming_ids))]
+
+    def get_counter_example_of_last_verification_attempt(self):
+        return self.counter_example_of_last_verification_attempt
 
     def evaluate_if_result_of_last_verification_attempt_is_a_valid_counterexample(self):
         """
         :return:
-        if the evaluation is SAT it returns SAT and saves the result in result_of_last_evaluation
+        if the evaluation is SAT it returns SAT and saves the result in
+        result_of_counter_example_of_last_verification_attempt_applied_to_original_network
         otherwise it returns UNSAT
         """
 
@@ -237,7 +290,7 @@ class GlobalDataManager(IDManager):
 
         input_query_to_eval = self.input_query_of_original_network.copy()
         for node_global_id in self.input_nodes_global_incoming_ids:
-            value_given = self.counter_example_of_last_solution_attempt[node_global_id]
+            value_given = self.counter_example_of_last_verification_attempt[node_global_id]
             input_query_to_eval.setLowerBound(node_global_id, value_given)
             input_query_to_eval.setUpperBound(node_global_id, value_given)
 
@@ -245,9 +298,9 @@ class GlobalDataManager(IDManager):
         filename_to_save_log_in = ""
         map_of_node_to_value, stats = MarabouCore.solve(input_query_to_eval, options, filename_to_save_log_in)
 
-        if len(self.counter_example_of_last_solution_attempt) > 0:
+        if len(self.counter_example_of_last_verification_attempt) > 0:
             # there is a SAT solution
-            self.result_of_last_evaluation = map_of_node_to_value
+            self.result_of_counter_example_of_last_verification_attempt_applied_to_original_network = map_of_node_to_value
             return GlobalDataManager.SAT
         else:
             return GlobalDataManager.UNSAT

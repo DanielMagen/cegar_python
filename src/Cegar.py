@@ -5,10 +5,12 @@ and to interface with general marabou
 from src.Network import Network
 
 
-def run_cegar(self):
-    dummy_AcasNnet_object = None
-    which_acas_output = 0
-    network = Network(dummy_AcasNnet_object, which_acas_output)
+def run_cegar_naive(AcasNnet_object, which_acas_output):
+    """
+    naive algorithm
+    abstracts all the way and only then starts to refine back
+    """
+    network = Network(AcasNnet_object, which_acas_output)
     network.fully_activate_the_entire_network()
 
     # merge all arnodes

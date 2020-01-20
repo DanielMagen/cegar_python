@@ -85,8 +85,8 @@ class Network:
             # violation of assumption (5)
             raise Exception("the output bounds were not set")
         else:
-            self.global_data_manager.save_current_input_query_as_original_network(input_nodes_global_incoming_ids,
-                                                                                  output_nodes_global_incoming_ids)
+            self.global_data_manager.save_network_query_as_original_network(input_nodes_global_incoming_ids,
+                                                                            output_nodes_global_incoming_ids)
 
     def _layer_node_map_to_global_ids(self, layer_number, layer_nodes_map):
         """
@@ -428,6 +428,7 @@ class Network:
     of the arnode edges based on their type and the network goal
     """
 
+    ############ IMPORTANT - for now the function is not commutative, ask guy and yithzak how to transform it into such
     def get_function_to_calc_weight_for_incoming_edges_for_arnode(self,
                                                                   table_number_of_arnode):
         """
@@ -493,7 +494,7 @@ class Network:
         # for now it seems that the function is sum all the times
         return lambda node, lis: sum(lis)
 
-    ######################## ask Yithzak about this
+    ######################## ask Yithzak about how to calculate the node biases - his paper assumes that there are none
     def get_function_to_calc_bias_for_arnode(self,
                                              table_number_of_arnode):
         def function_to_calc_bias_for_arnode(list_of_inner_nodes):
@@ -719,7 +720,7 @@ class Network:
         CODE_FOR_UNSAT
         CODE_FOR_SPURIOUS_COUNTEREXAMPLE
         """
-        if not self.global_data_manager.check_if_can_verify():
+        if not self.global_data_manager.check_if_can_run_current_network():
             # we need to initialize a valid equation for all the nodes/arnodes without one
             for data in self.global_data_manager.get_list_of_nodes_that_dont_have_valid_equations():
                 layer_number, table_number, key_in_table, node_code = data
@@ -741,3 +742,12 @@ class Network:
             return Network.CODE_FOR_SAT
 
         return Network.CODE_FOR_SPURIOUS_COUNTEREXAMPLE
+
+    def run_current_network(self, map_of_input_nodes_global_ids_to_values):
+        """
+        :param map_of_input_nodes_global_ids_to_values:
+        a map of the form (input_node_global_id -> value to give it)
+        :return:
+        runs the current network on the given map_of_input_nodes_global_ids
+        if
+        """
