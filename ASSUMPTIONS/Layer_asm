@@ -56,10 +56,14 @@ the global data manager relies on this assumption.
 
 12)
 -> ARNode assumptions (13)
-the output nodes ids would remain the same after the output layer is fully activated
 
 13)
 no merge or split operations would be performed on the input or output layers
+
+14)
+the global ids of the output and input nodes will never change once given.
+the global data manager relies on this
+(this can also be inferred from assumption (12) and assumption (13))
 
 Layer conclusions:
 1)
@@ -71,8 +75,3 @@ from conclusion (1) and ARNode assumption (5) we conclude that for a arnode to b
 all of its outgoing connections should be to arnodes which surround nodes which are not in the unprocessed table.
 i.e. an arnode can never be forward activated if one of its outgoing connections is to a node which
 is in the unprocessed table.
-
-3)
-from assumption (12) and assumption (13) we can conclude that the global ids of the output and input nodes
-will never change once given.
-the global data manager relies on this

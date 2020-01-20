@@ -537,6 +537,10 @@ class Layer:
         of course, it does not refresh nodes which are nested inside a fully activated arnode, all nodes which should
         have a global id
         """
+        if not self.layer_is_inner:
+            # violates assumption (14)
+            raise Exception("can not change global ids for outer layer nodes")
+
         # from assumption (1) all nodes in the non-unprocessed_table would be nested inside an arnode which resides in
         # the arnodes tables. from assumption (8) its enough to go over the arnodes to get all of the arnodes which
         # have global data + get all nodes which reside inside an arnode but still hold ownership over their global data
@@ -580,6 +584,13 @@ class Layer:
             tables = self.arnode_tables
 
         tables[table_number].calculate_equation_and_constraints_for_all_nodes_in_table()
+
+    def calculate_equation_and_constraints_for_a_specific_node(self, is_arnode, table_number, key_in_table):
+        tables = self.regular_node_tables
+        if is_arnode:
+            tables = self.arnode_tables
+
+        tables[table_number].calculate_equation_and_constraints_for_a_specific_node(key_in_table)
 
     def __str__(self):
         to_return = ''

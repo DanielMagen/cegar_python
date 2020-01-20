@@ -130,7 +130,8 @@ class Node:
     def check_if_have_global_equation_is_valid(self):
         return self.global_data_manager.check_if_node_has_invalid_equations(self.layer_number,
                                                                             self.table_number,
-                                                                            self.key_in_table)
+                                                                            self.key_in_table,
+                                                                            is_arnode=False)
 
     def set_global_equation_to_invalid(self):
         """
@@ -139,7 +140,8 @@ class Node:
         """
         self.global_data_manager.add_location_of_node_that_dont_have_valid_equation(self.layer_number,
                                                                                     self.table_number,
-                                                                                    self.key_in_table)
+                                                                                    self.key_in_table,
+                                                                                    is_arnode=False)
 
     def _set_global_equation_to_valid(self):
         """
@@ -148,7 +150,8 @@ class Node:
         """
         self.global_data_manager.remove_location_of_node_that_dont_have_valid_equation(self.layer_number,
                                                                                        self.table_number,
-                                                                                       self.key_in_table)
+                                                                                       self.key_in_table,
+                                                                                       is_arnode=False)
 
     def get_node_bias(self):
         return self.bias

@@ -176,6 +176,33 @@ class ARNode(Node):
             return super().get_global_outgoing_id()
         return self.first_node_in_starting_nodes.get_global_outgoing_id()
 
+    def check_if_have_global_equation_is_valid(self):
+        # preserve assumption (8)
+        if self.activation_status == ARNode.FULLY_ACTIVATED_STATUS:
+            return self.global_data_manager.check_if_node_has_invalid_equations(self.layer_number,
+                                                                                self.table_number,
+                                                                                self.key_in_table,
+                                                                                is_arnode=True)
+        return self.first_node_in_starting_nodes.check_if_have_global_equation_is_valid()
+
+    def set_global_equation_to_invalid(self):
+        # preserve assumption (8)
+        if self.activation_status == ARNode.FULLY_ACTIVATED_STATUS:
+            return self.global_data_manager.add_location_of_node_that_dont_have_valid_equation(self.layer_number,
+                                                                                               self.table_number,
+                                                                                               self.key_in_table,
+                                                                                               is_arnode=True)
+        self.first_node_in_starting_nodes.set_global_equation_to_invalid()
+
+    def _set_global_equation_to_valid(self):
+        # preserve assumption (8)
+        if self.activation_status == ARNode.FULLY_ACTIVATED_STATUS:
+            return self.global_data_manager.remove_location_of_node_that_dont_have_valid_equation(self.layer_number,
+                                                                                                  self.table_number,
+                                                                                                  self.key_in_table,
+                                                                                                  is_arnode=True)
+        self.first_node_in_starting_nodes._set_global_equation_to_valid()
+
     def get_node_bias(self):
         # preserve assumption (8)
         if self.activation_status == ARNode.FULLY_ACTIVATED_STATUS:

@@ -179,6 +179,9 @@ class AbstractTable:
         for node in self.get_iterator_for_all_nodes():
             node.calculate_equation_and_constraints()
 
+    def calculate_equation_and_constraints_for_a_specific_node(self, key_in_table):
+        self.get_node_by_key(key_in_table).calculate_equation_and_constraints()
+
     def __str__(self):
         to_return = ''
         to_return += f'table number {self.table_number}'

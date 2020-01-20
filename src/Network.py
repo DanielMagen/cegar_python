@@ -719,6 +719,17 @@ class Network:
         CODE_FOR_UNSAT
         CODE_FOR_SPURIOUS_COUNTEREXAMPLE
         """
+        if not self.global_data_manager.check_if_can_verify():
+            # we need to initialize a valid equation for all the nodes/arnodes without one
+            for data in self.global_data_manager.get_list_of_nodes_that_dont_have_valid_equations():
+                layer_number, table_number, key_in_table, node_code = data
+                layer = self.layers[layer_number]
+                if node_code == self.global_data_manager.CODE_FOR_NODE:
+                    layer.calculate_equation_and_constraints_for_a_specific_node(False, table_number, key_in_table)
+                else:
+                    # node_code == self.global_data_manager.CODE_FOR_ARNODE:
+                    layer.calculate_equation_and_constraints_for_a_specific_node(True, table_number, key_in_table)
+
         result = self.global_data_manager.verify()
         if result == GlobalDataManager.UNSAT:
             return Network.CODE_FOR_UNSAT

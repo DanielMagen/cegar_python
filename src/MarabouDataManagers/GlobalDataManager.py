@@ -20,6 +20,9 @@ class GlobalDataManager(IDManager):
     UNSAT = False
     SAT = True
 
+    CODE_FOR_NODE = 0
+    CODE_FOR_ARNODE = 1
+
     """
     currently this class does not support reaching the end of its available id range.
     if we exhaust the ids, then the class behavior is no defined. it would make errors. 
@@ -39,9 +42,10 @@ class GlobalDataManager(IDManager):
         self.input_nodes_global_incoming_ids = []
         self.output_nodes_global_incoming_ids = []
 
-        # those sets would hold triplets of the form (layer_number, table_number, key_in_table)
-        # for nodes that dont have valid equations
-        # if those sets are not empty, then the solving process can not take place
+        # this set would hold triplets of the form (layer_number, table_number, key_in_table, SOME_CODE)
+        # for nodes that dont have valid equations.
+        # the CODE would be either CODE_FOR_NODE or CODE_FOR_ARNODE
+        # if this set is not empty, then the solving process can not take place
         self.set_of_nodes_locations_that_dont_have_valid_equations = set([])
 
         self.counter_example_of_last_solution_attempt = None
@@ -54,15 +58,36 @@ class GlobalDataManager(IDManager):
     def removeEquation(self, equation):
         self.input_query_reference.removeEquation(equation)
 
-    def add_location_of_node_that_dont_have_valid_equation(self, layer_number, table_number, key_in_table):
-        self.set_of_nodes_locations_that_dont_have_valid_equations.add((layer_number, table_number, key_in_table))
+    def add_location_of_node_that_dont_have_valid_equation(self, layer_number, table_number, key_in_table,
+                                                           is_arnode):
+        if is_arnode:
+            self.set_of_nodes_locations_that_dont_have_valid_equations.add(
+                (layer_number, table_number, key_in_table, GlobalDataManager.CODE_FOR_ARNODE))
+        else:
+            self.set_of_nodes_locations_that_dont_have_valid_equations.add(
+                (layer_number, table_number, key_in_table, GlobalDataManager.CODE_FOR_NODE))
 
-    def check_if_node_has_invalid_equations(self, layer_number, table_number, key_in_table):
-        return (layer_number, table_number, key_in_table) in self.set_of_nodes_locations_that_dont_have_valid_equations
+    def check_if_node_has_invalid_equations(self, layer_number, table_number, key_in_table, is_arnode):
+        if is_arnode:
+            return (layer_number,
+                    table_number,
+                    key_in_table,
+                    GlobalDataManager.CODE_FOR_ARNODE) in self.set_of_nodes_locations_that_dont_have_valid_equations
+        else:
+            return (layer_number,
+                    table_number,
+                    key_in_table,
+                    GlobalDataManager.CODE_FOR_NODE) in self.set_of_nodes_locations_that_dont_have_valid_equations
 
-    def remove_location_of_node_that_dont_have_valid_equation(self, layer_number, table_number, key_in_table):
+    def remove_location_of_node_that_dont_have_valid_equation(self, layer_number, table_number, key_in_table,
+                                                              is_arnode):
         # discard ignores removal of items that are not in the set
-        self.set_of_nodes_locations_that_dont_have_valid_equations.discard((layer_number, table_number, key_in_table))
+        if is_arnode:
+            self.set_of_nodes_locations_that_dont_have_valid_equations.discard(
+                (layer_number, table_number, key_in_table, GlobalDataManager.CODE_FOR_ARNODE))
+        else:
+            self.set_of_nodes_locations_that_dont_have_valid_equations.discard(
+                (layer_number, table_number, key_in_table, GlobalDataManager.CODE_FOR_NODE))
 
     def setLowerBound(self, node_global_incoming_id, lower_bound):
         """
@@ -144,6 +169,53 @@ class GlobalDataManager(IDManager):
         self.input_nodes_global_incoming_ids = input_nodes_global_incoming_ids
         self.output_nodes_global_incoming_ids = output_nodes_global_incoming_ids
 
+    def check_if_can_verify(self):
+        """
+        :return: true if you can start verifying the network
+        and false otherwise.
+        for now, its false iff there are nodes in the network that don't have a valid equation
+
+        you can get an iterator over all the nodes which dont have a valid equation using the function
+        get_list_of_nodes_that_dont_have_valid_equations
+        """
+        return len(self.set_of_nodes_locations_that_dont_have_valid_equations) == 0
+
+    def get_list_of_nodes_that_dont_have_valid_equations(self):
+        """
+        :return: a list of the location data of the nodes that don't have a valid equation
+        note that this data is not the same as the regular location data
+        the data is of form (layer_number, table_number, key_in_table, CODE)
+        where CODE = CODE_FOR_NODE if the node is a regular node
+        and CODE = CODE_FOR_ARNODE if the node is an arnode
+        """
+        return list(self.set_of_nodes_locations_that_dont_have_valid_equations)
+
+    def verify(self):
+        """
+        gives a clone of the input query to the solving engine and returns the result
+        :return: SAT or UN-SAT indicating whether or not the input query has a counter example
+        if it does, the counter example would be saved.
+
+        the counter example could be retrieved by calling get_counter_example_input_query_of_last_solution_attempt
+        the counter example could also be checked if its a correct counter example or not.
+        """
+        if not self.check_if_can_verify():
+            raise Exception("can not verify since there are nodes with invalid equations")
+
+        input_query_copy = self.input_query_reference.copy()
+        options = None  ########################### check what are those options
+        filename_to_save_log_in = ""
+
+        # if I understand correctly this is a map of "node_global_id -> value it got"
+        self.counter_example_of_last_solution_attempt, stats = \
+            MarabouCore.solve(input_query_copy, options, filename_to_save_log_in)
+
+        if len(self.counter_example_of_last_solution_attempt) > 0:
+            # there is a SAT solution
+            return GlobalDataManager.SAT
+
+        return GlobalDataManager.UNSAT
+
     def get_counter_example_of_last_solution_attempt(self):
         return self.counter_example_of_last_solution_attempt
 
@@ -179,29 +251,6 @@ class GlobalDataManager(IDManager):
             return GlobalDataManager.SAT
         else:
             return GlobalDataManager.UNSAT
-
-    def verify(self):
-        """
-        gives a clone of the input query to the solving engine and returns the result
-        :return: SAT or UN-SAT indicating whether or not the input query has a counter example
-        if it does, the counter example would be saved.
-
-        the counter example could be retrieved by calling get_counter_example_input_query_of_last_solution_attempt
-        the counter example could also be checked if its a correct counter example or not.
-        """
-        input_query_copy = self.input_query_reference.copy()
-        options = None  ########################### check what are those options
-        filename_to_save_log_in = ""
-
-        # if I understand correctly this is a map of "node_global_id -> value it got"
-        self.counter_example_of_last_solution_attempt, stats = \
-            MarabouCore.solve(input_query_copy, options, filename_to_save_log_in)
-
-        if len(self.counter_example_of_last_solution_attempt) > 0:
-            # there is a SAT solution
-            return GlobalDataManager.SAT
-
-        return GlobalDataManager.UNSAT
 
     def _set_artificial_bounds_on_a_hole_id(self, hole_id):
         """

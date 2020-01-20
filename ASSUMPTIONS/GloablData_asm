@@ -22,7 +22,7 @@ this is because from assumption (3) we know that an id is returned when the arno
 fully activated. but from assumption (4) we know that an input arnode would never be fully activated.
 
 6)
--> Layer conclusion (3)
+-> Layer assumption (14)
 
 7)
 before calling the save_current_input_query_as_original_network function, all the output bounds should have been set
