@@ -749,5 +749,8 @@ class Network:
         a map of the form (input_node_global_id -> value to give it)
         :return:
         runs the current network on the given map_of_input_nodes_global_ids
-        if
+        and returns if the network was SAT or UNSAT on those inputs
         """
+        code_for_network_to_run_eval_on = GlobalDataManager.CODE_FOR_CURRENT_NETWORK
+        self.global_data_manager.run_network_on_input(code_for_network_to_run_eval_on,
+                                                      map_of_input_nodes_global_ids_to_values)
