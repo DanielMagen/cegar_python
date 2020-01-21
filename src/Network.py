@@ -1,5 +1,5 @@
 from src.Layer import *
-from src.MarabouDataManagers.GlobalDataManager import *
+from src.MarabouDataManagers.GlobalNetworkManager import *
 
 
 class Network:
@@ -51,7 +51,8 @@ class Network:
         """
         self.number_of_layers_in_network = len(AcasNnet_object.layerSizes)
 
-        self.global_data_manager = GlobalDataManager(Network.MULTIPLICITY_OF_IDS * self.number_of_nodes_in_network)
+        self.global_network_manager = GlobalNetworkManager(
+            Network.MULTIPLICITY_OF_IDS * self.number_of_nodes_in_network)
 
         self.layers = []
         self._initialize_layers()
@@ -85,8 +86,9 @@ class Network:
             # violation of assumption (5)
             raise Exception("the output bounds were not set")
         else:
-            self.global_data_manager.save_network_query_as_original_network(input_nodes_global_incoming_ids,
-                                                                            output_nodes_global_incoming_ids)
+            self._create_valid_equations_for_all_nodes_without_valid_equations()
+            self.global_network_manager.save_current_network_as_original_network(input_nodes_global_incoming_ids,
+                                                                                 output_nodes_global_incoming_ids)
 
     def _layer_node_map_to_global_ids(self, layer_number, layer_nodes_map):
         """
@@ -107,7 +109,7 @@ class Network:
 
     def _initialize_layers(self):
         self.layers[Network.LOCATION_OF_FIRST_LAYER] = Layer(Network.LOCATION_OF_FIRST_LAYER,
-                                                             self.global_data_manager,
+                                                             self.global_network_manager,
                                                              Layer.NO_POINTER_TO_ADJACENT_LAYER,
                                                              Layer.NO_POINTER_TO_ADJACENT_LAYER)
 
@@ -423,7 +425,7 @@ class Network:
     might contain a multiplicity of inner nodes.
     this calculation is dependent on the positivity/incrementality of the arnode, which is turn
     is dependent on the table its in in its layer.
-    
+
     the 2 functions below are used to give us the basic functions to calculate the weight
     of the arnode edges based on their type and the network goal
     """
@@ -712,6 +714,21 @@ class Network:
                                                function_to_calculate_merger_of_outgoing_edges,
                                                function_to_calculate_arnode_bias)
 
+    def _create_valid_equations_for_all_nodes_without_valid_equations(self):
+        """
+        creates valid equations for all nodes which do not have valid equations
+        """
+        if not self.global_network_manager.check_if_can_run_current_network():
+            # we need to initialize a valid equation for all the nodes/arnodes without one
+            for data in self.global_network_manager.get_list_of_nodes_that_dont_have_valid_equations():
+                layer_number, table_number, key_in_table, node_code = data
+                layer = self.layers[layer_number]
+                if node_code == self.global_network_manager.CODE_FOR_NODE:
+                    layer.calculate_equation_and_constraints_for_a_specific_node(False, table_number, key_in_table)
+                else:
+                    # node_code == self.global_network_manager.CODE_FOR_ARNODE:
+                    layer.calculate_equation_and_constraints_for_a_specific_node(True, table_number, key_in_table)
+
     def check_if_network_is_sat_or_unsat(self):
         """
         this function check whether the network is sat, unsat, or has a spurious counter example
@@ -720,22 +737,13 @@ class Network:
         CODE_FOR_UNSAT
         CODE_FOR_SPURIOUS_COUNTEREXAMPLE
         """
-        if not self.global_data_manager.check_if_can_run_current_network():
-            # we need to initialize a valid equation for all the nodes/arnodes without one
-            for data in self.global_data_manager.get_list_of_nodes_that_dont_have_valid_equations():
-                layer_number, table_number, key_in_table, node_code = data
-                layer = self.layers[layer_number]
-                if node_code == self.global_data_manager.CODE_FOR_NODE:
-                    layer.calculate_equation_and_constraints_for_a_specific_node(False, table_number, key_in_table)
-                else:
-                    # node_code == self.global_data_manager.CODE_FOR_ARNODE:
-                    layer.calculate_equation_and_constraints_for_a_specific_node(True, table_number, key_in_table)
+        self._create_valid_equations_for_all_nodes_without_valid_equations()
 
-        result = self.global_data_manager.verify()
+        result = self.global_network_manager.verify()
         if result == GlobalDataManager.UNSAT:
             return Network.CODE_FOR_UNSAT
 
-        result_is_valid = self.global_data_manager. \
+        result_is_valid = self.global_network_manager. \
             evaluate_if_result_of_last_verification_attempt_is_a_valid_counterexample()
 
         if result_is_valid == GlobalDataManager.SAT:
@@ -752,5 +760,5 @@ class Network:
         and returns if the network was SAT or UNSAT on those inputs
         """
         code_for_network_to_run_eval_on = GlobalDataManager.CODE_FOR_CURRENT_NETWORK
-        self.global_data_manager.run_network_on_input(code_for_network_to_run_eval_on,
-                                                      map_of_input_nodes_global_ids_to_values)
+        self.global_network_manager.run_network_on_input(code_for_network_to_run_eval_on,
+                                                         map_of_input_nodes_global_ids_to_values)
