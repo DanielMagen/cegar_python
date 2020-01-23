@@ -409,12 +409,24 @@ class Network:
 
             self.last_layer_not_fully_activated -= 1
 
+    def preprocess_more_layers_the_entire_network(self):
+        """
+        this function preprocess all of the layers in the network
+        """
+        self.preprocess_more_layers(len(self.layers), raise_error_if_overflow=False)
+
+    def forward_activate_the_entire_network(self):
+        """
+        this function preprocess, and forward activates all of the layers in the network
+        """
+        self.preprocess_more_layers_the_entire_network()
+        self.forward_activate_more_layers(len(self.layers), raise_error_if_overflow=False)
+
     def fully_activate_the_entire_network(self):
         """
         this function preprocess, and fully activates all of the layers in the network
         """
-        self.preprocess_more_layers(len(self.layers), raise_error_if_overflow=False)
-        self.forward_activate_more_layers(len(self.layers), raise_error_if_overflow=False)
+        self.forward_activate_the_entire_network()
         self.fully_activate_more_layers(len(self.layers), raise_error_if_overflow=False)
 
     """

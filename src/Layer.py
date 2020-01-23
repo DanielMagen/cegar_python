@@ -257,13 +257,11 @@ class Layer:
         lis[i] would contain all the connection data for outgoing edges that should go to the node we will create
         in regular_node_tables[i].
         """
-        weight_location_in_data = NodeEdges.INDEX_OF_WEIGHT_IN_DATA
-
         data_for_nodes_we_are_pos_linked_to = []
         data_for_nodes_we_are_neg_linked_to = []
 
         for outgoing_edges_data in node.get_iterator_for_connections_data(Node.OUTGOING_EDGE_DIRECTION):
-            weight_of_connection = outgoing_edges_data[weight_location_in_data]
+            weight_of_connection = outgoing_edges_data[NodeEdges.INDEX_OF_WEIGHT_IN_DATA]
             if weight_of_connection >= 0:
                 data_for_nodes_we_are_pos_linked_to.append(outgoing_edges_data)
             else:
