@@ -18,7 +18,7 @@ forward activated entails that
 a) all the arnodes which this arnode should be connected to via an outgoing connection have been created
 
 fully activated entails that
-a) the arnodes that have outgoing connections (which are incoming) to this node must be forward activated
+a) the arnodes that have outgoing connections (which are incoming) to this node must be at least forward activated
 b) the arnodes that we are connected to by outgoing connections will be fully activated
 
 6)
