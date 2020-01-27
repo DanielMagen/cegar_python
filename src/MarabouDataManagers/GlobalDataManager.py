@@ -1,4 +1,3 @@
-from maraboupy import MarabouCore
 from src.MarabouDataManagers.IDManager import IDManager
 from src.MarabouDataManagers.InputQueryFacade import InputQueryFacade
 
