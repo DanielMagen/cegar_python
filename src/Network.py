@@ -36,10 +36,10 @@ class Network:
 
     NUMBER_OF_TABLES_IN_LAYER = Layer.NUMBER_OF_OVERALL_TABLES
 
-    def __init__(self, AcasNnet_object, which_acas_output):
+    def __init__(self, nnet_reader_object, which_acas_output):
         """
-        :param AcasNnet_object:
-        an AcasNnet object which has loaded into itself the network and the requested bounds on the network input nodes.
+        :param nnet_reader_object:
+        an nnet_reader object which has loaded into itself the network and the requested bounds on the network input nodes.
         this network class would convert that network into an inner representation of multiple layers, tables and
         node classes, which are built for the purpose of supporting the abstraction refinement
 
@@ -49,7 +49,7 @@ class Network:
         the network class would need to convert the bounds to a single bound of the form >).
         we do support adding the output bounds for the AcasNnet, which are hardcoded into this class.
         """
-        self.number_of_layers_in_network = len(AcasNnet_object.layerSizes)
+        self.number_of_layers_in_network = len(nnet_reader_object.layerSizes)
 
         self.global_network_manager = GlobalNetworkManager(
             Network.MULTIPLICITY_OF_IDS * self.number_of_nodes_in_network)
@@ -68,7 +68,7 @@ class Network:
         # now create all the nodes in the network
         self.number_of_nodes_in_network = 0
 
-        first_layer_nodes_map, last_layer_nodes_map = self._initialize_nodes_in_all_layers(AcasNnet_object)
+        first_layer_nodes_map, last_layer_nodes_map = self._initialize_nodes_in_all_layers(nnet_reader_object)
 
         input_nodes_global_incoming_ids = self._layer_node_map_to_global_ids(Network.LOCATION_OF_FIRST_LAYER,
                                                                              first_layer_nodes_map)
@@ -116,10 +116,10 @@ class Network:
         for i in range(1, self.number_of_layers_in_network):
             self.layers.append(self.layers[i - 1].create_next_layer())
 
-    def _initialize_nodes_in_all_layers(self, AcasNnet_object):
+    def _initialize_nodes_in_all_layers(self, nnet_reader_object):
         """
-        :param AcasNnet_object:
-        creates all the nodes, their relations, their bounds, equations and constraints
+        this function creates all the nodes, their relations, their bounds, equations and constraints
+        :param nnet_reader_object:
 
         :return: 2 maps, 1 for the input nodes and 1 for the output nodes.
         those maps would map between index of the node in the conceptual layer (as given by the AcasNnet_object)
@@ -127,28 +127,6 @@ class Network:
         """
         LOCATION_OF_WEIGHTS = 0
         LOCATION_OF_BIASES = 0
-
-        matrix = AcasNnet_object.getMatrix()
-
-        def get_bias_for_node(layer_number, index_in_layer_of_node):
-            """
-            :param layer_number:
-            :param index_in_layer_of_node:
-            :return: the bias for the (index_in_layer_of_node)th node in the given layer
-            """
-            if layer_number == Network.LOCATION_OF_FIRST_LAYER:
-                return Node.NO_BIAS
-            return matrix[layer_number - 1][LOCATION_OF_BIASES][index_in_layer_of_node][0]
-
-        def get_weight_of_connection(layer_number, index_in_layer_of_node, index_in_previous_layer_of_node):
-            """
-            :param layer_number:
-            :param index_in_layer_of_node:
-            :param index_in_previous_layer_of_node:
-            :return: the weight of connection between (index_in_layer_of_node)th node in the given layer
-            and (index_in_next_layer_of_node)th node in the previous layer
-            """
-            return matrix[layer_number][LOCATION_OF_WEIGHTS][index_in_layer_of_node][index_in_previous_layer_of_node]
 
         # first, initialize all the nodes and their connections
 
@@ -165,12 +143,12 @@ class Network:
 
         for current_layer_number in range(len(self.layers)):
             current_layer = self.layers[current_layer_number]
-            number_of_nodes_in_current_layer = AcasNnet_object.layerSizes[current_layer_number]
+            number_of_nodes_in_current_layer = nnet_reader_object.layerSizes[current_layer_number]
 
             # first create all the nodes in the layer
             for current_node_number in range(number_of_nodes_in_current_layer):
                 current_layer_nodes_map[current_node_number] = current_layer.create_new_node(
-                    get_bias_for_node(current_layer_number, current_node_number))
+                    nnet_reader_object.get_bias_for_node(current_layer_number, current_node_number))
 
             # next connect all those nodes, to the nodes from the previous layer
             # we do not connect nodes which are connected to each other with 0 weight
@@ -178,9 +156,9 @@ class Network:
                 list_of_pairs_of_keys_and_weights = []
                 for a_node_index_in_previous_layer, the_key_in_unprocessed_table_of_node_in_previous_layer \
                         in previous_layer_nodes_map.items():
-                    weight_of_connection = get_weight_of_connection(current_layer_number,
-                                                                    current_node_index_in_layer,
-                                                                    a_node_index_in_previous_layer)
+                    weight_of_connection = nnet_reader_object.get_weight_of_connection(current_layer_number,
+                                                                                       current_node_index_in_layer,
+                                                                                       a_node_index_in_previous_layer)
                     if weight_of_connection != 0:
                         list_of_pairs_of_keys_and_weights.append(
                             (the_key_in_unprocessed_table_of_node_in_previous_layer,
@@ -206,8 +184,8 @@ class Network:
         first_layer = self.layers[Network.LOCATION_OF_FIRST_LAYER]
         is_arnode = False
         table_number = Layer.INDEX_OF_UNPROCESSED_TABLE
-        lower_bounds = AcasNnet_object.mins
-        upper_bounds = AcasNnet_object.maxes
+        lower_bounds = nnet_reader_object.inputMinimums
+        upper_bounds = nnet_reader_object.inputMaximums
 
         for node_index_in_layer, node_key_in_unprocessed_table in first_layer_nodes_map.items():
             first_layer.set_lower_and_upper_bound_for_node(is_arnode, table_number,
