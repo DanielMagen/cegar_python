@@ -108,7 +108,7 @@ class Layer:
     @staticmethod
     def type_to_number_of_map(type_of_node):
         """
-        this function is only used for visual understanding for the programmer, it as zero utility use
+        this function is only used for visual understanding for the programmer, it has zero utility use in the program
 
         :param type_of_node: (pos,inc), (pos,dec), (neg,inc), (neg,dec), (unprocessed)
         :return: the number of table corresponding to the type given in the list of 5 tables
@@ -129,17 +129,6 @@ class Layer:
 
         return new_node.get_key_in_table()
 
-    def get_iterator_for_all_keys_for_table(self, is_arnode, table_number):
-        """
-        :param is_arnode: a boolean, if true would search for the node in the arnode tables
-        :param table_number:
-        """
-        tables = self.regular_node_tables
-        if is_arnode:
-            tables = self.arnode_tables
-
-        return tables[table_number].get_iterator_for_all_keys()
-
     def get_iterator_for_all_nodes_for_table(self, is_arnode, table_number):
         """
         :param is_arnode: a boolean, if true would search for the node in the arnode tables
@@ -150,17 +139,6 @@ class Layer:
             tables = self.arnode_tables
 
         return tables[table_number].get_iterator_for_all_nodes()
-
-    def get_list_of_all_keys_for_table(self, is_arnode, table_number):
-        """
-        :param is_arnode: a boolean, if true would search for the node in the arnode tables
-        :param table_number:
-        """
-        tables = self.regular_node_tables
-        if is_arnode:
-            tables = self.arnode_tables
-
-        return tables[table_number].get_list_of_all_keys()
 
     def get_list_of_all_nodes_for_table(self, is_arnode, table_number):
         """
@@ -426,7 +404,7 @@ class Layer:
                                                              function_to_calculate_merger_of_incoming_edges,
                                                              function_to_calculate_arnode_bias):
         """
-        if the previous layer was entirely forward activated but you want ot recalculate the incoming edges to
+        if the previous layer was entirely forward activated but you still want ot recalculate the incoming edges to
         this layer arnodes, use this function
         :param table_number:
         :param function_to_calculate_merger_of_incoming_edges:

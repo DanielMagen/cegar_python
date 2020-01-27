@@ -259,7 +259,7 @@ class ARNode(Node):
         raise Exception("arnode was not able to be refreshed")
 
     def set_pointer_to_ar_node_nested_in(self, ar_node_location):
-        raise NotImplementedError("can not change")
+        raise NotImplementedError("an arnode is considered to be nested inside itself, this can not change")
 
     def get_pointer_to_ar_node_nested_in(self):
         return self
