@@ -125,9 +125,6 @@ class Network:
         those maps would map between index of the node in the conceptual layer (as given by the AcasNnet_object)
         to the key of the node in the unprocessed_table in the layer object
         """
-        LOCATION_OF_WEIGHTS = 0
-        LOCATION_OF_BIASES = 0
-
         # first, initialize all the nodes and their connections
 
         # those maps would map between index of the node in the conceptual layer (as given by the matrix)
@@ -137,7 +134,7 @@ class Network:
         current_layer_nodes_map = {}
         previous_layer_nodes_map = {}
 
-        # save the first, last layer map for later,we'll need it
+        # save the first and last layer maps for later, we'll need them
         first_layer_nodes_map = {}
         last_layer_nodes_map = {}
 

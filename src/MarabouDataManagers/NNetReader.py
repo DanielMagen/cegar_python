@@ -1,6 +1,6 @@
-# copied from the MarabouNetworkNNet class in marabou
 class NNetReader:
     def __init__(self, file_name):
+        # copied from the MarabouNetworkNNet class in marabou
         with open(file_name) as f:
             line = f.readline()
             cnt = 1
@@ -39,7 +39,7 @@ class NNetReader:
                 weights.append([])
                 biases.append([])
                 # weights
-                for i in range(currentLayerSize):
+                for i in range(d):
                     line = f.readline()
                     aux = [float(x) for x in line.strip().split(",")[:-1]]
                     weights[layernum].append([])
@@ -64,33 +64,47 @@ class NNetReader:
             self.biases = biases
 
     """
-    those are functions that can read the data from an acasNnet object
+    those are functions that can read the data from an acasNnet matrix.
     do not delete them because they explain how to integrate acasNnet with our code, which would be necessary when
     the code would be transferred to cpp
     
-    def get_bias_for_node(layer_number, index_in_layer_of_node):
+    def get_bias_for_node(layer_number, index_of_node_in_layer):
         ""
         :param layer_number:
-        :param index_in_layer_of_node:
-        :return: the bias for the (index_in_layer_of_node)th node in the given layer
+        :param index_of_node_in_layer:
+        :return: the bias for the (index_of_node_in_layer)th node in the given layer
         ""
+        LOCATION_OF_BIASES = 0
         if layer_number == Network.LOCATION_OF_FIRST_LAYER:
             return Node.NO_BIAS
         return matrix[layer_number - 1][LOCATION_OF_BIASES][index_in_layer_of_node][0]
 
-    def get_weight_of_connection(layer_number, index_in_layer_of_node, index_in_previous_layer_of_node):
+    def get_weight_of_connection(layer_number, index_of_node_in_layer, index_of_node_in_previous_layer):
         ""
         :param layer_number:
-        :param index_in_layer_of_node:
-        :param index_in_previous_layer_of_node:
-        :return: the weight of connection between (index_in_layer_of_node)th node in the given layer
-        and (index_in_next_layer_of_node)th node in the previous layer
+        :param index_of_node_in_layer:
+        :param index_of_node_in_previous_layer:
+        :return: the weight of connection between (index_of_node_in_layer)th node in the given layer
+        and (index_of_node_in_previous_layer)th node in the previous layer
         ""
-        return matrix[layer_number][LOCATION_OF_WEIGHTS][index_in_layer_of_node][index_in_previous_layer_of_node]
+        LOCATION_OF_WEIGHTS = 0
+        return matrix[layer_number][LOCATION_OF_WEIGHTS][index_of_node_in_layer][index_of_node_in_previous_layer]
     """
 
-    def get_bias_for_node(self, layer_number, index_in_layer_of_node):
-        pass
+    def get_bias_for_node(self, layer_number, index_of_node_in_layer):
+        """
+        :param layer_number:
+        :param index_of_node_in_layer:
+        :return: the bias for the (index_of_node_in_layer)th node in the given layer
+        """
+        return self.biases[layer_number][index_of_node_in_layer]
 
-    def get_weight_of_connection(self, layer_number, index_in_layer_of_node, index_in_previous_layer_of_node):
-        pass
+    def get_weight_of_connection(self, layer_number, index_of_node_in_layer, index_of_node_in_previous_layer):
+        """
+        :param layer_number:
+        :param index_of_node_in_layer:
+        :param index_of_node_in_previous_layer:
+        :return: the weight of connection between (index_in_layer_of_node)th node in the given layer
+        and (index_of_node_in_previous_layer)th node in the previous layer
+        """
+        return self.weights[layer_number][index_of_node_in_layer][index_of_node_in_previous_layer]

@@ -1,9 +1,7 @@
 from maraboupy import MarabouCore
 import copy
-import numpy as np
 
 
-# copied/based on MarabouNetwork class from the marabou project
 class InputQueryFacade:
     def __init__(self):
         self.equList = []
@@ -16,6 +14,8 @@ class InputQueryFacade:
 
     def get_new_marabou_input_query_object(self, number_of_nodes, input_nodes_global_incoming_ids,
                                            output_nodes_global_incoming_ids):
+        # copied/based on MarabouNetwork class from the marabou project
+
         ipq = MarabouCore.InputQuery()
         ipq.setNumberOfVariables(number_of_nodes)
 
