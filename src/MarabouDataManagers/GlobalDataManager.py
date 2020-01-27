@@ -42,12 +42,6 @@ class GlobalDataManager(IDManager):
         # if this set is not empty, then the solving process can not take place
         self.set_of_nodes_locations_that_dont_have_valid_equations = set([])
 
-    def addEquation(self, equation):
-        self.input_query.addEquation(equation)
-
-    def removeEquation(self, equation):
-        self.input_query.removeEquation(equation)
-
     def add_location_of_node_that_dont_have_valid_equation(self, layer_number, table_number, key_in_table,
                                                            is_arnode):
         if is_arnode:
@@ -79,6 +73,15 @@ class GlobalDataManager(IDManager):
             self.set_of_nodes_locations_that_dont_have_valid_equations.discard(
                 (layer_number, table_number, key_in_table, GlobalDataManager.CODE_FOR_NODE))
 
+    def get_new_equation(self):
+        return self.input_query.get_new_equation()
+
+    def addEquation(self, equation):
+        self.input_query.addEquation(equation)
+
+    def removeEquation(self, equation):
+        self.input_query.removeEquation(equation)
+
     def setLowerBound(self, node_global_incoming_id, lower_bound):
         self.input_query.setLowerBound(node_global_incoming_id, lower_bound)
 
@@ -99,9 +102,6 @@ class GlobalDataManager(IDManager):
 
     def removeReluConstraint(self, id1, id2):
         self.input_query.removeReluConstraint(id1, id2)
-
-    def get_new_equation(self):
-        return self.input_query.get_new_equation()
 
     def get_list_of_nodes_that_dont_have_valid_equations(self):
         """

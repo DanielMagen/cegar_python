@@ -101,7 +101,9 @@ class GlobalNetworkManager(GlobalDataManager):
         options = None  ########################### check what are those options
         filename_to_save_log_in = ""
         map_of_node_to_value, stats = MarabouCore.solve(
-            input_query_to_eval.get_new_marabou_input_query_object(self.get_maximum_id_used()),
+            input_query_to_eval.get_new_marabou_input_query_object(self.get_maximum_id_used(),
+                                                                   self.input_nodes_global_incoming_ids,
+                                                                   self.output_nodes_global_incoming_ids),
             options,
             filename_to_save_log_in)
 
@@ -124,7 +126,10 @@ class GlobalNetworkManager(GlobalDataManager):
 
         # if I understand correctly this is a map of "node_global_id -> value it got"
         self.counter_example_of_last_verification_attempt, stats = \
-            MarabouCore.solve(self.input_query.get_new_marabou_input_query_object(self.get_maximum_id_used()), options,
+            MarabouCore.solve(self.input_query.get_new_marabou_input_query_object(self.get_maximum_id_used(),
+                                                                                  self.input_nodes_global_incoming_ids,
+                                                                                  self.output_nodes_global_incoming_ids),
+                              options,
                               filename_to_save_log_in)
 
         if len(self.counter_example_of_last_verification_attempt) > 0:
@@ -170,7 +175,9 @@ class GlobalNetworkManager(GlobalDataManager):
         options = None  ########################### check what are those options
         filename_to_save_log_in = ""
         map_of_node_to_value, stats = MarabouCore.solve(
-            input_query_to_eval.get_new_marabou_input_query_object(self.get_maximum_id_used()),
+            input_query_to_eval.get_new_marabou_input_query_object(self.get_maximum_id_used(),
+                                                                   self.input_nodes_global_incoming_ids,
+                                                                   self.output_nodes_global_incoming_ids),
             options,
             filename_to_save_log_in)
 

@@ -3,7 +3,7 @@ import copy
 import numpy as np
 
 
-# copied from MarabouNetwork class from the marabou project
+# copied/based on MarabouNetwork class from the marabou project
 class InputQueryFacade:
     def __init__(self):
         self.equList = []
@@ -11,46 +11,38 @@ class InputQueryFacade:
         self.lowerBounds = dict()
         self.upperBounds = dict()
 
-        ####### take care of input and output
-        self.inputVars = []
-        self.outputVars = np.array([])
-
     def copy(self):
         copy.deepcopy(self)
 
-    def get_new_marabou_input_query_object(self, numVars):
+    def get_new_marabou_input_query_object(self, number_of_nodes, input_nodes_global_incoming_ids,
+                                           output_nodes_global_incoming_ids):
         ipq = MarabouCore.InputQuery()
-        ipq.setNumberOfVariables(numVars)
+        ipq.setNumberOfVariables(number_of_nodes)
 
-        i = 0
-        for inputVarArray in self.inputVars:
-            for inputVar in inputVarArray.flatten():
-                ipq.markInputVariable(inputVar, i)
-                i += 1
+        for inputIndex, inputVar in enumerate(input_nodes_global_incoming_ids):
+            ipq.markInputVariable(inputVar, inputIndex)
 
-        i = 0
-        for outputVar in self.outputVars.flatten():
-            ipq.markOutputVariable(outputVar, i)
-            i += 1
+        for outputIndex, outputVar in enumerate(output_nodes_global_incoming_ids):
+            ipq.markOutputVariable(outputVar, outputIndex)
 
         for e in self.equList:
             eq = MarabouCore.Equation(e.EquationType)
             for (c, v) in e.addendList:
-                assert v < numVars
+                assert v < number_of_nodes
                 eq.addAddend(c, v)
             eq.setScalar(e.scalar)
             ipq.addEquation(eq)
 
         for r in self.reluList:
-            assert r[1] < numVars and r[0] < numVars
+            assert r[1] < number_of_nodes and r[0] < number_of_nodes
             MarabouCore.addReluConstraint(ipq, r[0], r[1])
 
         for l in self.lowerBounds:
-            assert l < numVars
+            assert l < number_of_nodes
             ipq.setLowerBound(l, self.lowerBounds[l])
 
         for u in self.upperBounds:
-            assert u < numVars
+            assert u < number_of_nodes
             ipq.setUpperBound(u, self.upperBounds[u])
 
         return ipq
