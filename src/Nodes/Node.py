@@ -196,12 +196,36 @@ class Node:
 
         self.has_bounds = False
 
+    def remove_equation_and_constraints(self):
+        """
+        simply remove the equation and constraint from the global data manager
+        and sets them to none in this node
+        """
+        # from assumption (9) the equation and constraint should be set or removed together,
+        # so its enough to check if the equation was set or not
+        if self.equation == Node.NO_EQUATION:
+            # not much to do, since no equation was set
+            return
+
+        self.global_data_manager.removeEquation(self.equation)
+        if self.has_constraint:
+            self.global_data_manager.removeReluConstraint(self.global_incoming_id, self.global_outgoing_id)
+
+        self.equation = Node.NO_EQUATION
+        self.has_constraint = False
+
+        if self.incoming_edges_manager.has_no_connections():
+            # since we have no neighbors then our equation (which is non existent) is valid from assumption (14)
+            self._set_global_equation_to_valid()
+        else:
+            self.set_global_equation_to_invalid()
+
     def calculate_equation_and_constraints(self):
         """
         this function calculates the equation between this node and its incoming nodes
         and the constraint between its 2 global ids
 
-        if the equation and constraint already exist, it first deletes them from and then recalculates them
+        if the equation and constraint already exist, it first deletes them and then recalculates them
 
         from assumption (9) the equation and constraint should be set or removed together
         """
@@ -217,10 +241,10 @@ class Node:
         # before starting, check if the node you are about to add an equation and constraint to is an inner
         # or an outer node. according to assumption (11) an outer node can only have 1 global id
         if self.global_incoming_id == self.global_outgoing_id:
-            # check if we are in the input or output node
+            self.has_constraint = False
             if self.incoming_edges_manager.has_no_connections():
-                # we are in the input layer, no need to assign any equations
-                # remove_location_of_node_that_dont_have_valid_equation was done by remove_equation_and_constraints
+                # we are in the input layer, no need to assign any equations since we dont have any incoming connections
+                # also we dont need to have any constraints
                 # so simply return
                 return
         else:
@@ -251,40 +275,18 @@ class Node:
         # finally tell the data manager that a valid equation were set for you
         self._set_global_equation_to_valid()
 
-    def remove_equation_and_constraints(self):
-        """
-        simply remove the equation and constraint from the input query and marabou_core
-        and sets them to none in this node
-        """
-        # from assumption (9) the equation and constraint should be set or removed together,
-        # so its enough to check if the equation was set or not
-        if self.equation == Node.NO_EQUATION:
-            # not much to do, since no equation was set
-            return
-
-        self.global_data_manager.removeEquation(self.equation)
-        if self.has_constraint:
-            self.global_data_manager.removeReluConstraint(self.global_incoming_id, self.global_outgoing_id)
-
-        self.equation = Node.NO_EQUATION
-        self.has_constraint = False
-
-        if self.incoming_edges_manager.has_no_connections():
-            # since we have no neighbors then our equation (which is non existent) is valid from assumption (14)
-            self._set_global_equation_to_valid()
-
-    def remove_from_global_system(self, return_id=True):
+    def remove_from_global_system(self, give_back_id_to_data_manager=True):
         """
         1) removes this node global ids
         2) if the node was given an equation and a constraint it removes them too.
-        3) resets the reference to the marabou_core, input_query and id_manager to be null
+        3) resets the reference to the global_data_manager to be None
 
-        :param return_id: true by default, should not be changed unless you know what you're doing
+        :param give_back_id_to_data_manager: true by default, should not be changed unless you know what you're doing
         if its set to true, the function always returns -1,-1.
-        otherwise, this function does not give back the ids of the node to the global system,
+        otherwise, this function does not give back the ids of the node to the global manager,
         but simply returns the pair of ids.
         notice that no matter what, the id should be clean when this function is finished,
-        i.e. no bounds, relu constraints, or any other kind of things should be related to the id of this node.
+        i.e. no bounds, relu constraints, or any other things should be related to the id of this node.
         """
         if self.global_incoming_id == Node.NO_GLOBAL_ID or self.global_outgoing_id == Node.NO_GLOBAL_ID:
             if self.global_incoming_id == Node.NO_GLOBAL_ID and self.global_outgoing_id == Node.NO_GLOBAL_ID:
@@ -310,10 +312,12 @@ class Node:
             self.remove_node_bounds()
             self.has_bounds = False
 
-        # since the give_id_back function does not clean the id, the id should be clean by this stage
+        # since the give_id_back function does not "clean" the id, the id should be clean by this stage
+        # unless the programmer has made a mistake
+
         global_incoming_id_to_return = -1
         global_outgoing_id_to_return = -1
-        if return_id:
+        if give_back_id_to_data_manager:
             self.global_data_manager.give_id_back(self.global_incoming_id)
             if self.global_incoming_id != self.global_outgoing_id:
                 self.global_data_manager.give_id_back(self.global_outgoing_id)
@@ -327,67 +331,6 @@ class Node:
         self.global_data_manager = Node.NO_REFERENCE
 
         return global_incoming_id_to_return, global_outgoing_id_to_return
-
-    def refresh_global_variables(self, call_calculate_equation_and_constraints=True):
-        """
-        :param call_calculate_equation_and_constraints: true by default, if true this method calls the
-        calculate_equation_and_constraints method after refreshing the global ids.
-        if false, the node would remain without an equation or constraint after the refreshing has finished.
-
-        :return:
-        this function tries to removes this node from the global system and then reinsert it and recalculate an
-        equation and constraint for the node.
-
-        if the node has no global data and is not nested inside an arnode it raises an exception.
-
-        otherwise, if the node has no global data and is nested inside an arnode this method does nothing
-        and returns a reference to the arnode the node is nested in. this is because this method assumes that
-        if such a case is met then we are fulfilling arnode assumption (8), i.e. this node has given up any
-        authority to decide what the global variables are and the decision is entirely up to the arnode its nested in.
-
-        otherwise, after the method is over it returns Node.NO_REFERENCE
-
-        it assumes that this node currently has a valid global data manager
-        it removes this node from the global system and then reinsert it
-        if self.global_incoming_id != self.global_outgoing_id it will try to take 2 ids for itself
-        otherwise it would try to take only 1
-
-        note that after this function is finished, it calls each and every node which we are connected to via an
-        outgoing connection, and tells it that its global data is not valid
-        (we changed our id so the node which is outgoing from us has an invalid equation).
-        as such when calling this function, to avoid inefficiency, if you need to also refresh nodes which we are
-        connected to by an outgoing connection, its better to refresh us first, because else you will need to
-        recalculate the equations for those nodes more than once.
-        """
-        if self.global_data_manager == Node.NO_REFERENCE or \
-                self.global_incoming_id == Node.NO_GLOBAL_ID or self.global_outgoing_id == Node.NO_GLOBAL_ID:
-            if self.is_nested_in_ar_node():
-                # assumption (7)
-                return self.get_pointer_to_ar_node_nested_in()
-            else:
-                raise Exception("this node has no global data and is not nested inside any arnode and as "
-                                "such could not be refreshed")
-
-        global_data_reference_backup = self.global_data_manager
-        should_create_2_global_ids = (self.global_incoming_id != self.global_outgoing_id)
-        self.remove_from_global_system()
-
-        self.global_data_manager = global_data_reference_backup
-        self.global_incoming_id = self.global_data_manager.get_new_id()
-        self.global_outgoing_id = self.global_incoming_id
-        if should_create_2_global_ids:
-            self.global_outgoing_id = self.global_data_manager.get_new_id()
-
-        if call_calculate_equation_and_constraints:
-            self.calculate_equation_and_constraints()
-
-        # now tell all our outgoing connections that their global data is invalid
-        outgoing_connections_iter = self.get_iterator_for_connections_data(Node.OUTGOING_EDGE_DIRECTION)
-        for connection_data in outgoing_connections_iter:
-            node = connection_data[NodeEdges.INDEX_OF_REFERENCE_TO_NODE_CONNECTED_TO_IN_DATA]
-            node.set_global_equation_to_invalid()
-
-        return Node.NO_REFERENCE
 
     def set_in_stone(self):
         # from assumption (3)

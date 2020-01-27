@@ -501,40 +501,6 @@ class Layer:
                                                                       should_recalculate_bounds,
                                                                       function_to_calculate_arnode_bias)
 
-    def refresh_layer_global_variables(self, call_calculate_equation_and_constraints=True):
-        """
-        :param call_calculate_equation_and_constraints: true by default, if true all nodes whould have their
-        equation and constraints calculated after the refresh has finished.
-        refresh all the nodes and arnodes in the layer.
-
-        from assumption (7) this method assumes that all nodes that should have a global id,
-        really do have a global id.
-
-        of course, it does not refresh nodes which are nested inside a fully activated arnode, all nodes which should
-        have a global id
-        """
-        if not self.layer_is_inner:
-            # violates assumption (14)
-            raise Exception("can not change global ids for outer layer nodes")
-
-        # from assumption (1) all nodes in the non-unprocessed_table would be nested inside an arnode which resides in
-        # the arnodes tables. from assumption (8) its enough to go over the arnodes to get all of the arnodes which
-        # have global data + get all nodes which reside inside an arnode but still hold ownership over their global data
-        # so from assumption (1) all we need to do to affect all nodes in the layer including the arnodes and the
-        # regular nodes, is go through all arnodes tables and the unprocessed_table
-
-        # first iterate over all unprocessed nodes
-        unprocessed_nodes_iter = self.regular_node_tables[Layer.INDEX_OF_UNPROCESSED_TABLE].get_iterator_for_all_nodes()
-
-        for node in unprocessed_nodes_iter:
-            node.refresh_global_variables(call_calculate_equation_and_constraints)
-
-        # now go over all arnodes
-        for arnode_table in self.arnode_tables:
-            arnodes_iter = arnode_table.get_iterator_for_all_nodes()
-            for arnode in arnodes_iter:
-                arnode.refresh_global_variables(call_calculate_equation_and_constraints)
-
     def set_lower_and_upper_bound_for_node(self, is_arnode, table_number, key_in_table, lower_bound, upper_bound):
         """
         :param is_arnode: a boolean, if true would search for the node in the arnode tables

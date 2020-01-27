@@ -6,6 +6,16 @@ class ARNode(Node):
     """
     this class would represent a ARNode that would work under the assumptions detailed in
     the ASSUMPTIONS file.
+
+    important note:
+    the arnode wraps regular nodes.
+    it has 3 possible activation status and depending on each on them it behaves differently.
+    the arnode has been designed and implemented such that
+    1) when the arnode takes over a regular node, all of the actions that are supposed to take place on the regular
+    node, now take place using this arnode
+    2) if an arnode has a neighbor which is a regular node, then some actions of that node can affect the arnode,
+    if so, then the arnode takes care to noticce those actions. if the arnode does not do anything about those actions,
+    then it means that they do not affect the arnode.
     """
     # I want to first create the different arnodes and only after finishing creating them, activating them.
     # this is required to preserve assumption (1) because arnodes can not be created another way which still preserves
@@ -238,25 +248,6 @@ class ARNode(Node):
         if self.activation_status == ARNode.FULLY_ACTIVATED_STATUS:
             return super().remove_from_global_system()
         return self.first_node_in_starting_nodes.remove_from_global_system()
-
-    def refresh_global_variables(self, call_calculate_equation_and_constraints=True):
-        """
-        :return:
-        in contrast to the method from the node class, if we do not succeed refreshing the arnode for some reason,
-        we always raise an exception, and when we succeed we always return Node.NO_REFERENCE
-        """
-
-        # preserve assumption (8)
-        if self.activation_status == ARNode.FULLY_ACTIVATED_STATUS:
-            to_return = super().refresh_global_variables(call_calculate_equation_and_constraints)
-        else:
-            to_return = self.first_node_in_starting_nodes.refresh_global_variables(
-                call_calculate_equation_and_constraints)
-
-        if to_return == Node.NO_REFERENCE:
-            return to_return
-
-        raise Exception("arnode was not able to be refreshed")
 
     def set_pointer_to_ar_node_nested_in(self, ar_node_location):
         raise NotImplementedError("an arnode is considered to be nested inside itself, this can not change")

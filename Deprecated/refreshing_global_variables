@@ -1,0 +1,126 @@
+2 reasons why I removed this capability
+1) no usage for it
+2) as it currently, there is an infinite loop if we are trying to refresh the global data of a node which is
+nested inside an arnode which is not fully activated
+
+
+function inside the layer class:
+
+    def refresh_layer_global_variables(self, call_calculate_equation_and_constraints=True):
+        """
+        :param call_calculate_equation_and_constraints: true by default, if true all nodes whould have their
+        equation and constraints calculated after the refresh has finished.
+        refresh all the nodes and arnodes in the layer.
+
+        from assumption (7) this method assumes that all nodes that should have a global id,
+        really do have a global id.
+
+        of course, it does not refresh nodes which are nested inside a fully activated arnode, all nodes which should
+        have a global id
+        """
+        if not self.layer_is_inner:
+            # violates assumption (14)
+            raise Exception("can not change global ids for outer layer nodes")
+
+        # from assumption (1) all nodes in the non-unprocessed_table would be nested inside an arnode which resides in
+        # the arnodes tables. from assumption (8) its enough to go over the arnodes to get all of the arnodes which
+        # have global data + get all nodes which reside inside an arnode but still hold ownership over their global data
+        # so from assumption (1) all we need to do to affect all nodes in the layer including the arnodes and the
+        # regular nodes, is go through all arnodes tables and the unprocessed_table
+
+        # first iterate over all unprocessed nodes
+        unprocessed_nodes_iter = self.regular_node_tables[Layer.INDEX_OF_UNPROCESSED_TABLE].get_iterator_for_all_nodes()
+
+        for node in unprocessed_nodes_iter:
+            node.refresh_global_variables(call_calculate_equation_and_constraints)
+
+        # now go over all arnodes
+        for arnode_table in self.arnode_tables:
+            arnodes_iter = arnode_table.get_iterator_for_all_nodes()
+            for arnode in arnodes_iter:
+                arnode.refresh_global_variables(call_calculate_equation_and_constraints)
+
+function inside arnode class:
+
+    def refresh_global_variables(self, call_calculate_equation_and_constraints=True):
+        """
+        :return:
+        in contrast to the method from the node class, if we do not succeed refreshing the arnode for some reason,
+        we always raise an exception, and when we succeed we always return Node.NO_REFERENCE
+        """
+
+        # preserve assumption (8)
+        if self.activation_status == ARNode.FULLY_ACTIVATED_STATUS:
+            to_return = super().refresh_global_variables(call_calculate_equation_and_constraints)
+        else:
+            to_return = self.first_node_in_starting_nodes.refresh_global_variables(
+                call_calculate_equation_and_constraints)
+
+        if to_return == Node.NO_REFERENCE:
+            return to_return
+
+        raise Exception("arnode was not able to be refreshed")
+
+
+function inside node class:
+
+    def refresh_global_variables(self, call_calculate_equation_and_constraints=True):
+        """
+        :param call_calculate_equation_and_constraints: true by default, if true this method calls the
+        calculate_equation_and_constraints method after refreshing the global ids.
+        if false, the node would remain without an equation or constraint after the refreshing has finished.
+
+        :return:
+        this function tries to removes this node from the global system and then reinsert it and recalculate an
+        equation and constraint for the node.
+
+        if the node has no global data and is not nested inside an arnode it raises an exception.
+
+        otherwise, if the node has no global data and is nested inside an arnode this method does nothing
+        and returns a reference to the arnode the node is nested in. this is because this method assumes that
+        if such a case is met then we are fulfilling arnode assumption (8), i.e. this node has given up any
+        authority to decide what the global variables are and the decision is entirely up to the arnode its nested in.
+
+        otherwise, after the method is over it returns Node.NO_REFERENCE
+
+        it assumes that this node currently has a valid global data manager
+        it removes this node from the global system and then reinsert it
+        if self.global_incoming_id != self.global_outgoing_id it will try to take 2 ids for itself
+        otherwise it would try to take only 1
+
+        note that after this function is finished, it calls each and every node which we are connected to via an
+        outgoing connection, and tells it that its global data is not valid
+        (we changed our id so the node which is outgoing from us has an invalid equation).
+        as such when calling this function, to avoid inefficiency, if you need to also refresh nodes which we are
+        connected to by an outgoing connection, its better to refresh us first, because else you will need to
+        recalculate the equations for those nodes more than once.
+        """
+        if self.global_data_manager == Node.NO_REFERENCE or \
+                self.global_incoming_id == Node.NO_GLOBAL_ID or self.global_outgoing_id == Node.NO_GLOBAL_ID:
+            if self.is_nested_in_ar_node():
+                # assumption (7)
+                return self.get_pointer_to_ar_node_nested_in()
+            else:
+                raise Exception("this node has no global data and is not nested inside any arnode and as "
+                                "such could not be refreshed")
+
+        global_data_reference_backup = self.global_data_manager
+        should_create_2_global_ids = (self.global_incoming_id != self.global_outgoing_id)
+        self.remove_from_global_system()
+
+        self.global_data_manager = global_data_reference_backup
+        self.global_incoming_id = self.global_data_manager.get_new_id()
+        self.global_outgoing_id = self.global_incoming_id
+        if should_create_2_global_ids:
+            self.global_outgoing_id = self.global_data_manager.get_new_id()
+
+        if call_calculate_equation_and_constraints:
+            self.calculate_equation_and_constraints()
+
+        # now tell all our outgoing connections that their global data is invalid
+        outgoing_connections_iter = self.get_iterator_for_connections_data(Node.OUTGOING_EDGE_DIRECTION)
+        for connection_data in outgoing_connections_iter:
+            node = connection_data[NodeEdges.INDEX_OF_REFERENCE_TO_NODE_CONNECTED_TO_IN_DATA]
+            node.set_global_equation_to_invalid()
+
+        return Node.NO_REFERENCE
