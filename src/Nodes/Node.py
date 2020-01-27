@@ -14,6 +14,8 @@ class Node:
     NO_KEY_IN_TABLE = -1
 
     NO_GLOBAL_ID = -1
+    # when you implement this in cpp have another way to check if the pointer is valid. I remember we saw some way to
+    # have the pointer be null or 0 in cpp
     NO_EQUATION = None
     NO_REFERENCE = None
     NO_BIAS = 0
@@ -365,15 +367,13 @@ class Node:
 
     def set_pointer_to_ar_node_nested_in(self, pointer_to_ar_node_nested_in):
         if self.is_nested_in_ar_node():
-            raise Exception("node is already nested in another ar_node. call reset_ar_node_nested_in before"
-                            " calling this method")
+            raise Exception("node is already nested in another ar_node. call reset_ar_node_nested_in before "
+                            "calling this method")
         self.pointer_to_ar_node_nested_in = pointer_to_ar_node_nested_in
 
     def get_pointer_to_ar_node_nested_in(self):
         return self.pointer_to_ar_node_nested_in
 
-    # when you implement this in cpp have another way to check if the pointer is valid. I remember we saw some way to
-    # have the pointer be null or 0 in cpp
     def reset_ar_node_nested_in(self):
         self.pointer_to_ar_node_nested_in = Node.NO_REFERENCE
 
