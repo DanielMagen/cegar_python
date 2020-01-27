@@ -47,3 +47,9 @@ other nodes would have their bounds calculated by the marabou system
 
 13)
 -> GlobalDataManager assumption (3)
+
+14)
+a node with no incoming neighbors is considered to have a valid equation if its equation is Node.NO_EQUATION
+
+15)
+a node which has been removed from the global system is considered to have a valid equation

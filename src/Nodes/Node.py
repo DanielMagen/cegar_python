@@ -59,7 +59,7 @@ class Node:
 
         # each node which is not an input or and output node would be represented by 2 system nodes, which would be
         # connected by a relu activation function. those nodes ids are given to the node as incoming_id and outgoing_id.
-        #  if a node is an input or output node, the incoming_id should be equal to the outgoing_id
+        # if a node is an input or output node, the incoming_id should be equal to the outgoing_id
         self.global_incoming_id = global_incoming_id
         self.global_outgoing_id = global_outgoing_id
         # each node would a reference to the global_data_manager object which is responsible for the system.
@@ -67,9 +67,15 @@ class Node:
         self.global_data_manager = global_data_manager
 
         # each node would manage the equation that links it to its incoming nodes
+        # important note: this equation is solely the connection between this node and its incoming nodes
         self.equation = Node.NO_EQUATION
+        # note that since the node is initialized without any neighbors, then from assumption (14) its equation is
+        # considered valid. when we will add neighbors to it then its equation would no longer be valid
+        # until recalculated
+
         self.bias = bias  # this variable is NOT considered a global variable. it should not be deleted as long as
         # the node lives, because the arnodes which take over this node would use this node bias to calculate their own
+        # bias
 
         # each node would manage the constraint between its 2 global IDs. if the ids are the same, no constraint would
         # be added
@@ -93,7 +99,6 @@ class Node:
         and sets the node finished_lifetime to True
         """
 
-        # for now simply remove yourself from as a neighbor from all other nodes
         # later when moving to cpp you would have to destroy the various data structures you used
 
         our_location = self.get_location()
@@ -127,11 +132,11 @@ class Node:
     def get_global_outgoing_id(self):
         return self.global_outgoing_id
 
-    def check_if_have_global_equation_is_valid(self):
-        return self.global_data_manager.check_if_node_has_invalid_equations(self.layer_number,
-                                                                            self.table_number,
-                                                                            self.key_in_table,
-                                                                            is_arnode=False)
+    def check_if_node_equation_is_valid(self):
+        return not self.global_data_manager.check_if_node_has_invalid_equations(self.layer_number,
+                                                                                self.table_number,
+                                                                                self.key_in_table,
+                                                                                is_arnode=False)
 
     def set_global_equation_to_invalid(self):
         """
@@ -158,6 +163,8 @@ class Node:
 
     def set_node_bias(self, bias):
         self.bias = bias
+        # no need to check if if self.equation == Node.NO_EQUATION, because if so then from assumption (14)
+        # the node equation is valid only if the node has no neighbors
         if self.equation != Node.NO_EQUATION:
             # since we changed the bias the node equation is no longer correct
             self.set_global_equation_to_invalid()
@@ -263,7 +270,7 @@ class Node:
         self.has_constraint = False
 
         if self.incoming_edges_manager.has_no_connections():
-            # since we have no neighbors then our equation (which is non existent) is valid
+            # since we have no neighbors then our equation (which is non existent) is valid from assumption (14)
             self._set_global_equation_to_valid()
 
     def remove_from_global_system(self, return_id=True):
@@ -294,6 +301,10 @@ class Node:
             # from assumption (9) the equation and constraint should be set or removed together,
             # so its enough to check if the equation was set or not
             self.remove_equation_and_constraints()
+
+        if not self.check_if_node_equation_is_valid():
+            # since our global data is removed, our equation is considered valid from assumption (15)
+            self._set_global_equation_to_valid()
 
         if self.has_bounds:
             self.remove_node_bounds()
@@ -507,6 +518,44 @@ class Node:
             # from assumption (8) the equation is affected only by incoming connections
             self.set_global_equation_to_invalid()
 
+    def remove_neighbor_from_neighbors_list(self, direction_of_connection, neighbor_location_data,
+                                            remove_this_node_from_given_node_neighbors_list=True):
+        """
+        :param direction_of_connection:
+        :param neighbor_location_data:
+        :param remove_this_node_from_given_node_neighbors_list: if true would delete this node from the given
+        node neighbors (from the right direction of course)
+        TAKE GREAT CARE WHEN YOU SET IT TO FALSE, IF YOU DO THAT YOU MUST NOT RELOCATE THIS NODE OR THE NODE YOU
+        CONNECTED TO.
+
+        if the direction_of_connection is incoming then this function also
+        tells the global data manager that our equation if now invalid
+        """
+        self.check_if_killed_and_raise_error_if_is()
+
+        if direction_of_connection == Node.INCOMING_EDGE_DIRECTION:
+            edges_manager_to_work_with = self.incoming_edges_manager
+        elif direction_of_connection == Node.OUTGOING_EDGE_DIRECTION:
+            edges_manager_to_work_with = self.outgoing_edges_manager
+        else:
+            raise Exception("invalid direction_of_connection")
+
+        table_number, key_in_table = neighbor_location_data
+        _, node_connected_to = edges_manager_to_work_with.delete_connection(table_number, key_in_table)
+
+        if remove_this_node_from_given_node_neighbors_list:
+            node_connected_to.remove_neighbor_from_neighbors_list(-direction_of_connection, self.get_location(),
+                                                                  remove_this_node_from_given_node_neighbors_list=False)
+
+        if direction_of_connection == Node.INCOMING_EDGE_DIRECTION:
+            if self.incoming_edges_manager.has_no_connections():
+                # assumption (14)
+                self._set_global_equation_to_valid()
+            else:
+                # an incoming connection data was edited and as such if an equation was calculated before,
+                # it is now invalid from assumption (8) the equation is affected only by incoming connections
+                self.set_global_equation_to_invalid()
+
     def check_if_neighbor_exists(self, direction_of_connection, neighbor_location_data):
         """
 
@@ -570,40 +619,6 @@ class Node:
             return self.incoming_edges_manager.get_combinations_iterator_over_connections(r)
         elif direction == Node.OUTGOING_EDGE_DIRECTION:
             return self.outgoing_edges_manager.get_combinations_iterator_over_connections(r)
-
-    def remove_neighbor_from_neighbors_list(self, direction_of_connection, neighbor_location_data,
-                                            remove_this_node_from_given_node_neighbors_list=True):
-        """
-        :param direction_of_connection:
-        :param neighbor_location_data:
-        :param remove_this_node_from_given_node_neighbors_list: if true would delete this node from the given
-        node neighbors (from the right direction of course)
-        TAKE GREAT CARE WHEN YOU SET IT TO FALSE, IF YOU DO THAT YOU MUST NOT RELOCATE THIS NODE OR THE NODE YOU
-        CONNECTED TO.
-
-        if the direction_of_connection is incoming then this function also
-        tells the global data manager that our equation if now invalid
-        """
-        self.check_if_killed_and_raise_error_if_is()
-
-        if direction_of_connection == Node.INCOMING_EDGE_DIRECTION:
-            edges_manager_to_work_with = self.incoming_edges_manager
-        elif direction_of_connection == Node.OUTGOING_EDGE_DIRECTION:
-            edges_manager_to_work_with = self.outgoing_edges_manager
-        else:
-            raise Exception("invalid direction_of_connection")
-
-        table_number, key_in_table = neighbor_location_data
-        _, node_connected_to = edges_manager_to_work_with.delete_connection(table_number, key_in_table)
-
-        if remove_this_node_from_given_node_neighbors_list:
-            node_connected_to.remove_neighbor_from_neighbors_list(-direction_of_connection, self.get_location(),
-                                                                  remove_this_node_from_given_node_neighbors_list=False)
-
-        if direction_of_connection == Node.INCOMING_EDGE_DIRECTION:
-            # an incoming connection data was edited and as such if an equation was calculated before, it is now invalid
-            # from assumption (8) the equation is affected only by incoming connections
-            self.set_global_equation_to_invalid()
 
     def get_notified_that_neighbor_location_changed(self, direction_of_connection, previous_location, new_location):
         """
