@@ -1,4 +1,4 @@
-from src.MarabouDataManagers.IDManager import IDManager
+from src.IDManager import IDManager
 from src.MarabouDataManagers.InputQueryFacade import InputQueryFacade
 
 """

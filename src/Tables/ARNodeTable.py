@@ -95,6 +95,7 @@ class ARNodeTable(TableSupportsDeletion):
         those functions would be used to calculate the edges of each resulting arnode
         :param function_to_calculate_merger_of_incoming_edges:
         :param function_to_calculate_merger_of_outgoing_edges:
+        :param should_recalculate_bounds:
         :param function_to_calculate_arnode_bias: this function would receive the list of inner nodes of the
         ar node, and return a new bias for this arnode.
 
@@ -143,6 +144,7 @@ class ARNodeTable(TableSupportsDeletion):
         those functions would be used to calculate the edges of each resulting arnode
         :param function_to_calculate_merger_of_incoming_edges:
         :param function_to_calculate_merger_of_outgoing_edges:
+        :param should_recalculate_bounds:
         :param function_to_calculate_arnode_bias: this function would receive the list of inner nodes of the
         ar node, and return a new bias for this arnode.
         :return: the new merged arnode

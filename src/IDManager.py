@@ -7,6 +7,10 @@ class IDManager:
     currently this class does not support reaching the end of its available id range.
     if we exhaust the ids, then the class behavior is no defined. it would make errors. 
     so do not exhaust the id ranges in it!
+    
+    things that I want to improve but dont have time:
+    1) fix the id manager so that it would support reaching the end of the available range
+    2) support for infinite ids
     """
 
     def __init__(self, max_id_non_exclusive):

@@ -5,8 +5,10 @@ class TableSupportsDeletion(AbstractTable):
     def __init__(self, layer_number, table_number, layer_is_inner, global_data_manager):
         super().__init__(layer_number, table_number, layer_is_inner, global_data_manager)
         self.nodes = {}
-        self.key_for_new_node = 0 # this would serve as the key of the next node that would be added to the table
-        # later we might expand this concept to have a full id system
+        self.key_for_new_node = 0  # this would serve as the key of the next node that would be added to the table
+        # later if someone could fix the id manager to support infinite numbers of ids, or to at least support reaching
+        # the end of the possible ids range, then we could use this id manager to make sure that the keys wont increase
+        # too much
 
     def create_table_below_of_same_type(self):
         table_to_return = TableSupportsDeletion(*self.get_arguments_to_create_table_below())
@@ -24,7 +26,6 @@ class TableSupportsDeletion(AbstractTable):
     def get_number_of_nodes_in_table(self):
         return len(self.nodes)
 
-    # maybe add an id system so that the ids (keys) won't increase too much
     def _add_node_to_table_without_checking(self, node):
         new_key_for_node = self.key_for_new_node
         self.nodes[new_key_for_node] = node
