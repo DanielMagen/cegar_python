@@ -521,10 +521,10 @@ class Network:
     def decide_best_arnodes_to_merge(self):
         """
         this is my efficient implementation of algorithm 2 "create initial abstraction"
-        the problem with the original psudo code is that its working backwards, for each pair
-        of arnodes it finds an arnode which is connected to both of them and continues from there.
+        the problem with the original pseudo code is that its working backwards. for each pair of arnodes it finds
+        an arnode which is connected to both of them and continues from there.
         its fine if the network is fully connected. but my implementation does not assume that,
-        so it would be costly to go "for each pair of arnodes find the intersection of the arnodes
+        so it would be costly to work like "for each pair of arnodes find the intersection of the arnodes
         they are connected to using incoming connections". so instead I go the other way around. to check what arnodes
         should be merged in layer k, I look at layer k-1, and for each node in layer k-1, I check each pair of arnodes
         its connected to by an outgoing connection.
@@ -752,13 +752,13 @@ class Network:
         self._create_valid_equations_for_all_nodes_without_valid_equations()
 
         result = self.global_network_manager.verify()
-        if result == GlobalDataManager.UNSAT:
+        if result == GlobalNetworkManager.UNSAT:
             return Network.CODE_FOR_UNSAT
 
         result_is_valid = self.global_network_manager. \
             evaluate_if_result_of_last_verification_attempt_is_a_valid_counterexample()
 
-        if result_is_valid == GlobalDataManager.SAT:
+        if result_is_valid == GlobalNetworkManager.SAT:
             return Network.CODE_FOR_SAT
 
         return Network.CODE_FOR_SPURIOUS_COUNTEREXAMPLE
@@ -771,6 +771,6 @@ class Network:
         runs the current network on the given map_of_input_nodes_global_ids
         and returns if the network was SAT or UNSAT on those inputs
         """
-        code_for_network_to_run_eval_on = GlobalDataManager.CODE_FOR_CURRENT_NETWORK
+        code_for_network_to_run_eval_on = GlobalNetworkManager.CODE_FOR_CURRENT_NETWORK
         self.global_network_manager.run_network_on_input(code_for_network_to_run_eval_on,
                                                          map_of_input_nodes_global_ids_to_values)

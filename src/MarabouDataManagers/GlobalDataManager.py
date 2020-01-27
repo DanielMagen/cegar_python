@@ -130,9 +130,6 @@ class GlobalDataManager(IDManager):
         """
         self.input_query.removeBounds(hole_id)
 
-    def set_number_of_variables(self, number_of_variables):
-        self.input_query.setNumberOfVariables(number_of_variables)
-
     def reset_number_of_variables_in_input_query(self):
         """
         check what is the maximum id that was given away and sets the number of variables in the system to be

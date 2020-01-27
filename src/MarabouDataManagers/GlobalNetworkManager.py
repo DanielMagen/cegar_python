@@ -100,8 +100,10 @@ class GlobalNetworkManager(GlobalDataManager):
 
         options = None  ########################### check what are those options
         filename_to_save_log_in = ""
-        map_of_node_to_value, stats = MarabouCore.solve(input_query_to_eval.get_marabou_input_query_object(), options,
-                                                        filename_to_save_log_in)
+        map_of_node_to_value, stats = MarabouCore.solve(
+            input_query_to_eval.get_new_marabou_input_query_object(self.get_maximum_id_used()),
+            options,
+            filename_to_save_log_in)
 
         return map_of_node_to_value
 
@@ -117,13 +119,13 @@ class GlobalNetworkManager(GlobalDataManager):
         if not self.check_if_can_run_current_network():
             raise Exception("can not verify since there are nodes with invalid equations")
 
-        input_query_copy = self.input_query.copy()
         options = None  ########################### check what are those options
         filename_to_save_log_in = ""
 
         # if I understand correctly this is a map of "node_global_id -> value it got"
         self.counter_example_of_last_verification_attempt, stats = \
-            MarabouCore.solve(input_query_copy.get_marabou_input_query_object(), options, filename_to_save_log_in)
+            MarabouCore.solve(self.input_query.get_new_marabou_input_query_object(self.get_maximum_id_used()), options,
+                              filename_to_save_log_in)
 
         if len(self.counter_example_of_last_verification_attempt) > 0:
             # there is a SAT solution
@@ -167,8 +169,10 @@ class GlobalNetworkManager(GlobalDataManager):
 
         options = None  ########################### check what are those options
         filename_to_save_log_in = ""
-        map_of_node_to_value, stats = MarabouCore.solve(input_query_to_eval.get_marabou_input_query_object(), options,
-                                                        filename_to_save_log_in)
+        map_of_node_to_value, stats = MarabouCore.solve(
+            input_query_to_eval.get_new_marabou_input_query_object(self.get_maximum_id_used()),
+            options,
+            filename_to_save_log_in)
 
         if len(self.counter_example_of_last_verification_attempt) > 0:
             # there is a SAT solution

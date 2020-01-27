@@ -1,22 +1,66 @@
 from maraboupy import MarabouCore
 import copy
+import numpy as np
 
 
+# copied from MarabouNetwork class from the marabou project
 class InputQueryFacade:
     def __init__(self):
-        self.input_query_reference = MarabouCore.InputQuery()
+        self.equList = []
+        self.reluList = []
+        self.lowerBounds = dict()
+        self.upperBounds = dict()
+
+        ####### take care of input and output
+        self.inputVars = []
+        self.outputVars = np.array([])
 
     def copy(self):
         copy.deepcopy(self)
 
-    def get_marabou_input_query_object(self):
-        return self.input_query_reference
+    def get_new_marabou_input_query_object(self, numVars):
+        ipq = MarabouCore.InputQuery()
+        ipq.setNumberOfVariables(numVars)
+
+        i = 0
+        for inputVarArray in self.inputVars:
+            for inputVar in inputVarArray.flatten():
+                ipq.markInputVariable(inputVar, i)
+                i += 1
+
+        i = 0
+        for outputVar in self.outputVars.flatten():
+            ipq.markOutputVariable(outputVar, i)
+            i += 1
+
+        for e in self.equList:
+            eq = MarabouCore.Equation(e.EquationType)
+            for (c, v) in e.addendList:
+                assert v < numVars
+                eq.addAddend(c, v)
+            eq.setScalar(e.scalar)
+            ipq.addEquation(eq)
+
+        for r in self.reluList:
+            assert r[1] < numVars and r[0] < numVars
+            MarabouCore.addReluConstraint(ipq, r[0], r[1])
+
+        for l in self.lowerBounds:
+            assert l < numVars
+            ipq.setLowerBound(l, self.lowerBounds[l])
+
+        for u in self.upperBounds:
+            assert u < numVars
+            ipq.setUpperBound(u, self.upperBounds[u])
+
+        return ipq
 
     def addEquation(self, equation):
-        self.input_query_reference.addEquation(equation)
+        self.equList.append(equation)
 
     def removeEquation(self, equation):
-        self.input_query_reference.removeEquation(equation)
+        if equation in self.equList:
+            self.equList.remove(equation)
 
     def setLowerBound(self, node_global_incoming_id, lower_bound):
         """
@@ -26,7 +70,7 @@ class InputQueryFacade:
         :return:
         """
         if lower_bound != float('-inf'):
-            self.input_query_reference.setLowerBound(node_global_incoming_id, lower_bound)
+            self.lowerBounds[node_global_incoming_id] = lower_bound
 
     def setUpperBound(self, node_global_incoming_id, upper_bound):
         """
@@ -36,7 +80,7 @@ class InputQueryFacade:
         :return:
         """
         if upper_bound != float('inf'):
-            self.input_query_reference.setUpperBound(node_global_incoming_id, upper_bound)
+            self.upperBounds[node_global_incoming_id] = upper_bound
 
     def getLowerBound(self, node_global_incoming_id):
         """
@@ -44,7 +88,8 @@ class InputQueryFacade:
         :param node_global_incoming_id:
         :return:
         """
-        return self.input_query_reference.getLowerBound(node_global_incoming_id)
+        if node_global_incoming_id in self.lowerBounds:
+            return self.lowerBounds[node_global_incoming_id]
 
     def getUpperBound(self, node_global_incoming_id):
         """
@@ -52,7 +97,8 @@ class InputQueryFacade:
         :param node_global_incoming_id:
         :return:
         """
-        return self.input_query_reference.getUpperBound(node_global_incoming_id)
+        if node_global_incoming_id in self.upperBounds:
+            return self.upperBounds[node_global_incoming_id]
 
     def removeBounds(self, node_global_incoming_id):
         """
@@ -60,16 +106,21 @@ class InputQueryFacade:
         :param node_global_incoming_id:
         :return:
         """
-        return self.input_query_reference.removeBounds(node_global_incoming_id)
+        try:
+            del self.lowerBounds[node_global_incoming_id]
+        except KeyError:
+            pass
+        try:
+            del self.upperBounds[node_global_incoming_id]
+        except KeyError:
+            pass
 
     def addReluConstraint(self, id1, id2):
-        MarabouCore.addReluConstraint(self.input_query_reference, id1, id2)
+        self.reluList.append((id1, id2))
 
     def removeReluConstraint(self, id1, id2):
-        MarabouCore.removeReluConstraint(self.input_query_reference, id1, id2)
+        if (id1, id2) in self.reluList:
+            self.reluList.remove((id1, id2))
 
     def get_new_equation(self):
         return MarabouCore.Equation()
-
-    def setNumberOfVariables(self, number_of_variables):
-        self.input_query_reference.setNumberOfVariables(number_of_variables)
