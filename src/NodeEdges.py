@@ -158,7 +158,7 @@ class NodeEdges:
         3) the source code for itertools.combinations in c is here:
         https://github.com/python/cpython/blob/master/Modules/itertoolsmodule.c
         so when transferring the code to cpp, you could just copy it from there if you want.
-        but I think that this kind of function should have multiple implementations in cpp.
+        but I think that this kind of function should have implementations in many cpp libraries
         """
         for current_table_number in range(len(self.list_of_tables)):
             current_table_map = self.list_of_tables[current_table_number]

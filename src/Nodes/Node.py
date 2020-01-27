@@ -67,6 +67,8 @@ class Node:
         # each node would a reference to the global_data_manager object which is responsible for the system.
         # the node destructor would call it if need be
         self.global_data_manager = global_data_manager
+        # note that in the process of creating and deleting arnodes, we would need the inner nodes
+        # global_data_manager data, so we do not delete the reference to it when deleting all other global data
 
         # each node would manage the equation that links it to its incoming nodes
         # important note: this equation is solely the connection between this node and its incoming nodes
@@ -281,7 +283,6 @@ class Node:
         """
         1) removes this node global ids
         2) if the node was given an equation and a constraint it removes them too.
-        3) resets the reference to the global_data_manager to be None
 
         :param give_back_id_to_data_manager: true by default, should not be changed unless you know what you're doing
         if its set to true, the function always returns -1,-1.
@@ -293,7 +294,6 @@ class Node:
         if self.global_incoming_id == Node.NO_GLOBAL_ID or self.global_outgoing_id == Node.NO_GLOBAL_ID:
             if self.global_incoming_id == Node.NO_GLOBAL_ID and self.global_outgoing_id == Node.NO_GLOBAL_ID:
                 # not much to do, since no global variables were set
-                self.global_data_manager = Node.NO_REFERENCE
                 return
             else:
                 raise Exception("the node was given a only a 1 of the global_incoming_id, global_outgoing_id "
@@ -329,8 +329,6 @@ class Node:
 
         self.global_incoming_id = Node.NO_GLOBAL_ID
         self.global_outgoing_id = Node.NO_GLOBAL_ID
-
-        self.global_data_manager = Node.NO_REFERENCE
 
         return global_incoming_id_to_return, global_outgoing_id_to_return
 

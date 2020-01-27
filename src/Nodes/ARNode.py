@@ -5,21 +5,21 @@ from src.Nodes.Node import Node
 class ARNode(Node):
     """
     this class would represent a ARNode that would work under the assumptions detailed in
-    the ASSUMPTIONS file.
+    the ASSUMPTIONS file
 
     important note:
     the arnode wraps regular nodes.
-    it has 3 possible activation status and depending on each on them it behaves differently.
+    it has 3 possible activation status and depending on each on them it behaves somewhat differently.
     the arnode has been designed and implemented such that
     1) when the arnode takes over a regular node, all of the actions that are supposed to take place on the regular
     node, now take place using this arnode
-    2) if an arnode has a neighbor which is a regular node, then some actions of that node can affect the arnode,
-    if so, then the arnode takes care to noticce those actions. if the arnode does not do anything about those actions,
+    2) if an arnode has a neighbor which is a regular node, then some actions of that node can affect the arnode.
+    if so, then the arnode takes care to notice those actions. if the arnode does not do anything about some actions,
     then it means that they do not affect the arnode.
     """
     # I want to first create the different arnodes and only after finishing creating them, activating them.
-    # this is required to preserve assumption (1) because arnodes can not be created another way which still preserves
-    # it.
+    # this is required to preserve assumption (1) because arnodes can not be created in another way which still
+    # preserves it.
     # in addition to that I want to be able to only partially convert the network into an arnode form. this partial
     # transformation only makes sense if we transform the network into an arnode form from the end backwards.
     # an arnode of which its incoming edges are not from arnodes can not logically support abstraction or refinement.
@@ -43,6 +43,8 @@ class ARNode(Node):
         fully activated arnodes can merge and as such contain more than a single inner node. but to allow the
         program to create a new arnode when splitting or merging arnodes,
         I allow the arnodes constructor to receive more than one initial inner node.
+        the programmer must take note and if the arnode is initialized with more than one inner node, immediately
+        activate it.
 
         :param starting_nodes:
         :param table_number:
@@ -50,7 +52,7 @@ class ARNode(Node):
         """
 
         if len(starting_nodes) == 0:
-            raise AssertionError("ar node must have at least one starting node")
+            raise AssertionError("ar node must have at least one inner node")
 
         self.first_node_in_starting_nodes = None
         for node in starting_nodes:
@@ -80,7 +82,7 @@ class ARNode(Node):
 
         # this list should be kept ordered by the nodes indices.
         # from assumption (2) all the nodes in the inner nodes list would be in the same table
-        self.inner_nodes = [starting_nodes[i] for i in range(len(starting_nodes))]  # copy is really slow
+        self.inner_nodes = [starting_nodes[i] for i in range(len(starting_nodes))]  # copy is slow
         for node in starting_nodes:
             node.set_pointer_to_ar_node_nested_in(self)
 
@@ -116,11 +118,12 @@ class ARNode(Node):
         and set it as the arnode upper bound. if no nodes exist, it sets self.has_bounds to false
         :return:
         """
-        # I'm going to very carefully design this function because I want to avoid taking more ids than necessary
-        # so I need to delete the inner nodes from the global system before getting a new id.
+        # I want to avoid taking more ids than necessary from the global data manager
+        # so I want to delete the inner nodes from the global system before getting a new id.
         # the problem is that various functions require me to have an id before I call them so I need to delete
         # the nodes before I get an id, which would happen before I call those functions. but if those functions
         # rely on the inner_nodes global data its problematic
+        # so I'm going to very carefully design this function
 
         # first set our global_data_manager
         self.global_data_manager = self.first_node_in_starting_nodes.global_data_manager
