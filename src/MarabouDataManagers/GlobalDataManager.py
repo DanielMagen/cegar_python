@@ -1,5 +1,6 @@
 from maraboupy import MarabouCore
 from src.MarabouDataManagers.IDManager import IDManager
+from src.MarabouDataManagers.InputQueryFacade import InputQueryFacade
 
 """
 manage all global data which is required for the marabou system
@@ -33,7 +34,7 @@ class GlobalDataManager(IDManager):
         """
         super().__init__(max_id_non_exclusive)
 
-        self.input_query_reference = MarabouCore.InputQuery()
+        self.input_query = InputQueryFacade()
 
         # this set would hold triplets of the form (layer_number, table_number, key_in_table, SOME_CODE)
         # for nodes that dont have valid equations.
@@ -42,10 +43,10 @@ class GlobalDataManager(IDManager):
         self.set_of_nodes_locations_that_dont_have_valid_equations = set([])
 
     def addEquation(self, equation):
-        self.input_query_reference.addEquation(equation)
+        self.input_query.addEquation(equation)
 
     def removeEquation(self, equation):
-        self.input_query_reference.removeEquation(equation)
+        self.input_query.removeEquation(equation)
 
     def add_location_of_node_that_dont_have_valid_equation(self, layer_number, table_number, key_in_table,
                                                            is_arnode):
@@ -79,57 +80,28 @@ class GlobalDataManager(IDManager):
                 (layer_number, table_number, key_in_table, GlobalDataManager.CODE_FOR_NODE))
 
     def setLowerBound(self, node_global_incoming_id, lower_bound):
-        """
-        given a node global incoming id, it places the given lower bound on it
-        :param node_global_incoming_id:
-        :param lower_bound: if its -infinity it does not set any bound
-        :return:
-        """
-        if lower_bound != float('-inf'):
-            self.input_query_reference.setLowerBound(node_global_incoming_id, lower_bound)
+        self.input_query.setLowerBound(node_global_incoming_id, lower_bound)
 
     def setUpperBound(self, node_global_incoming_id, upper_bound):
-        """
-        given a node global incoming id, it places the given upper bound on it
-        :param node_global_incoming_id:
-        :param upper_bound: if its infinity it does not set any bound
-        :return:
-        """
-        if upper_bound != float('inf'):
-            self.input_query_reference.setUpperBound(node_global_incoming_id, upper_bound)
+        self.input_query.setUpperBound(node_global_incoming_id, upper_bound)
 
     def getLowerBound(self, node_global_incoming_id):
-        """
-        given a node global incoming id, it returns the lower bound placed on it
-        :param node_global_incoming_id:
-        :return:
-        """
-        return self.input_query_reference.getLowerBound(node_global_incoming_id)
+        return self.input_query.getLowerBound(node_global_incoming_id)
 
     def getUpperBound(self, node_global_incoming_id):
-        """
-        given a node global incoming id, it returns the upper bound placed on it
-        :param node_global_incoming_id:
-        :return:
-        """
-        return self.input_query_reference.getUpperBound(node_global_incoming_id)
+        return self.input_query.getUpperBound(node_global_incoming_id)
 
     def removeBounds(self, node_global_incoming_id):
-        """
-        given a node global incoming id, it removes the upper and lower bounds set on it
-        :param node_global_incoming_id:
-        :return:
-        """
-        return self.input_query_reference.removeBounds(node_global_incoming_id)
+        return self.input_query.removeBounds(node_global_incoming_id)
 
     def addReluConstraint(self, id1, id2):
-        MarabouCore.addReluConstraint(self.input_query_reference, id1, id2)
+        self.input_query.addReluConstraint(id1, id2)
 
     def removeReluConstraint(self, id1, id2):
-        MarabouCore.removeReluConstraint(self.input_query_reference, id1, id2)
+        self.input_query.removeReluConstraint(id1, id2)
 
     def get_new_equation(self):
-        return MarabouCore.Equation()
+        return self.input_query.get_new_equation()
 
     def get_list_of_nodes_that_dont_have_valid_equations(self):
         """
@@ -147,8 +119,8 @@ class GlobalDataManager(IDManager):
         a hole in self.ranges
         it artificially sets a bound of 0,0 on it
         """
-        self.input_query_reference.setLowerBound(hole_id, 0)
-        self.input_query_reference.setUpperBound(hole_id, 0)
+        self.input_query.setLowerBound(hole_id, 0)
+        self.input_query.setUpperBound(hole_id, 0)
 
     def _remove_artificial_bounds_on_a_hole_id(self, hole_id):
         """
@@ -156,10 +128,10 @@ class GlobalDataManager(IDManager):
         a hole in self.ranges
         removes the artificial bounds that were set on the hole id
         """
-        self.input_query_reference.removeBounds(hole_id)
+        self.input_query.removeBounds(hole_id)
 
     def set_number_of_variables(self, number_of_variables):
-        self.input_query_reference.setNumberOfVariables(number_of_variables)
+        self.input_query.setNumberOfVariables(number_of_variables)
 
     def reset_number_of_variables_in_input_query(self):
         """
@@ -168,7 +140,7 @@ class GlobalDataManager(IDManager):
         :return: how many variables there are in the system right now
         """
         num_of_variables_in_system = self.get_maximum_id_used() + 1
-        self.input_query_reference.setNumberOfVariables(num_of_variables_in_system)
+        self.input_query.setNumberOfVariables(num_of_variables_in_system)
 
         return num_of_variables_in_system
 

@@ -27,7 +27,7 @@ class GlobalNetworkManager(GlobalDataManager):
     def save_current_network_as_original_network(self, input_nodes_global_incoming_ids,
                                                  output_nodes_global_incoming_ids):
         """
-        this function copies the current self.input_query_reference and saves it to
+        this function copies the current self.input_query and saves it to
         self.input_query_of_original_network
         IMPORTANT:
         assumption (7)
@@ -50,7 +50,7 @@ class GlobalNetworkManager(GlobalDataManager):
         if not self.check_if_can_run_current_network():
             raise Exception("can not save a network which can not be run later")
 
-        self.input_query_of_original_network = self.input_query_reference.copy()
+        self.input_query_of_original_network = self.input_query.copy()
         self.input_nodes_global_incoming_ids = input_nodes_global_incoming_ids
         self.output_nodes_global_incoming_ids = output_nodes_global_incoming_ids
 
@@ -84,11 +84,11 @@ class GlobalNetworkManager(GlobalDataManager):
         IMPORTANT: This function does not save any data to the global data manager
         it simply evaluates the network you want on the input you want and returns the output
         """
-        if code_for_network_to_run_eval_on == GlobalDataManager.CODE_FOR_CURRENT_NETWORK:
+        if code_for_network_to_run_eval_on == GlobalNetworkManager.CODE_FOR_CURRENT_NETWORK:
             if not self.check_if_can_run_current_network():
                 raise Exception("can not run the network there are nodes with invalid equations")
-            input_query_to_eval = self.input_query_reference.copy()
-        elif code_for_network_to_run_eval_on == GlobalDataManager.CODE_FOR_ORIGINAL_NETWORK:
+            input_query_to_eval = self.input_query.copy()
+        elif code_for_network_to_run_eval_on == GlobalNetworkManager.CODE_FOR_ORIGINAL_NETWORK:
             input_query_to_eval = self.input_query_of_original_network.copy()
         else:
             raise ValueError("illegal code for network")
@@ -100,7 +100,8 @@ class GlobalNetworkManager(GlobalDataManager):
 
         options = None  ########################### check what are those options
         filename_to_save_log_in = ""
-        map_of_node_to_value, stats = MarabouCore.solve(input_query_to_eval, options, filename_to_save_log_in)
+        map_of_node_to_value, stats = MarabouCore.solve(input_query_to_eval.get_marabou_input_query_object(), options,
+                                                        filename_to_save_log_in)
 
         return map_of_node_to_value
 
@@ -116,13 +117,13 @@ class GlobalNetworkManager(GlobalDataManager):
         if not self.check_if_can_run_current_network():
             raise Exception("can not verify since there are nodes with invalid equations")
 
-        input_query_copy = self.input_query_reference.copy()
+        input_query_copy = self.input_query.copy()
         options = None  ########################### check what are those options
         filename_to_save_log_in = ""
 
         # if I understand correctly this is a map of "node_global_id -> value it got"
         self.counter_example_of_last_verification_attempt, stats = \
-            MarabouCore.solve(input_query_copy, options, filename_to_save_log_in)
+            MarabouCore.solve(input_query_copy.get_marabou_input_query_object(), options, filename_to_save_log_in)
 
         if len(self.counter_example_of_last_verification_attempt) > 0:
             # there is a SAT solution
@@ -166,7 +167,8 @@ class GlobalNetworkManager(GlobalDataManager):
 
         options = None  ########################### check what are those options
         filename_to_save_log_in = ""
-        map_of_node_to_value, stats = MarabouCore.solve(input_query_to_eval, options, filename_to_save_log_in)
+        map_of_node_to_value, stats = MarabouCore.solve(input_query_to_eval.get_marabou_input_query_object(), options,
+                                                        filename_to_save_log_in)
 
         if len(self.counter_example_of_last_verification_attempt) > 0:
             # there is a SAT solution
