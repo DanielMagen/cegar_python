@@ -197,9 +197,13 @@ class ARNode(Node):
         """
         this function should only be called once the arnode is fully activated
         it does the following:
-        1) it removes all of the inner nodes global variables
-        2) it uses the given function to calculate the bias for this arnode
-        3) it calculates the arnode equation and constraint.
+        1) for all the inner nodes that have global variables - it removes those global variables
+        2) it set the arnode bias, global_data_manager, id, equation and constraint.
+        if it can do so based on the inner nodes it does,
+        otherwise it sets them to default values
+        3) it uses the given function to calculate the bias for this arnode
+
+        if it can use the inner nodes it also:
         4) if should_recalculate_bounds=true it would calculate new bounds to the arnode based on the bounds of
         its inner nodes. it would do so as described in the doc of the should_recalculate_bounds param
 
@@ -226,49 +230,62 @@ class ARNode(Node):
         # so I'm going to very carefully design this function
 
         # first set our global_data_manager
+        # since the global_data_manager reference is never deleted, we can take it from the first inner node
         self.global_data_manager = self.first_node_in_starting_nodes.global_data_manager
 
         # now calculate our bias, this should be done before calculating the arnode equation
+        # since the bias is never deleted we can give this function all of our inner nodes
         self.set_node_bias(function_to_calculate_arnode_bias(self.inner_nodes))
+
+        # we can call the _take_control_over_inner_nodes_global_values during the run of the program
+        # where the inner nodes belonged to a previous arnode which already removed their global variables.
+        # as such we check to see if any nodes remain with global variables and act upon them from now on.
+        # there could be no such nodes
+        inner_nodes_that_still_have_global_variables = []
+        for node in self.inner_nodes:
+            if node.get_global_incoming_id() == Node.NO_GLOBAL_ID or node.get_global_outgoing_id() == Node.NO_GLOBAL_ID:
+                inner_nodes_that_still_have_global_variables.append(node)
 
         lower_bounds = []
         upper_bounds = []
         if should_recalculate_bounds:
             # now save all the inner nodes bound values to use later
-            for node in self.inner_nodes:
-                if node.has_bounds:
+            for node in inner_nodes_that_still_have_global_variables:
+                if node.check_if_has_bounds():
+                    # we depend on the fact that if a node has only an upper bound or only a lower bound, then
+                    # the getLowerBound and getUpperBound would return -infinity or infinity
+                    # and not return None
                     lower_bounds.append(self.global_data_manager.getLowerBound(node.get_global_incoming_id))
                     upper_bounds.append(self.global_data_manager.getUpperBound(node.get_global_incoming_id))
 
-        # now check if the arnode should have only 1 id or 2
-        # from assumption (2) all inner nodes are in the same table
-        # from assumption (11) it means that all inner nodes are from the same layer
-        # from assumption (12) it means that all inner nodes have 1 id or all inner nodes have 2
-        # so it suffices to check only the first inner node
-        should_create_2_global_ids = (
-                self.first_node_in_starting_nodes.global_incoming_id !=
-                self.first_node_in_starting_nodes.global_outgoing_id)
+        # before continuing remove (almost) all the of the inner nodes global variables
+        for i in range(1, len(inner_nodes_that_still_have_global_variables)):
+            inner_nodes_that_still_have_global_variables[i].remove_from_global_system()
 
-        # now before continuing remove all the of the inner nodes global variables
-        if len(self.inner_nodes) > 1:
-            for node in self.inner_nodes:
-                node.remove_from_global_system()
-
-            # now get a new id for us
+        if len(inner_nodes_that_still_have_global_variables) >= 1:
+            self.global_incoming_id, self.global_outgoing_id = inner_nodes_that_still_have_global_variables[
+                0].remove_from_global_system(return_id=False)
+        else:
             self.global_incoming_id = self.global_data_manager.get_new_id()
+            # now check if the arnode should have only 1 id or 2
+            # from assumption (2) all inner nodes are in the same table
+            # from assumption (11) it means that all inner nodes are from the same layer
+            # from assumption (12) it means that all inner nodes have 1 id or all inner nodes have 2
+            # so it suffices to check only the first inner node
+            should_create_2_global_ids = self.first_node_in_starting_nodes.check_if_node_is_inner()
             if should_create_2_global_ids:
                 self.global_outgoing_id = self.global_data_manager.get_new_id()
             else:
                 self.global_outgoing_id = self.global_incoming_id
-        else:
-            self.global_incoming_id, self.global_outgoing_id = self.inner_nodes[0].remove_from_global_system(
-                return_id=False)
 
         # calculate the arnode equation and constraints
         self.calculate_equation_and_constraints()
 
         # now calculate arnode bounds
         if should_recalculate_bounds:
+            # we depend on the fact that if a node has only an upper bound or only a lower bound, then
+            # the getLowerBound and getUpperBound would return -infinity or infinity
+            # so the lower_bounds and upper_bounds lists do not contain None
             if len(lower_bounds) == 0 or len(upper_bounds) == 0:
                 self.has_bounds = False
             else:

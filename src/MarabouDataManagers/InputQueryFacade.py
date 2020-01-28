@@ -78,19 +78,21 @@ class InputQueryFacade:
         """
         given a node global incoming id, it returns the lower bound placed on it
         :param node_global_incoming_id:
-        :return:
+        :return: if the lower bound does not exist it returns -infinity (do not change that, we rely on this fact)
         """
         if node_global_incoming_id in self.lowerBounds:
             return self.lowerBounds[node_global_incoming_id]
+        return float('-inf')
 
     def getUpperBound(self, node_global_incoming_id):
         """
         given a node global incoming id, it returns the upper bound placed on it
         :param node_global_incoming_id:
-        :return:
+        :return: if the upper bound does not exist it returns infinity (do not change that, we rely on this fact)
         """
         if node_global_incoming_id in self.upperBounds:
             return self.upperBounds[node_global_incoming_id]
+        return float('inf')
 
     def removeBounds(self, node_global_incoming_id):
         """

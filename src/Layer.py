@@ -24,7 +24,7 @@ class Layer:
     # the unprocessed_table would be added after all the tables which do not support deletion
     INDEX_OF_UNPROCESSED_TABLE = NUMBER_OF_REGULAR_TABLES_THAT_DO_NOT_SUPPORT_DELETION
 
-    # those must be equal
+    # those must be multiple of -1 of one another
     INCOMING_LAYER_DIRECTION = Node.INCOMING_EDGE_DIRECTION
     OUTGOING_LAYER_DIRECTION = Node.OUTGOING_EDGE_DIRECTION
 
@@ -43,15 +43,16 @@ class Layer:
         self.previous_layer = pointer_to_previous_layer
         self.next_layer = pointer_to_next_layer
 
-        # first initialize the regular_node_tables
-        # to preserve assumption (2) the first 4 tables must have indices of 0-3 in order, as such give the first table
-        # an index of 0 and the create_table_below_of_same_type function of the table class would take care of
-        # increasing the index by 1 each turn
-        self.layer_is_inner = True
         if pointer_to_previous_layer == Layer.NO_POINTER_TO_ADJACENT_LAYER or \
                 pointer_to_next_layer == Layer.NO_POINTER_TO_ADJACENT_LAYER:
             self.layer_is_inner = False
+        else:
+            self.layer_is_inner = True
 
+        # initialize the regular_node_tables
+        # to preserve assumption (2) the first 4 tables must have indices of 0-3 in order, as such give the first table
+        # an index of 0 and the create_table_below_of_same_type function of the table class would take care of
+        # increasing the index by 1 each turn
         self.regular_node_tables.append(
             TableDoesntSupportsDeletion(self.layer_number, 0, self.layer_is_inner, self.global_data_manager))
         for i in range(1, Layer.NUMBER_OF_REGULAR_TABLES_THAT_DO_NOT_SUPPORT_DELETION):

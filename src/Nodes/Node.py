@@ -64,6 +64,10 @@ class Node:
         # if a node is an input or output node, the incoming_id should be equal to the outgoing_id
         self.global_incoming_id = global_incoming_id
         self.global_outgoing_id = global_outgoing_id
+
+        # this variable is important and should not be deleted until the end of the program
+        self.node_is_inner = (global_incoming_id != global_outgoing_id)
+
         # each node would a reference to the global_data_manager object which is responsible for the system.
         # the node destructor would call it if need be
         self.global_data_manager = global_data_manager
@@ -77,7 +81,7 @@ class Node:
         # considered valid. when we will add neighbors to it then its equation would no longer be valid
         # until recalculated
 
-        self.bias = bias  # this variable is NOT considered a global variable. it should not be deleted as long as
+        self.bias = bias  # this variable it should not be deleted as long as
         # the node lives, because the arnodes which take over this node would use this node bias to calculate their own
         # bias
 
@@ -135,6 +139,12 @@ class Node:
 
     def get_global_outgoing_id(self):
         return self.global_outgoing_id
+
+    def check_if_node_is_inner(self):
+        return self.node_is_inner
+
+    def check_if_has_bounds(self):
+        return self.has_bounds
 
     def check_if_node_equation_is_valid(self):
         return not self.global_data_manager.check_if_node_has_invalid_equations(self.layer_number,
@@ -244,7 +254,7 @@ class Node:
 
         # before starting, check if the node you are about to add an equation and constraint to is an inner
         # or an outer node. according to assumption (11) an outer node can only have 1 global id
-        if self.global_incoming_id == self.global_outgoing_id:
+        if not self.check_if_node_is_inner:
             self.has_constraint = False
             if self.incoming_edges_manager.has_no_connections():
                 # we are in the input layer, no need to assign any equations since we dont have any incoming connections
@@ -281,6 +291,8 @@ class Node:
 
     def remove_from_global_system(self, give_back_id_to_data_manager=True):
         """
+        deletes some of the global variables
+
         1) removes this node global ids
         2) if the node was given an equation and a constraint it removes them too.
 
