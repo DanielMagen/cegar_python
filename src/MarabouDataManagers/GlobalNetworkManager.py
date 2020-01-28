@@ -2,6 +2,8 @@ from src.MarabouDataManagers.GlobalDataManager import GlobalDataManager
 from maraboupy import MarabouCore
 
 """
+manage some of the global data which is required for the marabou system
+
 - solving and evaluating the network - would be used to save the original network input query
 and use it to evaluate a proposed solution
 """
@@ -24,6 +26,29 @@ class GlobalNetworkManager(GlobalDataManager):
         # counter example, as given by the marabou_core solve function.
         self.result_of_counter_example_of_last_verification_attempt_applied_to_original_network = {}
 
+    def get_input_nodes_global_incoming_ids(self):
+        # copy is slow
+        return [self.input_nodes_global_incoming_ids[i] for i in range(len(self.input_nodes_global_incoming_ids))]
+
+    def get_output_nodes_global_incoming_ids(self):
+        # copy is slow
+        return [self.output_nodes_global_incoming_ids[i] for i in range(len(self.output_nodes_global_incoming_ids))]
+
+    def get_counter_example_of_last_verification_attempt(self):
+        return self.counter_example_of_last_verification_attempt
+
+    def check_if_can_run_current_network(self):
+        """
+        :return: true if you can start verifying the network
+        and false otherwise.
+        for now, its false iff there are nodes in the network that don't have a valid equation
+        (for example one for their neighbors was deleted)
+
+        you can get an iterator over all the nodes which dont have a valid equation using the function
+        get_list_of_nodes_that_dont_have_valid_equations
+        """
+        return len(self.set_of_nodes_locations_that_dont_have_valid_equations) == 0
+
     def save_current_network_as_original_network(self, input_nodes_global_incoming_ids,
                                                  output_nodes_global_incoming_ids):
         """
@@ -33,10 +58,9 @@ class GlobalNetworkManager(GlobalDataManager):
         assumption (7)
         it assumes that the output bounds were already set on all of the output nodes
 
-        input_query_of_original_network would be used to evaluate possible sat
-        results later on.
+        input_query_of_original_network would be used to evaluate possible sat results later on.
         from assumption (5) we know that the input nodes wont change their global id throughout the program life,
-        so we can use this old input query knowing that when a possible solution would tell us to. for example, set
+        so we can use this old input query knowing that when a possible solution would tell us to, for example, set
         input node with global id 5 to be 1.2, then it would be the input node with global id 5 from the start
 
         also from assumption (6) we now that the output nodes global id would remain the same (this assumption also
@@ -54,18 +78,6 @@ class GlobalNetworkManager(GlobalDataManager):
         self.input_nodes_global_incoming_ids = input_nodes_global_incoming_ids
         self.output_nodes_global_incoming_ids = output_nodes_global_incoming_ids
 
-    def check_if_can_run_current_network(self):
-        """
-        :return: true if you can start verifying the network
-        and false otherwise.
-        for now, its false iff there are nodes in the network that don't have a valid equation
-        (for example one for their neighbors was deleted)
-
-        you can get an iterator over all the nodes which dont have a valid equation using the function
-        get_list_of_nodes_that_dont_have_valid_equations
-        """
-        return len(self.set_of_nodes_locations_that_dont_have_valid_equations) == 0
-
     def run_network_on_input(self, code_for_network_to_run_eval_on,
                              map_of_input_nodes_global_ids_to_values):
         """
@@ -81,7 +93,7 @@ class GlobalNetworkManager(GlobalDataManager):
         the map_of_node_to_value which we get from the MarabouCore.solve function
         note that if the given input is unsat then the map would be empty
 
-        IMPORTANT: This function does not save any data to the global data manager
+        IMPORTANT: This function does not save any data to the global network manager
         it simply evaluates the network you want on the input you want and returns the output
         """
         if code_for_network_to_run_eval_on == GlobalNetworkManager.CODE_FOR_CURRENT_NETWORK:
@@ -112,11 +124,13 @@ class GlobalNetworkManager(GlobalDataManager):
     def verify(self):
         """
         gives a clone of the current input query to the solving engine
-        :return: SAT or UN-SAT indicating whether or not the input query has a counter example
-        if it does, the counter example would be saved in counter_example_of_last_verification_attempt
+        :return:
+        SAT or UN-SAT indicating whether or not the input query has a counter example
+        if its SAT, the counter example would be saved in counter_example_of_last_verification_attempt
 
         the counter example could be retrieved by calling get_counter_example_input_query_of_last_solution_attempt
-        the counter example could also be checked if its a correct counter example or not.
+        the counter example could also be checked if its a correct counter example or not by calling
+        evaluate_if_result_of_last_verification_attempt_is_a_valid_counterexample
         """
         if not self.check_if_can_run_current_network():
             raise Exception("can not verify since there are nodes with invalid equations")
@@ -137,17 +151,6 @@ class GlobalNetworkManager(GlobalDataManager):
             return GlobalDataManager.SAT
 
         return GlobalDataManager.UNSAT
-
-    def get_input_nodes_global_incoming_ids(self):
-        # copy is slow
-        return [self.input_nodes_global_incoming_ids[i] for i in range(len(self.input_nodes_global_incoming_ids))]
-
-    def get_output_nodes_global_incoming_ids(self):
-        # copy is slow
-        return [self.output_nodes_global_incoming_ids[i] for i in range(len(self.output_nodes_global_incoming_ids))]
-
-    def get_counter_example_of_last_verification_attempt(self):
-        return self.counter_example_of_last_verification_attempt
 
     def evaluate_if_result_of_last_verification_attempt_is_a_valid_counterexample(self):
         """
