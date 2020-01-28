@@ -2,14 +2,14 @@ from src.IDManager import IDManager
 from src.MarabouDataManagers.InputQueryFacade import InputQueryFacade
 
 """
-manage all global data which is required for the marabou system
+manage some of the global data which is required for the marabou system
+
 - global ids : can automatically reduce the number of used variables or set bounds on 
 "artificial variables" which are not being used.
 
 - input query
 
 - equation
-
 """
 
 
@@ -51,6 +51,13 @@ class GlobalDataManager(IDManager):
                 (layer_number, table_number, key_in_table, GlobalDataManager.CODE_FOR_NODE))
 
     def check_if_node_has_invalid_equations(self, layer_number, table_number, key_in_table, is_arnode):
+        """
+        :param layer_number:
+        :param table_number:
+        :param key_in_table:
+        :param is_arnode:
+        :return: true if the given node has an invalid equation
+        """
         if is_arnode:
             return (layer_number,
                     table_number,
@@ -64,7 +71,8 @@ class GlobalDataManager(IDManager):
 
     def remove_location_of_node_that_dont_have_valid_equation(self, layer_number, table_number, key_in_table,
                                                               is_arnode):
-        # discard ignores removal of items that are not in the set
+        # discard ignores removal of items that are not in the set, so if we are given a node which is not listed
+        # we simply ignore it
         if is_arnode:
             self.set_of_nodes_locations_that_dont_have_valid_equations.discard(
                 (layer_number, table_number, key_in_table, GlobalDataManager.CODE_FOR_ARNODE))
@@ -129,21 +137,11 @@ class GlobalDataManager(IDManager):
         """
         self.input_query.removeBounds(hole_id)
 
-    def reset_number_of_variables_in_input_query(self):
-        """
-        check what is the maximum id that was given away and sets the number of variables in the system to be
-        it + 1
-        :return: how many variables there are in the system right now
-        """
-        num_of_variables_in_system = self.get_maximum_id_used() + 1
-        self.input_query.setNumberOfVariables(num_of_variables_in_system)
-
-        return num_of_variables_in_system
-
     def get_new_id(self):
+        ranges_had_holes = self._check_if_ranges_has_holes()
         to_return = super().get_new_id()
 
-        if self._check_if_ranges_has_holes():
+        if ranges_had_holes:
             # then the id we are going to return is a hole id.
             # we need to remove the artificial bounds that were set on it
             self._remove_artificial_bounds_on_a_hole_id(to_return)
@@ -159,7 +157,7 @@ class GlobalDataManager(IDManager):
         also, this function assumes that the user "cleaned" the id before returning it.
         i.e. no bounds, relu constraints, or any other kind of things are related to the id.
         so the user should not expect that this function will "clean" the id for him. this fact is used in outside
-        classes, so be very careful if you want to change it.
+        classes, so be very careful if you want to change it (if you clean the id some function might not work)
         """
 
         length_of_ranges_before_insertion = len(self.ranges)
@@ -167,12 +165,12 @@ class GlobalDataManager(IDManager):
 
         super().give_id_back(id_returned)
 
-        # before finishing there are a couple of checks to make.
+        # now there are a couple of checks to make.
         # first check if the id_returned merged the 2 final ranges
         # (for example ranges was [0,1,5,9,10,max] and we inserted 9 then now ranges is [0,1,5,max])
-        # if that happened then we can reduce the number of variables in the input query
+        # if that happened then we can reduce the number of hole ids
         # (for example, in the state [0,1,5,9,10,max] we held ids 5,6,7,8 as hole ids, and after inserting 9
-        # we can reduce the number of used variables in the input query to 5 (0,1,2,3,4) (with 0 being a hole id))
+        # the hole ids 5,6,7,8,9 need to be erased
         if length_of_ranges_before_insertion > IDManager.LENGTH_OF_SIMPLE_RANGE:
             # if the length_of_ranges_before_insertion was 2 then we couldn't have "merge the 2 final ranges"
             # since there were no 2 final ranges.
@@ -184,15 +182,8 @@ class GlobalDataManager(IDManager):
                 # since all the ids we are about to return were hole ids,
                 for i in range(current_largest_available_id, largest_available_id_before_insertion):
                     self._remove_artificial_bounds_on_a_hole_id(i)
-                # now reset the number of used variables
-                self.reset_number_of_variables_in_input_query()
         else:
             # check for holes
-            if len(self.ranges) == IDManager.LENGTH_OF_SIMPLE_RANGE:
-                # then the id we inserted did not create a new hole,
-                # the only way it could happen is if the id returned was the largest id given
-                # so we can simply reduce the number of used variables by 1 (since we gave up our largest used id)
-                self.reset_number_of_variables_in_input_query()
-            else:
+            if len(self.ranges) != IDManager.LENGTH_OF_SIMPLE_RANGE:
                 # the inserted id should be treated as a hole id
                 self._set_artificial_bounds_on_a_hole_id(id_returned)

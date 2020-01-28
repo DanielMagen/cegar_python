@@ -119,4 +119,3 @@ class IDManager:
         if no ids were given it returns -1
         """
         return self.ranges[IDManager.LOCATION_OF_LARGEST_AVAILABLE_ID] - 1
-
