@@ -106,22 +106,12 @@ class Layer:
 
         return new_layer
 
-    @staticmethod
-    def type_to_number_of_map(type_of_node):
-        """
-        this function is only used for visual understanding for the programmer, it has zero utility use in the program
-
-        :param type_of_node: (pos,inc), (pos,dec), (neg,inc), (neg,dec), (unprocessed)
-        :return: the number of table corresponding to the type given in the list of 5 tables
-        """
-        return [('pos', 'inc'), ('pos', 'dec'), ('neg', 'inc'), ('neg', 'dec'), 'unprocessed'].index(type_of_node)
-
     def create_new_node(self, bias_for_node):
         """
         :return: creates a new node in the unprocessed table (to preserve assumption (4)) and returns it.
         """
         # when new nodes are created they are inserted into the unprocessed table
-        # from assumption (1) all layers have the same number of layers
+        # from assumption (1) all layers have the same number of tables
         new_node = self.regular_node_tables[Layer.INDEX_OF_UNPROCESSED_TABLE].create_new_node_and_add_to_table(
             Layer.NUMBER_OF_OVERALL_TABLES,
             Layer.NUMBER_OF_OVERALL_TABLES,
@@ -231,10 +221,12 @@ class Layer:
 
         :param node:
         :return:
-        a list (lets call it lis)
-        of size NUMBER_OF_REGULAR_TABLES_THAT_DO_NOT_SUPPORT_DELETION, such that
-        lis[i] would contain all the connection data for outgoing edges that should go to the node we will create
-        in regular_node_tables[i].
+        we want to split a node into 4 types of nodes:
+        pos-inc, pos-dec, neg-inc, neg-dec
+        to do so we need to split the given node outgoing edges between those 4 new nodes we want to create
+        this function returns a list of size 4 (NUMBER_OF_REGULAR_TABLES_THAT_DO_NOT_SUPPORT_DELETION)
+        so that list[i] would contain all the connection data for outgoing edges that should go to the node we will
+        create in regular_node_tables[i].
         """
         data_for_nodes_we_are_pos_linked_to = []
         data_for_nodes_we_are_neg_linked_to = []
@@ -264,7 +256,7 @@ class Layer:
             elif table_number in dec_table_numbers:
                 split_data_by_types[1].append(outgoing_edges_data)
             else:
-                raise Exception("some of the nodes that this node is connected to by an outgoing connection were not"
+                raise Exception("some of the nodes that this node is connected to by an outgoing connection were not "
                                 "preprocessed")
 
         for outgoing_edges_data in data_for_nodes_we_are_neg_linked_to:
@@ -274,7 +266,7 @@ class Layer:
             elif table_number in dec_table_numbers:
                 split_data_by_types[2].append(outgoing_edges_data)
             else:
-                raise Exception("some of the nodes that this node is connected to by an outgoing connection were not"
+                raise Exception("some of the nodes that this node is connected to by an outgoing connection were not "
                                 "preprocessed")
 
         return split_data_by_types
@@ -288,17 +280,21 @@ class Layer:
         other tables
         it assumes that all the nodes that this node is connected to by an outgoing connection have been preprocessed
         and also that all the nodes that should be connected to this node by an incoming connection, have been
-        connected to it
+        connected to it (the node is going to die and in its stead 4 new nodes would appear)
 
-        :param function_to_split_edges_data: a function that receives a node and returns a list (lets call it lis)
-        of size NUMBER_OF_REGULAR_TABLES_THAT_DO_NOT_SUPPORT_DELETION, such that
-        lis[i] would contain all the connection data for outgoing edges that should go to the node we will create
-        in regular_node_tables[i].
+
+        :param function_to_split_edges_data:
+        we want to split a node into 4 types of nodes:
+        pos-inc, pos-dec, neg-inc, neg-dec
+        to do so we need to split the given node outgoing edges between those 4 new nodes we want to create
+        this function would receive the node we wish to split and
+        return a list of size 4 (NUMBER_OF_REGULAR_TABLES_THAT_DO_NOT_SUPPORT_DELETION)
+        so that list[i] would contain all the connection data for outgoing edges that should go to the node we will
+        create in regular_node_tables[i].
 
         for each node it would insert into a regular table, it would create a corresponding arnode in the arnodes table
         """
-        if self.previous_layer == Layer.NO_POINTER_TO_ADJACENT_LAYER or \
-                self.next_layer == Layer.NO_POINTER_TO_ADJACENT_LAYER:
+        if not self.layer_is_inner:
             raise Exception("input or output layers nodes cannot be split, "
                             "call preprocess_entire_layer to prepare the layer for further actions")
 
@@ -308,13 +304,14 @@ class Layer:
 
         # before continuing, since the node is about to be removed, we first remove the node global variables,
         # including the node global id. we do so at this stage to create as little gaps as possible in the id manager
-        node.remove_from_global_system()
+        node.remove_id_equation_and_constraint()
 
         edge_data_split_by_type = function_to_split_edges_data(node)
 
         # now create a new node for each list which isn't empty and insert the node in the right table
         # we wish this list to be of length NUMBER_OF_REGULAR_TABLES_THAT_DO_NOT_SUPPORT_DELETION,
         # so a None value would indicate if a list is empty at a specific location
+        # we do so that we would know what type each new node created belongs to
         nodes_created = [None for _ in range(Layer.NUMBER_OF_REGULAR_TABLES_THAT_DO_NOT_SUPPORT_DELETION)]
 
         for i in range(len(edge_data_split_by_type)):
@@ -349,19 +346,20 @@ class Layer:
         # now calculate the equation and constraints for all nodes created
         for i in range(len(nodes_created)):
             if nodes_created[i] is not None:
-                nodes_created[i].calculate_equation_and_constraints()
+                nodes_created[i].calculate_equation_and_constraint()
 
         # now create an arnode for all the nodes created to preserve assumption (1)
         for i in range(len(nodes_created)):
             if nodes_created[i] is not None:
                 self._create_arnode_for_node(nodes_created[i])
 
-    def _handle_preprocess_of_outer_layers(self):
+    def _handle_preprocess_of_entire_outer_layers(self):
         # from assumption (9) we will simply move the nodes to the pos-inc table
         table_to_move_to = self.regular_node_tables[Layer.INDEX_OF_POS_INC_TABLE]
 
         unprocessed_table = self.regular_node_tables[Layer.INDEX_OF_UNPROCESSED_TABLE]
-        for unprocessed_node_key in unprocessed_table.get_iterator_for_all_keys():
+        for unprocessed_node_key in unprocessed_table.get_list_of_all_keys():
+            # remove node from unprocessed table and move it to its new table
             new_node_key = unprocessed_table.remove_node_from_table_and_relocate_to_other_table(
                 unprocessed_node_key,
                 table_to_move_to)
@@ -373,7 +371,6 @@ class Layer:
             # not be safe to forward activate or fully activate the arnode, since the node it surrounds might
             # still be connected to nodes in unprocessed tables
             self._create_arnode_for_node(node)
-            return
 
     # perhaps its inefficient, it might be more efficient to recalculate all the edges all at once and create
     # the nodeEdges object from scratch, than deleting all edges one by one
@@ -383,18 +380,19 @@ class Layer:
         (even if the layer is the input or output layer)
         :return:
         """
-        unprocessed_table = self.regular_node_tables[Layer.INDEX_OF_UNPROCESSED_TABLE]
         if not self.layer_is_inner:
             # from assumption (9) we will simply move the nodes to the pos-inc table
-            self._handle_preprocess_of_outer_layers()
+            self._handle_preprocess_of_entire_outer_layers()
 
         else:
+            unprocessed_table = self.regular_node_tables[Layer.INDEX_OF_UNPROCESSED_TABLE]
             for node_key in unprocessed_table.get_list_of_all_keys():
                 self.split_unprocessed_node_to_tables(node_key, Layer.get_split_edge_data_by_types)
 
     def forward_activate_arnode_table(self,
                                       table_number,
                                       function_to_calculate_merger_of_outgoing_edges):
+
         arnode_iterator = self.arnode_tables[table_number].get_iterator_for_all_nodes()
         for arnode in arnode_iterator:
             if arnode.get_activation_status() != ARNode.FULLY_ACTIVATED_STATUS:
@@ -521,19 +519,19 @@ class Layer:
 
         tables[table_number].get_node_by_key(key_in_table).set_lower_and_upper_bound(lower_bound, upper_bound)
 
-    def calculate_equation_and_constraints_for_all_nodes_in_table(self, is_arnode, table_number):
+    def calculate_equation_and_constraint_for_all_nodes_in_table(self, is_arnode, table_number):
         tables = self.regular_node_tables
         if is_arnode:
             tables = self.arnode_tables
 
-        tables[table_number].calculate_equation_and_constraints_for_all_nodes_in_table()
+        tables[table_number].calculate_equation_and_constraint_for_all_nodes_in_table()
 
-    def calculate_equation_and_constraints_for_a_specific_node(self, is_arnode, table_number, key_in_table):
+    def calculate_equation_and_constraint_for_a_specific_node(self, is_arnode, table_number, key_in_table):
         tables = self.regular_node_tables
         if is_arnode:
             tables = self.arnode_tables
 
-        tables[table_number].calculate_equation_and_constraints_for_a_specific_node(key_in_table)
+        tables[table_number].calculate_equation_and_constraint_for_a_specific_node(key_in_table)
 
     def __str__(self):
         to_return = ''

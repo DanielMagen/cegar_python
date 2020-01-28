@@ -130,7 +130,7 @@ class Node:
 
         # finally, remove from the global system
         if self.global_incoming_id != Node.NO_GLOBAL_ID or self.global_outgoing_id != Node.NO_GLOBAL_ID:
-            self.remove_from_global_system()
+            self.remove_id_equation_and_constraint()
 
         self.finished_lifetime = True
 
@@ -210,7 +210,7 @@ class Node:
 
         self.has_bounds = False
 
-    def remove_equation_and_constraints(self):
+    def remove_equation_and_constraint(self):
         """
         simply remove the equation and constraint from the global data manager
         and sets them to none in this node
@@ -234,7 +234,7 @@ class Node:
         else:
             self.set_global_equation_to_invalid()
 
-    def calculate_equation_and_constraints(self):
+    def calculate_equation_and_constraint(self):
         """
         this function calculates the equation between this node and its incoming nodes
         and the constraint between its 2 global ids
@@ -250,7 +250,7 @@ class Node:
         if self.equation != Node.NO_EQUATION:
             # from assumption (9) the equation and constraint should be set or removed together,
             # so its enough to check if the equation was set or not
-            self.remove_equation_and_constraints()
+            self.remove_equation_and_constraint()
 
         # before starting, check if the node you are about to add an equation and constraint to is an inner
         # or an outer node. according to assumption (11) an outer node can only have 1 global id
@@ -289,7 +289,7 @@ class Node:
         # finally tell the data manager that a valid equation were set for you
         self._set_global_equation_to_valid()
 
-    def remove_from_global_system(self, give_back_id_to_data_manager=True):
+    def remove_id_equation_and_constraint(self, give_back_id_to_data_manager=True):
         """
         deletes some of the global variables
 
@@ -316,7 +316,7 @@ class Node:
         if self.equation != Node.NO_EQUATION:
             # from assumption (9) the equation and constraint should be set or removed together,
             # so its enough to check if the equation was set or not
-            self.remove_equation_and_constraints()
+            self.remove_equation_and_constraint()
 
         if not self.check_if_node_equation_is_valid():
             # since our global data is removed, our equation is considered valid from assumption (15)

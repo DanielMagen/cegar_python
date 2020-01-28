@@ -196,7 +196,7 @@ class Network:
         is_arnode = False
         table_number = Layer.INDEX_OF_UNPROCESSED_TABLE
         for i in range(Network.LOCATION_OF_FIRST_LAYER + 1, len(self.layers)):
-            self.layers[i].calculate_equation_and_constraints_for_all_nodes_in_table(is_arnode, table_number)
+            self.layers[i].calculate_equation_and_constraint_for_all_nodes_in_table(is_arnode, table_number)
 
         return first_layer_nodes_map, last_layer_nodes_map
 
@@ -711,10 +711,10 @@ class Network:
                 layer_number, table_number, key_in_table, node_code = data
                 layer = self.layers[layer_number]
                 if node_code == self.global_network_manager.CODE_FOR_NODE:
-                    layer.calculate_equation_and_constraints_for_a_specific_node(False, table_number, key_in_table)
+                    layer.calculate_equation_and_constraint_for_a_specific_node(False, table_number, key_in_table)
                 else:
                     # node_code == self.global_network_manager.CODE_FOR_ARNODE:
-                    layer.calculate_equation_and_constraints_for_a_specific_node(True, table_number, key_in_table)
+                    layer.calculate_equation_and_constraint_for_a_specific_node(True, table_number, key_in_table)
 
     def check_if_network_is_sat_or_unsat(self):
         """

@@ -155,23 +155,23 @@ class ARNode(Node):
             return super().check_if_have_global_id()
         return self.first_node_in_starting_nodes.check_if_have_global_id()
 
-    def calculate_equation_and_constraints(self):
+    def calculate_equation_and_constraint(self):
         # preserve assumption (8)
         if self.activation_status == ARNode.FULLY_ACTIVATED_STATUS:
-            return super().calculate_equation_and_constraints()
-        return self.first_node_in_starting_nodes.calculate_equation_and_constraints()
+            return super().calculate_equation_and_constraint()
+        return self.first_node_in_starting_nodes.calculate_equation_and_constraint()
 
-    def remove_equation_and_constraints(self):
+    def remove_equation_and_constraint(self):
         # preserve assumption (8)
         if self.activation_status == ARNode.FULLY_ACTIVATED_STATUS:
-            return super().remove_equation_and_constraints()
-        return self.first_node_in_starting_nodes.remove_equation_and_constraints()
+            return super().remove_equation_and_constraint()
+        return self.first_node_in_starting_nodes.remove_equation_and_constraint()
 
-    def remove_from_global_system(self, give_back_id_to_data_manager=True):
+    def remove_id_equation_and_constraint(self, give_back_id_to_data_manager=True):
         # preserve assumption (8)
         if self.activation_status == ARNode.FULLY_ACTIVATED_STATUS:
-            return super().remove_from_global_system(give_back_id_to_data_manager)
-        return self.first_node_in_starting_nodes.remove_from_global_system(give_back_id_to_data_manager)
+            return super().remove_id_equation_and_constraint(give_back_id_to_data_manager)
+        return self.first_node_in_starting_nodes.remove_id_equation_and_constraint(give_back_id_to_data_manager)
 
     def set_pointer_to_ar_node_nested_in(self, ar_node_location):
         raise NotImplementedError("an arnode is considered to be nested inside itself, this can not change")
@@ -260,11 +260,11 @@ class ARNode(Node):
 
         # before continuing remove (almost) all the of the inner nodes global variables
         for i in range(1, len(inner_nodes_that_still_have_global_variables)):
-            inner_nodes_that_still_have_global_variables[i].remove_from_global_system()
+            inner_nodes_that_still_have_global_variables[i].remove_id_equation_and_constraint()
 
         if len(inner_nodes_that_still_have_global_variables) >= 1:
             self.global_incoming_id, self.global_outgoing_id = inner_nodes_that_still_have_global_variables[
-                0].remove_from_global_system(return_id=False)
+                0].remove_id_equation_and_constraint(return_id=False)
         else:
             self.global_incoming_id = self.global_data_manager.get_new_id()
             # now check if the arnode should have only 1 id or 2
@@ -279,7 +279,7 @@ class ARNode(Node):
                 self.global_outgoing_id = self.global_incoming_id
 
         # calculate the arnode equation and constraints
-        self.calculate_equation_and_constraints()
+        self.calculate_equation_and_constraint()
 
         # now calculate arnode bounds
         if should_recalculate_bounds:
