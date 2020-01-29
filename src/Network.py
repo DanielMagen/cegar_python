@@ -9,7 +9,6 @@ class Network:
     # "<" would mean that we want to verify y < c
     # note that we try to find a counter example to the property we want to verify
     # so if we want to verify that y > c we would search for an input which gives us y<=c
-    POSSIBLE_VERIFICATION_GOALS = ['unsat >=', 'unsat <=']
 
     # if we want to verify that N(x) > c,
     # then we would create create a network N' such that N(x) >= N'(x)
@@ -20,9 +19,13 @@ class Network:
     # if we want to make sure that y < c, i.e. we want to unsat y >= c, we need to increase the output of the network.
     # the same hold for the opposite case,
     # if we want to make sure that y > c, i.e. we want to unsat y <= c, we need to decrease the output of the network.
-    ABSTRACTION_WOULD_INCREASE_OUTPUT = POSSIBLE_VERIFICATION_GOALS.index('unsat >=')
-    ABSTRACTION_WOULD_DECREASE_OUTPUT = POSSIBLE_VERIFICATION_GOALS.index('unsat <=')
-    UNINITIALIZED_GOAL = -1
+    # in his paper, yitzhak always assumed that the goal would always be to increase the output.
+    # so for now we only support this option.
+    # one problem with supporting the other option is that the algorithms to decide which nodes to split or merge
+    # might depend on the verification goal of the network (<= >=).
+    # in this case I don't know how to change the algorithms to preserve their correctness
+    # another thing that needs to be done to support this option is to change
+    # get_function_to_calc_weight_for_incoming_edges_for_arnode slightly
 
     NUMBER_OF_TABLES_IN_LAYER = Layer.NUMBER_OF_OVERALL_TABLES
 
@@ -78,9 +81,6 @@ class Network:
         input_nodes_global_incoming_ids = self._layer_node_map_to_global_ids(Network.LOCATION_OF_FIRST_LAYER,
                                                                              first_layer_nodes_map)
 
-        self.goal = Network.UNINITIALIZED_GOAL
-        # this function would set self.goal to one of:
-        # ABSTRACTION_WOULD_INCREASE_OUTPUT or ABSTRACTION_WOULD_DECREASE_OUTPUT
         self.output_bounds_were_set = False
         output_nodes_global_incoming_ids = self.hard_code_acas_output_properties(last_layer_nodes_map,
                                                                                  which_acas_output)
@@ -90,13 +90,6 @@ class Network:
         if not self.output_bounds_were_set:
             # violation of assumption (5)
             raise AssertionError("the output bounds were not set")
-        if self.goal == Network.ABSTRACTION_WOULD_DECREASE_OUTPUT:
-            # for now we do not support the ABSTRACTION_WOULD_DECREASE_OUTPUT parameter
-            # the algorithms to decide which nodes to split or merge might depend
-            # on the verification goal of the network (<= >=). in this case I don't know how to change the algorithms
-            # to preserve their correctness
-            # in his paper, yitzhak always assumed that the goal would always be to increase the output.
-            raise AssertionError("we currently do not support the ABSTRACTION_WOULD_DECREASE_OUTPUT goal")
 
         self._create_valid_equations_for_all_nodes_without_valid_equations()
         self.global_network_manager.save_current_network_as_original_network(input_nodes_global_incoming_ids,
@@ -231,9 +224,7 @@ class Network:
         :param which_acas_output:
         which of the 4 properties should be added to the network
 
-        this function would set self.goal to either
-        ABSTRACTION_WOULD_INCREASE_OUTPUT or ABSTRACTION_WOULD_DECREASE_OUTPUT
-        and would set the output bounds
+        this function would also set the output bounds
 
         :return: a list of te output nodes global incoming ids
         """
@@ -243,11 +234,12 @@ class Network:
         if len(list_of_nodes) != 5:
             raise Exception("acas should have exactly 5 outputs")
 
+        if which_acas_output not in range(1, 5):
+            raise ValueError("there are only 4 possible acas outputs")
+
         if which_acas_output == 1:
             # we want to make sure that y0 < 3.9911256459
             # so we want to unsat y0 >= 3.9911256459
-            self.goal = Network.ABSTRACTION_WOULD_INCREASE_OUTPUT
-
             list_of_nodes[0].set_lower_and_upper_bound(3.9911256459, float('inf'))
 
             # should bounds be set on all output nodes? if acas has 5 different output nodes then in this case we dont
@@ -256,73 +248,70 @@ class Network:
 
             return [list_of_nodes[0].get_global_incoming_id()]
 
+        """
+        if which_acas_output == 2:
+            # we want to unsat
+            # + y0 - y1 >= 0
+            # + y0 - y2 >= 0
+            # + y0 - y3 >= 0
+            # + y0 - y4 >= 0
+            
+        elif which_acas_output == 3 or which_acas_output == 4:
+            # we want to unsat
+            # + y0 - y1 <= 0
+            # + y0 - y2 <= 0
+            # + y0 - y3 <= 0
+            # + y0 - y4 <= 0
+
+            # which is equivalent to unsat
+            # - y0 + y1 >= 0
+            # - y0 + y2 >= 0
+            # - y0 + y3 >= 0
+            # - y0 + y4 >= 0
+        """
+        # y0 node would be y_nodes[0], y1 node would be y_nodes[1] and so on
+        y_nodes = [last_layer_nodes_map[i] for i in range(5)]
+
+        # we want to create a new layer and input to it the differences between the nodes
+        # first create the new output nodes
+        new_last_layer = self.layers[-1].create_next_layer()
+        self.layers.append(new_last_layer)
+        new_output_nodes = []
+        bias_for_nodes = 0
+        for i in range(4):
+            new_output_nodes.append(new_last_layer.create_new_node(bias_for_nodes))
+
+        # now connect the new output nodes to the y_nodes
+
+        # first prepare the various connection data you'll need
+        # what we are creating here is a connection data list as the NodeEdges class requires
+        # in acas_output 2 the connection to y0 would be of weight 1 and the connection to
+        # the rest would be of weight -1
+        # in acas_outputs 3,4 it would be the reverse
+        if which_acas_output == 2:
+            weight_of_connection_to_y0 = 1
         else:
-            if which_acas_output == 2:
-                # we want to unsat
-                # + y0 - y1 >= 0
-                # + y0 - y2 >= 0
-                # + y0 - y3 >= 0
-                # + y0 - y4 >= 0
-                self.goal = Network.ABSTRACTION_WOULD_INCREASE_OUTPUT
-            elif which_acas_output == 3 or which_acas_output == 4:
-                # we want to unsat
-                # + y0 - y1 <= 0
-                # + y0 - y2 <= 0
-                # + y0 - y3 <= 0
-                # + y0 - y4 <= 0
+            weight_of_connection_to_y0 = -1
+        connections_to_ys = [[*y_nodes[i].get_location(), -weight_of_connection_to_y0, y_nodes[i]]
+                             for i in range(len(y_nodes))]
+        # change the connection to y0 to be +1 instead of -1
+        connections_to_ys[0][NodeEdges.INDEX_OF_WEIGHT_IN_DATA] *= -1
 
-                # which is equivalent to unsat
-                # - y0 + y1 >= 0
-                # - y0 + y2 >= 0
-                # - y0 + y3 >= 0
-                # - y0 + y4 >= 0
-                self.goal = Network.ABSTRACTION_WOULD_INCREASE_OUTPUT
-            else:
-                raise ValueError("there are only 4 possible acas outputs")
+        # now connect each new output node to the previous y's
+        for i in range(len(new_output_nodes)):
+            new_output_nodes[i].add_or_edit_neighbors_by_bulk(Node.INCOMING_EDGE_DIRECTION,
+                                                              [connections_to_ys[0], connections_to_ys[i + 1]])
 
-            # y0 node would be y_nodes[0], y1 node would be y_nodes[1] and so on
-            y_nodes = [last_layer_nodes_map[i] for i in range(5)]
+        # now set the bounds on the nodes
+        for i in range(len(new_output_nodes)):
+            new_output_nodes[i].set_lower_and_upper_bound(0, float('inf'))
 
-            # we want to create a new layer and input to it the differences between the nodes
-            # first create the new output nodes
-            new_last_layer = self.layers[-1].create_next_layer()
-            self.layers.append(new_last_layer)
-            new_output_nodes = []
-            bias_for_nodes = 0
-            for i in range(4):
-                new_output_nodes.append(new_last_layer.create_new_node(bias_for_nodes))
+        self.output_bounds_were_set = True
 
-            # now connect the new output nodes to the y_nodes
+        def get_node_global_incoming_id(node):
+            return node.get_global_incoming_id()
 
-            # first prepare the various connection data you'll need
-            # what we are creating here is a connection data list as the NodeEdges class requires
-            # in acas_output 2 the connection to y0 would be of weight 1 and the connection to
-            # the rest would be of weight -1
-            # in acas_outputs 3,4 it would be the reverse
-            if which_acas_output == 2:
-                weight_of_connection_to_y0 = 1
-            else:
-                weight_of_connection_to_y0 = -1
-            connections_to_ys = [[*y_nodes[i].get_location(), -weight_of_connection_to_y0, y_nodes[i]]
-                                 for i in range(len(y_nodes))]
-            # change the connection to y0 to be +1 instead of -1
-            connections_to_ys[0][NodeEdges.INDEX_OF_WEIGHT_IN_DATA] *= -1
-
-            # now connect each new output node to the previous y's
-            for i in range(len(new_output_nodes)):
-                new_output_nodes[i].add_or_edit_neighbors_by_bulk(Node.INCOMING_EDGE_DIRECTION,
-                                                                  [connections_to_ys[0], connections_to_ys[i + 1]])
-
-            # now set the bounds on the nodes
-            for i in range(len(new_output_nodes)):
-                new_output_nodes[i].set_lower_and_upper_bound(0, float('inf'))
-
-            self.output_bounds_were_set = True
-
-            def get_node_global_incoming_id(node):
-                return node.get_global_incoming_id()
-
-            return list(map(get_node_global_incoming_id, new_output_nodes))
+        return list(map(get_node_global_incoming_id, new_output_nodes))
 
     def preprocess_more_layers(self, number_of_layers_to_preprocess, raise_error_if_overflow=False):
         """
@@ -496,16 +485,9 @@ class Network:
         else:
             raise ValueError('given table number is invalid')
 
-        if self.goal == Network.ABSTRACTION_WOULD_INCREASE_OUTPUT:
-            if arnode_is_inc_type:
-                return lambda node, lis: max(lis)
-            return lambda node, lis: min(lis)
-
-        else:
-            # self.goal == Network.ABSTRACTION_WOULD_DECREASE_OUTPUT
-            if arnode_is_inc_type:
-                return lambda node, lis: min(lis)
+        if arnode_is_inc_type:
             return lambda node, lis: max(lis)
+        return lambda node, lis: min(lis)
 
     def get_function_to_calc_weight_for_outgoing_edges_for_arnode(self,
                                                                   table_number_of_arnode):
