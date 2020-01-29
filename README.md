@@ -15,5 +15,5 @@ each network would be represented by both a real live network that can be used f
 and the inner representation which we would implement here
 
 each network inner representation would be implemented as a system of nested managers
-network managers > layer managers > table managers > nodes > node edges
+network > layer managers > table managers > nodes > node edges
 

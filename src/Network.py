@@ -11,70 +11,76 @@ class Network:
     # so if we want to verify that y > c we would search for an input which gives us y<=c
     POSSIBLE_VERIFICATION_GOALS = ['<', '>']
 
+    # if we want to verify that N(x) > c,
+    # then we would create create a network N' such that N(x) >= N'(x)
+    # if we can manage to prove that N'(x) > c we are done since this would mean that c < N'(x) <= N(x)
+    # so what we need to do is to verify that N'(x) <= c is unsat
+    #
+    # so to summarize,
+    # if we want to make sure that y < c, i.e. we want to unsat y >= c, we need to increase the output of the network.
+    # the same hold for the opposite case,
+    # if we want to make sure that y > c, i.e. we want to unsat y <= c, we need to decrease the output of the network.
+    ABSTRACTION_WOULD_INCREASE_OUTPUT = POSSIBLE_VERIFICATION_GOALS.index('<')
+    ABSTRACTION_WOULD_DECREASE_OUTPUT = POSSIBLE_VERIFICATION_GOALS.index('>')
+    UNINITIALIZED_GOAL = -1
+
+    NUMBER_OF_TABLES_IN_LAYER = Layer.NUMBER_OF_OVERALL_TABLES
+
     # ratio between number of initial nodes to available ids
+    # its necessary because for now the id manager does not support infinite ids and also does not support
+    # reaching the end of the available range
     MULTIPLICITY_OF_IDS = 20  # arbitrarily set it to 20
 
+    # obvious, but I put it here to emphasize that this shouldn't change by any means
     LOCATION_OF_FIRST_LAYER = 0
 
     CODE_FOR_SAT = 0
     CODE_FOR_UNSAT = 1
     CODE_FOR_SPURIOUS_COUNTEREXAMPLE = 2
 
-    UNINITIALIZED_GOAL = -1
-    """
-    if we want to verify that N(x) < c, then our network would try to prove that N(x) >= c is unsat.
-    to do so we would create a network N' such that N(x) >= N'(x).
-    if N'(x) <= c is unsat (i.e not possible) then it means that always N'(x) > c, which would mean that
-    always N(x) >= N'(x) > c.
-    so to summarize, 
-    if we want to make sure that y < c, i.e. we want to unsat y >= c, we need to decrease the output of the network.
-    the same hold for the opposite case, 
-    if we want to make sure that y > c, i.e. we want to unsat y <= c, we need to increase the output of the network.
-    """
-    ABSTRACTION_WOULD_INCREASE_OUTPUT = POSSIBLE_VERIFICATION_GOALS.index('<')
-    ABSTRACTION_WOULD_DECREASE_OUTPUT = POSSIBLE_VERIFICATION_GOALS.index('>')
-
-    NUMBER_OF_TABLES_IN_LAYER = Layer.NUMBER_OF_OVERALL_TABLES
-
     def __init__(self, nnet_reader_object, which_acas_output):
         """
         :param nnet_reader_object:
-        an nnet_reader object which has loaded into itself the network and the requested bounds on the network input nodes.
-        this network class would convert that network into an inner representation of multiple layers, tables and
-        node classes, which are built for the purpose of supporting the abstraction refinement
+        an nnet_reader object which has loaded into itself the network and the requested bounds on the network
+        input nodes.
+        this network class would convert that nnet_reader_object into an inner representation of multiple layers,
+        tables and node classes, which are built for the purpose of supporting the abstraction refinement
 
 
         :param which_acas_output:
         for now the network class does not support adding arbitrary output bounds (for cegar to work on such bounds
-        the network class would need to convert the bounds to a single bound of the form >).
-        we do support adding the output bounds for the AcasNnet, which are hardcoded into this class.
+        the network class would need to convert the bounds to a form that cegar know how to deal with, a task which was
+        not covered in the paper).
+        however, we do support adding the output bounds for the AcasNnet, which are hardcoded into this class.
         """
-        self.number_of_layers_in_network = len(nnet_reader_object.layerSizes)
-
+        number_of_nodes_in_network = sum(nnet_reader_object.layerSizes)
         self.global_network_manager = GlobalNetworkManager(
-            Network.MULTIPLICITY_OF_IDS * self.number_of_nodes_in_network)
+            Network.MULTIPLICITY_OF_IDS * number_of_nodes_in_network)
 
         self.layers = []
-        self._initialize_layers()
+        number_of_layers_in_network = len(nnet_reader_object.layerSizes)
+        self._initialize_layers(number_of_layers_in_network)
 
-        # all layers in the network are not preprocessed
-        # note that currently we do not use the full potential of the layer class capabilities
-        # the layer class can be preprocessed, forward activated and fully activated with much more finer control
-        # but for now we treat the layers as a single block that need to change states all at once
+        # all layers in the network are not preprocessed (all nodes are in the unprocessed tables)
+        # note in the current implementation we do not use the full potential of the layer class capabilities
+        # the layer class can be preprocessed, forward activated and fully activated with much finer control
+        # but for now we treat the layers as a single block that need to change the states of its nodes all at once
         self.last_layer_not_preprocessed = len(self.layers) - 1
         self.last_layer_not_forward_activated = len(self.layers) - 1
         self.last_layer_not_fully_activated = len(self.layers) - 1
 
-        # now create all the nodes in the network
-        self.number_of_nodes_in_network = 0
-
         first_layer_nodes_map, last_layer_nodes_map = self._initialize_nodes_in_all_layers(nnet_reader_object)
 
+        # we need to know what are the global ids of the input and output nodes
+        # we can use the maps that were returned by the _initialize_nodes_in_all_layers function to get those ids
+        # for the input nodes, those ids can be extracted immediately
+        # but the output nodes might still change a bit in the hard_code_acas_output_properties so we wait until the
+        # call to the hard_code_acas_output_properties to get the output node global ids
         input_nodes_global_incoming_ids = self._layer_node_map_to_global_ids(Network.LOCATION_OF_FIRST_LAYER,
                                                                              first_layer_nodes_map)
 
         self.goal = Network.UNINITIALIZED_GOAL
-        # this function would set self.goal to either
+        # this function would set self.goal to one of:
         # ABSTRACTION_WOULD_INCREASE_OUTPUT or ABSTRACTION_WOULD_DECREASE_OUTPUT
         self.output_bounds_were_set = False
         output_nodes_global_incoming_ids = self.hard_code_acas_output_properties(last_layer_nodes_map,
@@ -94,26 +100,29 @@ class Network:
         """
         :param layer_number:
         :param layer_nodes_map:
-        map between index of the node in the conceptual layer (as given by the AcasNnet_object)
+        map between index of the node in the conceptual layer (as given by the nnet_reader_object)
         to the key of the node in the unprocessed_table in the layer object
 
-        :return: a list of the incoming global ids of the nodes
+        :return: a list of the incoming global ids of the nodes in the map given
         """
         to_return = []
         current_layer = self.layers[layer_number]
+        # we don't need the index of the node in the conceptual layer
         for _, key_in_the_unprocessed_table in layer_nodes_map.items():
             node = current_layer.get_unprocessed_node_by_key(key_in_the_unprocessed_table)
             to_return.append(node.get_global_incoming_id)
 
         return to_return
 
-    def _initialize_layers(self):
-        self.layers[Network.LOCATION_OF_FIRST_LAYER] = Layer(Network.LOCATION_OF_FIRST_LAYER,
+    def _initialize_layers(self, number_of_layers_in_network):
+        first_layer = Layer(Network.LOCATION_OF_FIRST_LAYER,
                                                              self.global_network_manager,
                                                              Layer.NO_POINTER_TO_ADJACENT_LAYER,
                                                              Layer.NO_POINTER_TO_ADJACENT_LAYER)
+        self.layers.append(first_layer)
+        # at this point we assert self.layers.index(first_layer) == Network.LOCATION_OF_FIRST_LAYER
 
-        for i in range(1, self.number_of_layers_in_network):
+        for i in range(1, number_of_layers_in_network):
             self.layers.append(self.layers[i - 1].create_next_layer())
 
     def _initialize_nodes_in_all_layers(self, nnet_reader_object):
@@ -122,7 +131,7 @@ class Network:
         :param nnet_reader_object:
 
         :return: 2 maps, 1 for the input nodes and 1 for the output nodes.
-        those maps would map between index of the node in the conceptual layer (as given by the AcasNnet_object)
+        those maps would map between index of the node in the conceptual layer (as given by the nnet_reader_object)
         to the key of the node in the unprocessed_table in the layer object
         """
         # first, initialize all the nodes and their connections
@@ -203,7 +212,7 @@ class Network:
     def hard_code_acas_output_properties(self, last_layer_nodes_map, which_acas_output):
         """
         :param last_layer_nodes_map:
-        map between index of the node in the conceptual layer (as given by the AcasNnet_object)
+        map between index of the node in the conceptual layer (as given by the nnet_reader_object)
         to the key of the node in the unprocessed_table in the layer object
 
         :param which_acas_output:
@@ -299,9 +308,8 @@ class Network:
         if its false, it simply preprocess as many layers as it can. note that this number could be 0.
         """
         up_to = self.last_layer_not_preprocessed - number_of_layers_to_preprocess
-        if raise_error_if_overflow:
-            if up_to < -1:
-                raise Exception("requested to preprocess more layers than there are available")
+        if raise_error_if_overflow and up_to < -1:
+            raise Exception("requested to preprocess more layers than there are available")
 
         for i in range(self.last_layer_not_preprocessed,
                        max(-1, up_to), -1):
@@ -323,9 +331,8 @@ class Network:
 
         """
         up_to = self.last_layer_not_forward_activated - number_of_layers_to_forward_activate
-        if raise_error_if_overflow:
-            if up_to < self.last_layer_not_preprocessed:
-                raise Exception("requested to forward activate more layers than there are available")
+        if raise_error_if_overflow and up_to < self.last_layer_not_preprocessed:
+            raise Exception("requested to forward activate more layers than there are available")
 
         for i in range(self.last_layer_not_forward_activated,
                        max(self.last_layer_not_preprocessed, up_to), -1):
@@ -568,6 +575,7 @@ class Network:
                                                        connection_data_2[NodeEdges.INDEX_OF_TABLE_NUMBER_IN_DATA],
                                                        connection_data_2[NodeEdges.INDEX_OF_KEY_IN_TABLE_IN_DATA])
 
+                        ################################################################################################### check if bug
                         if key_of_pair_in_map_of_pairs not in map_of_pairs_to_m:
                             map_of_pairs_to_m[key_of_pair_in_map_of_pairs] = m
                         elif m > map_of_pairs_to_m[key_of_pair_in_map_of_pairs]:
