@@ -305,6 +305,7 @@ class Network:
 
             def get_node_global_incoming_id(node):
                 return node.get_global_incoming_id()
+
             return list(map(get_node_global_incoming_id, new_output_nodes))
 
     def preprocess_more_layers(self, number_of_layers_to_preprocess, raise_error_if_overflow=False):
@@ -450,9 +451,9 @@ class Network:
     def get_function_to_calc_weight_for_incoming_edges_for_arnode(self,
                                                                   table_number_of_arnode):
         """
-        this function returns the function that is given to the arnode to calculate
+        this method returns the function that is given to the arnode to calculate
         its incoming edges from the edges of its inner nodes.
-        this function can be fed into all the arnodes functions that require a
+        this function can be fed into all the arnodes methods that require a
         "function_to_calculate_merger_of_incoming_edges"
 
         :param table_number_of_arnode: one of
@@ -462,10 +463,11 @@ class Network:
         Layer.INDEX_OF_NEG_DEC_TABLE
 
         :return:
-        a function that receives 2 inputs
+        this method returns a function
+        that function receives 2 inputs
         1) a reference to an arnode
         2) a list of weights we are connected to the arnode with
-        and returns a new weight for that we will connect to the given arnode with
+        and returns a new weight that we will connect to the given arnode with
 
         for example if we want to increase the network output and we have a group of incremental nodes then we will
         return a function of the form
@@ -492,7 +494,7 @@ class Network:
     def get_function_to_calc_weight_for_outgoing_edges_for_arnode(self,
                                                                   table_number_of_arnode):
         """
-        this function returns the function that is given to the arnode to calculate
+        this method returns a function that is given to the arnode to calculate
         its outgoing edges from the edges of its inner nodes.
         this function can be fed into all the arnodes functions that require a
         "function_to_calculate_merger_of_outgoing_edges"
@@ -515,6 +517,21 @@ class Network:
     ######################## ask Yithzak about how to calculate the node biases - his paper assumes that there are none
     def get_function_to_calc_bias_for_arnode(self,
                                              table_number_of_arnode):
+        """
+        :param table_number_of_arnode: one of
+        Layer.INDEX_OF_POS_INC_TABLE
+        Layer.INDEX_OF_POS_DEC_TABLE
+        Layer.INDEX_OF_NEG_INC_TABLE
+        Layer.INDEX_OF_NEG_DEC_TABLE
+
+        :return:
+        this method returns the function that is given to the arnode to calculate
+        its bias from the bias of its inner nodes
+
+        for now this function is trivial and possibly incorrect,
+        Yithzak paper assumes that there are no biases so I don't know what to do with those
+        """
+
         def function_to_calc_bias_for_arnode(list_of_inner_nodes):
             if len(list_of_inner_nodes) == 1:
                 return list_of_inner_nodes[0].get_node_bias()
@@ -525,42 +542,49 @@ class Network:
     def decide_best_arnodes_to_merge(self):
         """
         this is my efficient implementation of algorithm 2 "create initial abstraction"
-        the problem with the original pseudo code is that its working backwards. for each pair of arnodes it finds
-        an arnode which is connected to both of them and continues from there.
-        its fine if the network is fully connected. but my implementation does not assume that,
+        the problem with the original pseudo code is that its working backwards.
+        for each pair of arnodes it finds an arnode which is connected to both of them and continues from there.
+        this approach is fine if the network is fully connected, but my implementation does not assume that.
         so it would be costly to work like "for each pair of arnodes find the intersection of the arnodes
-        they are connected to using incoming connections". so instead I go the other way around. to check what arnodes
-        should be merged in layer k, I look at layer k-1, and for each node in layer k-1, I check each pair of arnodes
-        its connected to by an outgoing connection.
+        they are connected to using incoming connections".
+        so instead I go the other way around.
+        to check what arnodes should be merged in layer k, I look at layer k-1, and for each node in layer k-1,
+        I check each pair of arnodes its connected to by an outgoing connection.
 
         :return:
         the attributes needed to know which arnodes to merge
         a layer number
         a table number
-        a list_of_keys_of_arnodes_to_merge inside this table
+        a list_of_keys_of_arnodes_to_merge inside this table - for now, since we only implement algo 2, this would be
+        a pair
 
         if no arnode set is found that is legible for merging, this function would raise an error
         """
-        # the output arnode wont be merged to preserve assumption (4) so we check to see if we fully activated
+        # first lets check that we fully activated enough layers so that we can start the merging process.
+        # the output arnode wont be merged to preserve assumption (4) so we check to see if we at least fully activated
         # a layer before the output layer
         if self.last_layer_not_fully_activated >= len(self.layers) - 2:
             raise Exception("can not decide which arnodes to merge since not enough layers are "
                             "fully activated")
 
         # to preserve assumption (4) we should't check if (or even try to) merge arnodes in the output or input layers.
-        # in this implementation, to check what arnodes should be merged in layer k I look at layer k-1.
+        # in this implementation, to check what arnodes should be merged in layer k, I look at the nodes in layer k-1.
+        # so I need to loop over the layers which I call "k-1". i.e. I need to loop over the layers that preceed the
+        # layers that I want to merge.
         # so when you do the math, I must go through a loop from len(self.layers) - 3 (the second layer from the last)
-        # up to (and including) self.last_layer_not_fully_activated. since the loop is exclusive up to
-        # self.last_layer_not_fully_activated - 1.
+        # up to (and including) self.last_layer_not_fully_activated.
+        # since the loop is exclusive up to, I loop up to self.last_layer_not_fully_activated - 1.
+
         # from assumption (3) we know that self.last_layer_not_fully_activated must be at least 0, so the loop is
-        # sound, I will never go below 0. this also means that that we wont ever try to merge or split the input layer
-        # (since if we wanted to act upon layer 0 we need to use layer -1 which does not exist)
+        # sound, i.e. I will never go below 0.
+        # this also means that that we wont ever try to merge or split the input layer
+        # (since if we wanted to act upon layer 0 we need to use layer "-1" which does not exist)
         # so assumption (4) is again preserved
 
         best_pair = None
         best_pair_m = float("inf")  # m would indicate maximum difference between weights.
         layer_of_best_pair = -1
-        # i.e. weight of a->ar1 and weight of a->ar2 would differ most.
+
         for i in range(len(self.layers) - 3, self.last_layer_not_fully_activated - 1, -1):
             assert i > -1  # just in case, but it should never happen
             current_layer_number = i + 1
@@ -570,7 +594,10 @@ class Network:
             map_of_pairs_to_m = {}
 
             for table_number in Layer.OVERALL_ARNODE_TABLES:
-                for arnode in previous_layer.get_iterator_for_all_nodes_for_table(True, table_number):
+                # go through all arnodes in this table
+                is_arnode = True
+                for arnode in previous_layer.get_iterator_for_all_nodes_for_table(is_arnode, table_number):
+                    # for each arnode find all the pairs of arnodes its connected to by an outgoing connection
                     for connection_data_pair in arnode.get_combinations_iterator_over_connections(
                             Node.OUTGOING_EDGE_DIRECTION, 2):
 
@@ -579,11 +606,10 @@ class Network:
                         weight_of_connection_2 = connection_data_2[NodeEdges.INDEX_OF_WEIGHT_IN_DATA]
 
                         # note that at this point we assume that arnodes in one type of table (for example pos-inc)
-                        # connects only to arnodes that reside in the same type of table
+                        # connects only to arnodes that reside in the same type of table (in other layers)
                         # I'm sure it should follow from the layer assumptions.
                         # if you disagree you could assert that the table number as returned
-                        # in the connection data, is never changing and always equal to Layer.INDEX_OF_POS_INC_TABLE
-
+                        # in the connection data, is never changing and always equal to table_number
                         """
                         if you wish to test
                         assert connection_data_1[NodeEdges.INDEX_OF_TABLE_NUMBER_IN_DATA] == \
@@ -597,13 +623,14 @@ class Network:
                                                        connection_data_2[NodeEdges.INDEX_OF_TABLE_NUMBER_IN_DATA],
                                                        connection_data_2[NodeEdges.INDEX_OF_KEY_IN_TABLE_IN_DATA])
 
-                        ################################################################################################### check if bug
-                        if key_of_pair_in_map_of_pairs not in map_of_pairs_to_m:
-                            map_of_pairs_to_m[key_of_pair_in_map_of_pairs] = m
-                        elif m > map_of_pairs_to_m[key_of_pair_in_map_of_pairs]:
+                        if key_of_pair_in_map_of_pairs not in map_of_pairs_to_m \
+                                or m > map_of_pairs_to_m[key_of_pair_in_map_of_pairs]:
+                            # save for each pair of arnodes in the current layer its biggest m
                             map_of_pairs_to_m[key_of_pair_in_map_of_pairs] = m
 
-            # now search map_of_pairs_to_m for the best pair
+            # now we want to find the best pair in the current layer
+            # the best pair would have the minimum m
+            # search map_of_pairs_to_m for the best pair
             best_pair_in_layer = None
             m_of_best_pair_in_layer = float("inf")  # infinity
             for current_pair, m_of_current_pair in map_of_pairs_to_m.items():
@@ -621,10 +648,10 @@ class Network:
             raise Exception("no arnode set found that is legible for merging")
 
         # now you have the best pair to merge in the network so return the pair attributes
-        # best_pair data is of the form (table_num1, index_in_table1, table_num2, index_in_table2)
+        # best_pair data is of the form (table_num1, key_in_table1, table_num2, key_in_table2)
         # and they should have the same table number
-        table_number = best_pair[1]
-        pairs_indices_in_table = [best_pair[0], best_pair[2]]
+        table_number = best_pair[0]
+        pairs_indices_in_table = [best_pair[1], best_pair[3]]
 
         return layer_of_best_pair, table_number, pairs_indices_in_table
 
