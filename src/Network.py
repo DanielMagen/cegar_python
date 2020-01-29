@@ -9,7 +9,7 @@ class Network:
     # "<" would mean that we want to verify y < c
     # note that we try to find a counter example to the property we want to verify
     # so if we want to verify that y > c we would search for an input which gives us y<=c
-    POSSIBLE_VERIFICATION_GOALS = ['<', '>']
+    POSSIBLE_VERIFICATION_GOALS = ['unsat >=', 'unsat <=']
 
     # if we want to verify that N(x) > c,
     # then we would create create a network N' such that N(x) >= N'(x)
@@ -20,8 +20,8 @@ class Network:
     # if we want to make sure that y < c, i.e. we want to unsat y >= c, we need to increase the output of the network.
     # the same hold for the opposite case,
     # if we want to make sure that y > c, i.e. we want to unsat y <= c, we need to decrease the output of the network.
-    ABSTRACTION_WOULD_INCREASE_OUTPUT = POSSIBLE_VERIFICATION_GOALS.index('<')
-    ABSTRACTION_WOULD_DECREASE_OUTPUT = POSSIBLE_VERIFICATION_GOALS.index('>')
+    ABSTRACTION_WOULD_INCREASE_OUTPUT = POSSIBLE_VERIFICATION_GOALS.index('unsat >=')
+    ABSTRACTION_WOULD_DECREASE_OUTPUT = POSSIBLE_VERIFICATION_GOALS.index('unsat <=')
     UNINITIALIZED_GOAL = -1
 
     NUMBER_OF_TABLES_IN_LAYER = Layer.NUMBER_OF_OVERALL_TABLES
@@ -226,24 +226,25 @@ class Network:
 
         this function would set self.goal to either
         ABSTRACTION_WOULD_INCREASE_OUTPUT or ABSTRACTION_WOULD_DECREASE_OUTPUT
+        and would set the output bounds
 
         :return: a list of te output nodes global incoming ids
         """
-
-        def get_node_global_incoming_id(node):
-            return node.get_global_incoming_id()
-
         last_layer = self.layers[-1]
-        list_of_nodes = last_layer.get_list_of_all_nodes_for_table(False, Layer.INDEX_OF_UNPROCESSED_TABLE)
+        is_arnode = False
+        list_of_nodes = last_layer.get_list_of_all_nodes_for_table(is_arnode, Layer.INDEX_OF_UNPROCESSED_TABLE)
         if len(list_of_nodes) != 5:
             raise Exception("acas should have exactly 5 outputs")
 
         if which_acas_output == 1:
-            # we want to unsat y0 >= 3.9911256459
+            # we want to make sure that y0 < 3.9911256459
+            # so we want to unsat y0 >= 3.9911256459
             self.goal = Network.ABSTRACTION_WOULD_INCREASE_OUTPUT
 
             list_of_nodes[0].set_lower_and_upper_bound(3.9911256459, float('inf'))
 
+            # should bounds be set on all output nodes? if acas has 5 different output nodes then in this case we dont
+            # care what happens to the rest in this case?
             self.output_bounds_were_set = True
 
             return [list_of_nodes[0].get_global_incoming_id()]
@@ -264,23 +265,27 @@ class Network:
                 # + y0 - y4 <= 0
                 self.goal = Network.ABSTRACTION_WOULD_DECREASE_OUTPUT
             else:
-                raise ValueError("we only now of 4 possible acas outputs")
+                raise ValueError("there are only 4 possible acas outputs")
 
             # y0 node would be y_nodes[0], y1 node would be y_nodes[1] and so on
             y_nodes = [last_layer_nodes_map[i] for i in range(5)]
 
-            # create a new layer and input to it the differences between the nodes
+            # we want to create a new layer and input to it the differences between the nodes
+            # first create the new output nodes
             new_last_layer = self.layers[-1].create_next_layer()
             self.layers.append(new_last_layer)
             new_output_nodes = []
+            bias_for_nodes = 0
             for i in range(4):
-                new_output_nodes.append(new_last_layer.create_new_node(0))
+                new_output_nodes.append(new_last_layer.create_new_node(bias_for_nodes))
 
-            # now connect the new output nodes to the previous ones
+            # now connect the new output nodes to the y_nodes
+
             # first prepare the various connection data you'll need
-            # the connection to y0 would be of weight 1 and the connection to the rest would be of weight -1
             # what we are creating here is a connection data list as the NodeEdges class requires
+            # the connection to y0 would be of weight 1 and the connection to the rest would be of weight -1
             connections_to_ys = [[*y_nodes[i].get_location(), -1, y_nodes[i]] for i in range(len(y_nodes))]
+            # change the connection to y0 to be +1 instead of -1
             connections_to_ys[0][NodeEdges.INDEX_OF_WEIGHT_IN_DATA] = 1
 
             # now connect each new output node to the previous y's
@@ -298,6 +303,8 @@ class Network:
 
             self.output_bounds_were_set = True
 
+            def get_node_global_incoming_id(node):
+                return node.get_global_incoming_id()
             return list(map(get_node_global_incoming_id, new_output_nodes))
 
     def preprocess_more_layers(self, number_of_layers_to_preprocess, raise_error_if_overflow=False):
