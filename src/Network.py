@@ -341,11 +341,10 @@ class Network:
         layers are available for forward activation only if they have been preprocessed before.
 
         if its false, it simply forward activates as many layers as it can. note that this number could be 0.
-
         """
         up_to = self.last_layer_not_forward_activated - number_of_layers_to_forward_activate
         if raise_error_if_overflow and up_to < self.last_layer_not_preprocessed:
-            raise Exception("requested to forward activate more layers than there are available")
+            raise Exception("requested to forward activate more layers than there were preprocessed")
 
         for i in range(self.last_layer_not_forward_activated,
                        max(self.last_layer_not_preprocessed, up_to), -1):
@@ -353,6 +352,7 @@ class Network:
             for table_number in Layer.OVERALL_ARNODE_TABLES:
                 function_to_calculate_merger_of_outgoing_edges = self. \
                     get_function_to_calc_weight_for_outgoing_edges_for_arnode(table_number)
+
                 current_layer.forward_activate_arnode_table(
                     table_number,
                     function_to_calculate_merger_of_outgoing_edges)
@@ -378,18 +378,21 @@ class Network:
         """
         up_to = self.last_layer_not_fully_activated - number_of_layers_to_fully_activate
         if raise_error_if_overflow:
-            # to be fully activated a layer needs to have the layer before it forward activated, hence the +1
+            # to be fully activated a layer needs to have the layer before it forward activated
+            # hence the + 1
             if up_to < self.last_layer_not_forward_activated + 1:
-                raise Exception("requested to fully activate more layers than there are available")
+                raise Exception("requested to fully activate more layers than there were forward activated")
             elif up_to == -1:
                 # i.e. te user wants to fully activate the input which is forbidden according to assumption (3)
                 raise Exception("requested to fully activate more layers than there are available")
 
-        # in a bit of serendipity, the fact that we allow only layers to be fully activated if
+        # to preserve assumption (3) the input layer could never be fully activated.
+        # in a bit of serendipity (and part rigorousness), the fact that we allow layers to be fully activated only if
         # their immediate previous layer has been forward activate, means that the input layer could never be
         # fully activated, because the "previous layer to it" (which does not exist), have not been forward activated,
-        # this comes into effect in the '+ 1' in the loop.
-        # to preserve assumption (3) the input layer could never be fully activated.
+        # this comes into effect in the '+ 1' in the loop
+        # so this +1 takes care of both the demand that the first layer must never be fully activated and that
+        # a layer can be fully activated only if their immediate previous layer has been forward activate
         for i in range(self.last_layer_not_fully_activated,
                        max(self.last_layer_not_forward_activated + 1, up_to), -1):
             current_layer = self.layers[i]
@@ -404,7 +407,7 @@ class Network:
 
             self.last_layer_not_fully_activated -= 1
 
-    def preprocess_more_layers_the_entire_network(self):
+    def preprocess_the_entire_network(self):
         """
         this function preprocess all of the layers in the network
         """
@@ -414,7 +417,7 @@ class Network:
         """
         this function preprocess, and forward activates all of the layers in the network
         """
-        self.preprocess_more_layers_the_entire_network()
+        self.preprocess_the_entire_network()
         self.forward_activate_more_layers(len(self.layers), raise_error_if_overflow=False)
 
     def fully_activate_the_entire_network(self):
@@ -438,6 +441,12 @@ class Network:
     """
 
     ############ IMPORTANT - for now the function is not commutative, ask guy and yithzak how to transform it into such
+    # the problem is that there are at least 2^n ways to decide the weight of the merged edge
+    # for example
+    # sum of max of max of sum ...
+    # or
+    # max of max of sum of max...
+    # and so on
     def get_function_to_calc_weight_for_incoming_edges_for_arnode(self,
                                                                   table_number_of_arnode):
         """
