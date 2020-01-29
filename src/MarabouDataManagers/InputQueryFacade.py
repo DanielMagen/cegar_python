@@ -2,6 +2,9 @@ from maraboupy import MarabouCore
 import copy
 
 
+# TODO does a variable must have all bounds set?
+#  in the functions setLowerBound and setUpperBound in GlobalDataManager
+#  I didnt set any bounds if we were given infinities
 class InputQueryFacade:
     def __init__(self):
         self.equList = []

@@ -96,7 +96,7 @@ class Node:
         # make it unnecessary
         self.finished_lifetime = False
 
-    ################ remove when transferring to cpp
+    # remove when transferring to cpp
     def check_if_killed_and_raise_error_if_is(self):
         if self.finished_lifetime:
             raise Exception("this node is dead and can not support any function")

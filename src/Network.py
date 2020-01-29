@@ -446,13 +446,13 @@ class Network:
     of the arnode edges based on their type and the network goal
     """
 
-    ############ IMPORTANT - for now the function is not commutative, ask guy and yithzak how to transform it into such
-    # the problem is that there are at least 2^n ways to decide the weight of the merged edge
-    # for example
-    # sum of max of max of sum ...
-    # or
-    # max of max of sum of max...
-    # and so on
+    # TODO - for now the function is not commutative, ask guy and yithzak how to transform it into such
+    #  the problem is that there are at least 2^n ways to decide the weight of the merged edge
+    #  for example
+    #  sum of max of max of sum ...
+    #  or
+    #  max of max of sum of max...
+    #  and so on
     def get_function_to_calc_weight_for_incoming_edges_for_arnode(self,
                                                                   table_number_of_arnode):
         """
@@ -512,7 +512,7 @@ class Network:
         # for now it seems that the function is sum all the times
         return lambda node, lis: sum(lis)
 
-    ######################## ask Yithzak about how to calculate the node biases - his paper assumes that there are none
+    # TODO ask Yithzak about how to calculate the node biases - his paper assumes that there are none
     def get_function_to_calc_bias_for_arnode(self,
                                              table_number_of_arnode):
         """
