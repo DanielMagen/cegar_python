@@ -53,13 +53,12 @@ class Network:
         not covered in the paper).
         however, we do support adding the output bounds for the AcasNnet, which are hardcoded into this class.
         """
-        number_of_nodes_in_network = sum(nnet_reader_object.layerSizes)
+        number_of_nodes_in_network = nnet_reader_object.get_number_of_nodes_in_network
         self.global_network_manager = GlobalNetworkManager(
             Network.MULTIPLICITY_OF_IDS * number_of_nodes_in_network)
 
         self.layers = []
-        number_of_layers_in_network = len(nnet_reader_object.layerSizes)
-        self._initialize_layers(number_of_layers_in_network)
+        self._initialize_layers(nnet_reader_object)
 
         # all layers in the network are not preprocessed (all nodes are in the unprocessed tables)
         # note in the current implementation we do not use the full potential of the layer class capabilities
@@ -114,11 +113,13 @@ class Network:
 
         return to_return
 
-    def _initialize_layers(self, number_of_layers_in_network):
+    def _initialize_layers(self, nnet_reader_object):
+        number_of_layers_in_network = nnet_reader_object.get_number_of_layers_in_network()
+
         first_layer = Layer(Network.LOCATION_OF_FIRST_LAYER,
-                                                             self.global_network_manager,
-                                                             Layer.NO_POINTER_TO_ADJACENT_LAYER,
-                                                             Layer.NO_POINTER_TO_ADJACENT_LAYER)
+                            self.global_network_manager,
+                            Layer.NO_POINTER_TO_ADJACENT_LAYER,
+                            Layer.NO_POINTER_TO_ADJACENT_LAYER)
         self.layers.append(first_layer)
         # at this point we assert self.layers.index(first_layer) == Network.LOCATION_OF_FIRST_LAYER
 
@@ -127,19 +128,17 @@ class Network:
 
     def _initialize_nodes_in_all_layers(self, nnet_reader_object):
         """
-        this function creates all the nodes, their relations, their bounds, equations and constraints
+        this function creates all the nodes along with their relations, bounds, equations and constraints
         :param nnet_reader_object:
 
         :return: 2 maps, 1 for the input nodes and 1 for the output nodes.
         those maps would map between index of the node in the conceptual layer (as given by the nnet_reader_object)
         to the key of the node in the unprocessed_table in the layer object
         """
-        # first, initialize all the nodes and their connections
-
-        # those maps would map between index of the node in the conceptual layer (as given by the matrix)
+        # those maps would map between index of the node in the conceptual layer (as given by the nnet_reader_object)
         # to the key of the node in the unprocessed_table in the layer object
-        # from assumption (2) all nodes created would be added to the unprocessed table of the layer so its enough to
-        # save those keys, since we wont move any nodes before finishing creating the entire network
+        # from assumption (2) every node created would be added to the unprocessed table of its layer so its enough to
+        # save those keys, since we wont move any node to other tables before finishing creating the entire network
         current_layer_nodes_map = {}
         previous_layer_nodes_map = {}
 
@@ -147,61 +146,68 @@ class Network:
         first_layer_nodes_map = {}
         last_layer_nodes_map = {}
 
+        # first, initialize all the nodes and their connections
         for current_layer_number in range(len(self.layers)):
             current_layer = self.layers[current_layer_number]
-            number_of_nodes_in_current_layer = nnet_reader_object.layerSizes[current_layer_number]
+            number_of_nodes_in_current_layer = nnet_reader_object.get_number_of_nodes_in_layer(current_layer_number)
 
             # first create all the nodes in the layer
-            for current_node_number in range(number_of_nodes_in_current_layer):
-                current_layer_nodes_map[current_node_number] = current_layer.create_new_node(
-                    nnet_reader_object.get_bias_for_node(current_layer_number, current_node_number))
+            for current_node_number_in_conceptual_layer in range(number_of_nodes_in_current_layer):
+                bias_for_new_node = nnet_reader_object.get_bias_for_node(current_layer_number,
+                                                                         current_node_number_in_conceptual_layer)
+                current_layer_nodes_map[current_node_number_in_conceptual_layer] = current_layer.create_new_node(
+                    bias_for_new_node)
 
-            # next connect all those nodes, to the nodes from the previous layer
-            # we do not connect nodes which are connected to each other with 0 weight
-            for current_node_index_in_layer, current_node_key_in_unprocessed_table in current_layer_nodes_map.items():
+            # next connect all the nodes in the current layer to the nodes from the previous layer
+            # we do not connect nodes which are connected to each other with weight 0
+            for current_node_index_in_conceptual_layer, current_node_key_in_unprocessed_table in current_layer_nodes_map.items():
+                # go over each node in the current layer and create a list of all its connections to
+                # nodes in the previous layer
                 list_of_pairs_of_keys_and_weights = []
                 for a_node_index_in_previous_layer, the_key_in_unprocessed_table_of_node_in_previous_layer \
                         in previous_layer_nodes_map.items():
                     weight_of_connection = nnet_reader_object.get_weight_of_connection(current_layer_number,
-                                                                                       current_node_index_in_layer,
+                                                                                       current_node_index_in_conceptual_layer,
                                                                                        a_node_index_in_previous_layer)
                     if weight_of_connection != 0:
                         list_of_pairs_of_keys_and_weights.append(
                             (the_key_in_unprocessed_table_of_node_in_previous_layer,
                              weight_of_connection))
 
-                # finally add all the connections to the current node
+                # now that we have a list of weights, add all the connections to the current node
                 current_layer.add_or_edit_neighbors_to_node_in_unprocessed_table_by_bulk(
                     current_node_key_in_unprocessed_table,
                     Layer.INCOMING_LAYER_DIRECTION,
                     list_of_pairs_of_keys_and_weights)
 
-            # after finishing creating all connections between this layer and the previous one,
+            # now we finished creating all connections between this layer and the previous one
+            if current_layer_number == Network.LOCATION_OF_FIRST_LAYER:
+                first_layer_nodes_map = current_layer_nodes_map
+            if current_layer_number == len(self.layers) - 1:
+                last_layer_nodes_map = current_layer_nodes_map
+
             # set previous_layer_nodes_map to be current_layer_nodes_map before continuing the loop
             previous_layer_nodes_map = current_layer_nodes_map
             current_layer_nodes_map = {}
 
-            if current_layer_number == Network.LOCATION_OF_FIRST_LAYER:
-                first_layer_nodes_map = previous_layer_nodes_map
-            if current_layer_number == len(self.layers) - 1:
-                last_layer_nodes_map = previous_layer_nodes_map
-
-        # first create the bounds on all input nodes which reside in layer 0
+        # at this point we created all the nodes and their connections
+        # now create the bounds on all input nodes (which reside in layer 0)
         first_layer = self.layers[Network.LOCATION_OF_FIRST_LAYER]
         is_arnode = False
         table_number = Layer.INDEX_OF_UNPROCESSED_TABLE
         lower_bounds = nnet_reader_object.inputMinimums
         upper_bounds = nnet_reader_object.inputMaximums
 
-        for node_index_in_layer, node_key_in_unprocessed_table in first_layer_nodes_map.items():
+        for node_index_in_conceptual_layer, node_key_in_unprocessed_table in first_layer_nodes_map.items():
             first_layer.set_lower_and_upper_bound_for_node(is_arnode, table_number,
                                                            node_key_in_unprocessed_table,
-                                                           lower_bounds[node_index_in_layer],
-                                                           upper_bounds[node_index_in_layer])
+                                                           lower_bounds[node_index_in_conceptual_layer],
+                                                           upper_bounds[node_index_in_conceptual_layer])
 
         # now create the equations for all the nodes
-        # we dont create an equation for the input nodes
-        # since all nodes still reside in the unprocessed table we create the equations and constraints only for them
+        # we don't need to create an equation for the input nodes since they don't have incoming connections
+        # since all nodes still reside in the unprocessed table we create the equations and constraints
+        # by looking only for nodes in the unprocessed table
         is_arnode = False
         table_number = Layer.INDEX_OF_UNPROCESSED_TABLE
         for i in range(Network.LOCATION_OF_FIRST_LAYER + 1, len(self.layers)):

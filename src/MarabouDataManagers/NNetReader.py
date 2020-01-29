@@ -63,6 +63,8 @@ class NNetReader:
             self.weights = weights
             self.biases = biases
 
+            self.number_of_nodes_in_network = sum(self.layerSizes)
+
     def get_bias_for_node(self, layer_number, index_of_node_in_layer):
         """
         :param layer_number:
@@ -76,6 +78,7 @@ class NNetReader:
         #         if layer_number == Network.LOCATION_OF_FIRST_LAYER:
         #             return Node.NO_BIAS
         #         return matrix[layer_number - 1][LOCATION_OF_BIASES][index_in_layer_of_node][0]
+
         return self.biases[layer_number][index_of_node_in_layer]
 
     def get_weight_of_connection(self, layer_number, index_of_node_in_layer, index_of_node_in_previous_layer):
@@ -91,4 +94,14 @@ class NNetReader:
         # then use this code:
         # LOCATION_OF_WEIGHTS = 0
         # return matrix[layer_number][LOCATION_OF_WEIGHTS][index_of_node_in_layer][index_of_node_in_previous_layer]
+
         return self.weights[layer_number][index_of_node_in_layer][index_of_node_in_previous_layer]
+
+    def get_number_of_nodes_in_network(self):
+        return self.number_of_nodes_in_network
+
+    def get_number_of_layers_in_network(self):
+        return self.numLayers
+
+    def get_number_of_nodes_in_layer(self, layer_index):
+        return self.layerSizes[layer_index]
