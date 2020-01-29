@@ -1,5 +1,6 @@
 from src.MarabouDataManagers.GlobalDataManager import GlobalDataManager
-from maraboupy import MarabouCore
+from Mock.maraboupy import MarabouCore
+# in real implementation replace with "from maraboupy import MarabouCore"
 
 """
 manage some of the global data which is required for the marabou system

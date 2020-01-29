@@ -1,4 +1,5 @@
-from maraboupy import MarabouCore
+from Mock.maraboupy import MarabouCore
+# in real implementation replace with "from maraboupy import MarabouCore"
 import copy
 
 
@@ -119,5 +120,6 @@ class InputQueryFacade:
         if (id1, id2) in self.reluList:
             self.reluList.remove((id1, id2))
 
-    def get_new_equation(self):
+    @staticmethod
+    def get_new_equation():
         return MarabouCore.Equation()
