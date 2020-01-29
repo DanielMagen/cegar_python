@@ -89,11 +89,18 @@ class Network:
         # state as the state that would be used to check possible sat solutions
         if not self.output_bounds_were_set:
             # violation of assumption (5)
-            raise Exception("the output bounds were not set")
-        else:
-            self._create_valid_equations_for_all_nodes_without_valid_equations()
-            self.global_network_manager.save_current_network_as_original_network(input_nodes_global_incoming_ids,
-                                                                                 output_nodes_global_incoming_ids)
+            raise AssertionError("the output bounds were not set")
+        if self.goal == Network.ABSTRACTION_WOULD_DECREASE_OUTPUT:
+            # for now we do not support the ABSTRACTION_WOULD_DECREASE_OUTPUT parameter
+            # the algorithms to decide which nodes to split or merge might depend
+            # on the verification goal of the network (<= >=). in this case I don't know how to change the algorithms
+            # to preserve their correctness
+            # in his paper, yitzhak always assumed that the goal would always be to increase the output.
+            raise AssertionError("we currently do not support the ABSTRACTION_WOULD_DECREASE_OUTPUT goal")
+
+        self._create_valid_equations_for_all_nodes_without_valid_equations()
+        self.global_network_manager.save_current_network_as_original_network(input_nodes_global_incoming_ids,
+                                                                             output_nodes_global_incoming_ids)
 
     def _layer_node_map_to_global_ids(self, layer_number, layer_nodes_map):
         """
@@ -263,7 +270,13 @@ class Network:
                 # + y0 - y2 <= 0
                 # + y0 - y3 <= 0
                 # + y0 - y4 <= 0
-                self.goal = Network.ABSTRACTION_WOULD_DECREASE_OUTPUT
+
+                # which is equivalent to unsat
+                # - y0 + y1 >= 0
+                # - y0 + y2 >= 0
+                # - y0 + y3 >= 0
+                # - y0 + y4 >= 0
+                self.goal = Network.ABSTRACTION_WOULD_INCREASE_OUTPUT
             else:
                 raise ValueError("there are only 4 possible acas outputs")
 
@@ -283,10 +296,17 @@ class Network:
 
             # first prepare the various connection data you'll need
             # what we are creating here is a connection data list as the NodeEdges class requires
-            # the connection to y0 would be of weight 1 and the connection to the rest would be of weight -1
-            connections_to_ys = [[*y_nodes[i].get_location(), -1, y_nodes[i]] for i in range(len(y_nodes))]
+            # in acas_output 2 the connection to y0 would be of weight 1 and the connection to
+            # the rest would be of weight -1
+            # in acas_outputs 3,4 it would be the reverse
+            if which_acas_output == 2:
+                weight_of_connection_to_y0 = 1
+            else:
+                weight_of_connection_to_y0 = -1
+            connections_to_ys = [[*y_nodes[i].get_location(), -weight_of_connection_to_y0, y_nodes[i]]
+                                 for i in range(len(y_nodes))]
             # change the connection to y0 to be +1 instead of -1
-            connections_to_ys[0][NodeEdges.INDEX_OF_WEIGHT_IN_DATA] = 1
+            connections_to_ys[0][NodeEdges.INDEX_OF_WEIGHT_IN_DATA] *= -1
 
             # now connect each new output node to the previous y's
             for i in range(len(new_output_nodes)):
@@ -294,12 +314,8 @@ class Network:
                                                                   [connections_to_ys[0], connections_to_ys[i + 1]])
 
             # now set the bounds on the nodes
-            if which_acas_output == 2:
-                for i in range(len(new_output_nodes)):
-                    new_output_nodes[i].set_lower_and_upper_bound(0, float('inf'))
-            else:
-                for i in range(len(new_output_nodes)):
-                    new_output_nodes[i].set_lower_and_upper_bound(float('-inf'), 0)
+            for i in range(len(new_output_nodes)):
+                new_output_nodes[i].set_lower_and_upper_bound(0, float('inf'))
 
             self.output_bounds_were_set = True
 
