@@ -582,7 +582,9 @@ class Network:
         # so assumption (4) is again preserved
 
         best_pair = None
-        best_pair_m = float("inf")  # m would indicate maximum difference between weights.
+        best_pair_m = float("inf")
+        # each pair "m" would indicate maximum difference between weights.
+        # the best pair have the lowest m
         layer_of_best_pair = -1
 
         for i in range(len(self.layers) - 3, self.last_layer_not_fully_activated - 1, -1):
@@ -665,39 +667,45 @@ class Network:
         a table number
         the key inside this table
         a list of lists which would be a valid partition of the
-        arnode inner nodes.
+        arnode inner nodes - since we only implement algorithm 3, this list would actually tell us to split
+        by taking only 1 inner node out of the arnode
 
         if no arnode is found that is legible for splitting, this function would raise an error
         """
-        # the output arnode wont be split to preserve assumption (4) so we check to see if we fully activated
-        # a layer before the output layer
+        # the outer layer arnodes wont be split to preserve assumption (4) so for the same reason specified in the
+        # decide_best_arnodes_to_merge method,
+        # we check to see if we fully activated a layer before the output layer
         if self.last_layer_not_fully_activated >= len(self.layers) - 2:
             raise Exception("can not decide which arnodes to merge since not enough layers are "
                             "fully activated")
 
         best_arnode_to_split = None
         best_arnode_to_split_m = 0
-        index_of_node_to_take_out_of_arnode_in_inner_nodes = -1
+        index_in_inner_nodes_to_take_out_of_arnode = -1
         layer_number_of_best_arnode = -1
 
         # to preserve assumption (4) we should't check if (or even try to) split arnodes in the output or input layers.
         # so we start from len(self.layers) - 2
         # from assumption (3) we know that self.last_layer_not_fully_activated must be at least 0, so the loop is
-        # sound, I will never go below 1. this also means that that we wont ever try to merge or split the input layer
+        # sound, I will never go below 1. this also means that that we wont ever try to split the input layer
         # so assumption (4) is again preserved
-        for i in range(len(self.layers) - 2, self.last_layer_not_fully_activated, -1):
+        for layer_num in range(len(self.layers) - 2, self.last_layer_not_fully_activated, -1):
             for table_number in Layer.OVERALL_ARNODE_TABLES:
-                for current_arnode in self.layers[i].get_iterator_for_all_nodes_for_table(True, table_number):
+                is_arnode = True
+                for current_arnode in self.layers[layer_num].get_iterator_for_all_nodes_for_table(is_arnode,
+                                                                                                  table_number):
                     inner_nodes = current_arnode.get_inner_nodes()
                     if len(inner_nodes) == 1:
-                        # this arnode is not comprised of multiple nodes, hence we skip over it
+                        # this arnode is not comprised of multiple nodes, hence we cant split it so we skip it
                         continue
 
                     for j in range(len(inner_nodes)):
                         node = inner_nodes[j]
-                        # measure the difference between the weight of incoming connection of this node
-                        # to its neighbor x, and the weight of connection of the arnode to the
-                        # arnode that contains x.
+                        # go through all of the inner node incoming neighbors
+                        # for each neighbor measure the difference of weights in connections between
+                        # the weight of connection of this node to its neighbor,
+                        # and
+                        # the weight of connection of the current arnode to the arnode that contains that neighbor.
                         for incoming_connection_data in node.get_iterator_for_connections_data():
                             incoming_node = incoming_connection_data[
                                 NodeEdges.INDEX_OF_REFERENCE_TO_NODE_CONNECTED_TO_IN_DATA]
@@ -715,20 +723,19 @@ class Network:
                             if diff > best_arnode_to_split_m:
                                 best_arnode_to_split_m = diff
                                 best_arnode_to_split = current_arnode
-                                index_of_node_to_take_out_of_arnode_in_inner_nodes = j
-                                layer_number_of_best_arnode = i
+                                index_in_inner_nodes_to_take_out_of_arnode = j
+                                layer_number_of_best_arnode = layer_num
 
         if best_arnode_to_split is None:
             raise Exception("no arnode found that is legible for splitting")
-        # now you have the best arnode to split, but you need to create a valid partition
-        # for this arnode
+        # now you have the best arnode to split, but you need to create a valid partition for this arnode
         partition = [[]]
         best_arnode_to_split_inner_nodes = best_arnode_to_split.get_inner_nodes()
         for i in range(len(best_arnode_to_split_inner_nodes)):
-            if i != index_of_node_to_take_out_of_arnode_in_inner_nodes:
+            if i != index_in_inner_nodes_to_take_out_of_arnode:
                 partition[0].append(best_arnode_to_split_inner_nodes[i])
 
-        partition.append([best_arnode_to_split_inner_nodes[index_of_node_to_take_out_of_arnode_in_inner_nodes]])
+        partition.append([best_arnode_to_split_inner_nodes[index_in_inner_nodes_to_take_out_of_arnode]])
 
         table, key = best_arnode_to_split.get_location()
 
@@ -767,11 +774,8 @@ class Network:
             for data in self.global_network_manager.get_list_of_nodes_that_dont_have_valid_equations():
                 layer_number, table_number, key_in_table, node_code = data
                 layer = self.layers[layer_number]
-                if node_code == self.global_network_manager.CODE_FOR_NODE:
-                    layer.calculate_equation_and_constraint_for_a_specific_node(False, table_number, key_in_table)
-                else:
-                    # node_code == self.global_network_manager.CODE_FOR_ARNODE:
-                    layer.calculate_equation_and_constraint_for_a_specific_node(True, table_number, key_in_table)
+                is_arnode = (node_code == self.global_network_manager.CODE_FOR_ARNODE)
+                layer.calculate_equation_and_constraint_for_a_specific_node(is_arnode, table_number, key_in_table)
 
     def check_if_network_is_sat_or_unsat(self):
         """
