@@ -1,38 +1,29 @@
 
 class IDManager:
     LOCATION_OF_LARGEST_AVAILABLE_ID = -2
-    LENGTH_OF_SIMPLE_RANGE = 2  # if self.ranges is of that length then its of the form [a, max]
+    LENGTH_OF_SIMPLE_RANGE = 2  # if self.ranges is of that length then its of the form [a, infinity]
 
-    """
-    currently this class does not support reaching the end of its available id range.
-    if we exhaust the ids, then the class behavior is no defined. it would make errors. 
-    so do not exhaust the id ranges in it!
-    
-    things that I want to improve but dont have time:
-    1) fix the id manager so that it would support reaching the end of the available range
-    2) support for infinite ids
-    """
-
-    def __init__(self, max_id_non_exclusive):
+    def __init__(self):
         """
         this class would give available ids in increasing order
-        :param max_id_non_exclusive: the maximum id that can be given
+        currently this class supports only infinite ids.
+        it does not support limiting the number of ids given.
         """
-        self.max_id = max_id_non_exclusive
+
         """
         the list will hold an ordered list of ranges of the form [a,b],[c,d],[e,f],...
         (such that for the range [a,b] valid ids to give would be a,a+1,..., b-1)
         in order to save space declaring useless lists the ranges will be held
         consecutively as such: a,b,c,d,e,f,...
         """
-        self.ranges = [0, max_id_non_exclusive]
+        self.ranges = [0, float('inf')]
 
     def _check_if_ranges_has_holes(self):
         """
         :return: true if the range of free ids has holes in it, i.e. if self.ranges is not
-        of the form [a, max_id_non_exclusive]
+        of the form [a, infinity]
         """
-        # since the only time the ranges wont have holes is when it is in the form [a, max_id_non_exclusive]
+        # since the only time the ranges wont have holes is when it is in the form [a, infinity]
         # we simply need to check if its length is different than 2
         return len(self.ranges) != 2
 
@@ -64,9 +55,6 @@ class IDManager:
         return end
 
     def get_new_id(self):
-        if len(self.ranges) == 0:
-            raise ValueError('there are no available ids')
-
         to_return = self.ranges[0]
         self.ranges[0] += 1
 
@@ -81,15 +69,7 @@ class IDManager:
         :param id_returned: an id that should be marked as available
         for now this function almost completely trusts the user that a correct id is given back
         (i.e. we only get an id that was given before)
-
-        also, this function assumes that the user "cleaned" the id before returning it.
-        i.e. no bounds, relu constraints, or any other kind of things are related to the id.
-        so the user should not expect that this function will "clean" the id for him. this fact is used in outside
-        classes, so be very careful if you want to change it.
         """
-        if id_returned >= self.max_id:
-            raise ValueError('the id was never given')
-
         index_inserted = self._insert_id_into_ranges(id_returned)
 
         # now check if we can merge adjacent ranges

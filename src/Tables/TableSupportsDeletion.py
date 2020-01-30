@@ -1,14 +1,12 @@
 from src.Tables.Table import AbstractTable
+from src.IDManager import IDManager
 
 
 class TableSupportsDeletion(AbstractTable):
     def __init__(self, layer_number, table_number, layer_is_inner, global_data_manager):
         super().__init__(layer_number, table_number, layer_is_inner, global_data_manager)
         self.nodes = {}
-        self.key_for_new_node = 0  # this would serve as the key of the next node that would be added to the table
-        # later if someone could fix the id manager to support infinite numbers of ids, or to at least support reaching
-        # the end of the possible ids range, then we could use this id manager to make sure that the keys wont increase
-        # too much
+        self.id_manager = IDManager()
 
     def create_table_below_of_same_type(self):
         table_to_return = TableSupportsDeletion(*self.get_arguments_to_create_table_below())
@@ -27,9 +25,8 @@ class TableSupportsDeletion(AbstractTable):
         return len(self.nodes)
 
     def _add_node_to_table_without_checking(self, node):
-        new_key_for_node = self.key_for_new_node
+        new_key_for_node = self.id_manager.get_new_id()
         self.nodes[new_key_for_node] = node
-        self.key_for_new_node += 1
         return new_key_for_node
 
     def get_node_by_key(self, node_key):
@@ -41,6 +38,7 @@ class TableSupportsDeletion(AbstractTable):
         notifies lower tables that this table size has changed.
         :param node_key:
         """
+        self.id_manager.give_id_back(node_key)
         del self.nodes[node_key]
 
     def remove_node_from_table_and_relocate_to_other_table(self, node_key, new_table_manager):

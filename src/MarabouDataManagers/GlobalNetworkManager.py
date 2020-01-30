@@ -14,8 +14,8 @@ class GlobalNetworkManager(GlobalDataManager):
     CODE_FOR_ORIGINAL_NETWORK = 0
     CODE_FOR_CURRENT_NETWORK = 1
 
-    def __init__(self, max_id_non_exclusive):
-        super().__init__(max_id_non_exclusive)
+    def __init__(self):
+        super().__init__()
 
         self.counter_example_of_last_verification_attempt = None
 

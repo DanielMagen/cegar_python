@@ -20,18 +20,11 @@ class GlobalDataManager(IDManager):
     CODE_FOR_NODE = 0
     CODE_FOR_ARNODE = 1
 
-    """
-    currently this class does not support reaching the end of its available id range.
-    if we exhaust the ids, then the class behavior is no defined. it would make errors. 
-    so do not exhaust the id ranges in it!
-    """
-
-    def __init__(self, max_id_non_exclusive):
+    def __init__(self):
         """
         this class would give available ids in increasing order
-        :param max_id_non_exclusive: the maximum id that can be given
         """
-        super().__init__(max_id_non_exclusive)
+        super().__init__()
 
         self.input_query = InputQueryFacade()
 

@@ -29,11 +29,6 @@ class Network:
 
     NUMBER_OF_TABLES_IN_LAYER = Layer.NUMBER_OF_OVERALL_TABLES
 
-    # ratio between number of initial nodes to available ids
-    # its necessary because for now the id manager does not support infinite ids and also does not support
-    # reaching the end of the available range
-    MULTIPLICITY_OF_IDS = 20  # arbitrarily set it to 20
-
     # obvious, but I put it here to emphasize that this shouldn't change by any means
     LOCATION_OF_FIRST_LAYER = 0
 
@@ -56,9 +51,7 @@ class Network:
         not covered in the paper).
         however, we do support adding the output bounds for the AcasNnet, which are hardcoded into this class.
         """
-        number_of_nodes_in_network = nnet_reader_object.get_number_of_nodes_in_network()
-        self.global_network_manager = GlobalNetworkManager(
-            Network.MULTIPLICITY_OF_IDS * number_of_nodes_in_network)
+        self.global_network_manager = GlobalNetworkManager()
 
         self.layers = []
         # more layers can be added later since we might need to change the output to fit cegar expected network
