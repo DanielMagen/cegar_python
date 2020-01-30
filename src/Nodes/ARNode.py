@@ -1,3 +1,4 @@
+from src.NodeEdges import NodeEdges
 from src.Nodes.Node import Node
 
 
@@ -381,12 +382,6 @@ class ARNode(Node):
                     raise AssertionError("can not activate arnode because an outgoing connection can not link into any "
                                          "existent arnode")
 
-                # if an node is connected to us by an edge that is outgoing from us it means that for him we are
-                # an incoming connection,m and vice versa
-                if not arnode_connected_to.check_if_neighbor_exists(-direction_of_connection, our_location):
-                    raise AssertionError("arnode that should be connected to this arnode was not connected. can not "
-                                         "forward activate arnode")
-
     def forward_activate_arnode(self, function_to_calculate_merger_of_outgoing_edges):
         """
         this method partially activates the arnode.
@@ -466,12 +461,11 @@ class ARNode(Node):
                                          "forward activated")
 
         # check that all arnodes we are connected to by an outgoing connection are fully activated
-        for arnode in self.get_iterator_for_connections_data(Node.OUTGOING_EDGE_DIRECTION):
-            for edge_data in arnode.get_iterator_for_connections_data(direction_of_connection):
-                _, _, _, arnode_connected_to = edge_data
-                if arnode_connected_to.get_activation_status() != ARNode.FULLY_ACTIVATED_STATUS:
-                    raise AssertionError("can not fully activate arnode since an outgoing connection is not "
-                                         "fully activated")
+        for connections_data in self.get_iterator_for_connections_data(Node.OUTGOING_EDGE_DIRECTION):
+            arnode_connected_to = connections_data[NodeEdges.INDEX_OF_REFERENCE_TO_NODE_CONNECTED_TO_IN_DATA]
+            if arnode_connected_to.get_activation_status() != ARNode.FULLY_ACTIVATED_STATUS:
+                raise AssertionError("can not fully activate arnode since an outgoing connection is not "
+                                     "fully activated")
 
         return True
 
