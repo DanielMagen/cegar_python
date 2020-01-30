@@ -43,11 +43,8 @@ class Layer:
         self.previous_layer = pointer_to_previous_layer
         self.next_layer = pointer_to_next_layer
 
-        if pointer_to_previous_layer == Layer.NO_POINTER_TO_ADJACENT_LAYER or \
-                pointer_to_next_layer == Layer.NO_POINTER_TO_ADJACENT_LAYER:
-            self.layer_is_inner = False
-        else:
-            self.layer_is_inner = True
+        self.layer_is_inner = False
+        self._set_is_inner()
 
         # initialize the regular_node_tables
         # to preserve assumption (2) the first 4 tables must have indices of 0-3 in order, as such give the first table
@@ -73,6 +70,13 @@ class Layer:
     def set_next_layer(self, pointer_to_next_layer):
         self.next_layer = pointer_to_next_layer
 
+    def _set_is_inner(self):
+        if self.previous_layer == Layer.NO_POINTER_TO_ADJACENT_LAYER or \
+                self.next_layer == Layer.NO_POINTER_TO_ADJACENT_LAYER:
+            self.layer_is_inner = False
+        else:
+            self.layer_is_inner = True
+
     def create_next_layer(self):
         """
         :return: creates a new layer which would be this layer "next layer"
@@ -86,6 +90,9 @@ class Layer:
         new_layer = Layer(self.layer_number + 1, self.global_data_manager, pointer_to_previous_layer=self,
                           pointer_to_next_layer=Layer.NO_POINTER_TO_ADJACENT_LAYER)
         self.next_layer = new_layer
+
+        # check if your'e still an inner layer, and if not change it
+        self._set_is_inner()
 
         return new_layer
 
@@ -103,6 +110,9 @@ class Layer:
                           pointer_to_previous_layer=Layer.NO_POINTER_TO_ADJACENT_LAYER,
                           pointer_to_next_layer=self)
         self.previous_layer = new_layer
+
+        # check if your'e still an inner layer, and if not change it
+        self._set_is_inner()
 
         return new_layer
 

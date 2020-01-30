@@ -61,15 +61,8 @@ class Network:
             Network.MULTIPLICITY_OF_IDS * number_of_nodes_in_network)
 
         self.layers = []
+        # more layers can be added later since we might need to change the output to fit cegar expected network
         self._initialize_layers(nnet_reader_object)
-
-        # all layers in the network are not preprocessed (all nodes are in the unprocessed tables)
-        # note in the current implementation we do not use the full potential of the layer class capabilities
-        # the layer class can be preprocessed, forward activated and fully activated with much finer control
-        # but for now we treat the layers as a single block that need to change the states of its nodes all at once
-        self.last_layer_not_preprocessed = len(self.layers) - 1
-        self.last_layer_not_forward_activated = len(self.layers) - 1
-        self.last_layer_not_fully_activated = len(self.layers) - 1
 
         first_layer_nodes_map, last_layer_nodes_map = self._initialize_nodes_in_all_layers(nnet_reader_object)
 
@@ -84,6 +77,14 @@ class Network:
         self.output_bounds_were_set = False
         output_nodes_global_incoming_ids = self.hard_code_acas_output_properties(last_layer_nodes_map,
                                                                                  which_acas_output)
+
+        # all layers in the network are not preprocessed (all nodes are in the unprocessed tables)
+        # note in the current implementation we do not use the full potential of the layer class capabilities
+        # the layer class can be preprocessed, forward activated and fully activated with much finer control
+        # but for now we treat the layers as a single block that need to change the states of its nodes all at once
+        self.last_layer_not_preprocessed = len(self.layers) - 1
+        self.last_layer_not_forward_activated = len(self.layers) - 1
+        self.last_layer_not_fully_activated = len(self.layers) - 1
 
         # finally, before starting to act upon the Network, save the starting network
         # state as the state that would be used to check possible sat solutions
