@@ -1,14 +1,30 @@
 # this is a mock class that is intended to receive the calls for marabou
 
-class mock_input_query:
-    pass
-
 
 class mock_equation:
+    def __init__(self):
+        self.EquationType = 1
+        self.addendList = []
+        self.scalar = 1
+
     def addAddend(self, weight, id):
         pass
 
     def setScalar(self, bias):
+        pass
+
+
+class mock_input_query:
+    def setNumberOfVariables(self, number_of_nodes):
+        pass
+
+    def markInputVariable(self, inputVar, inputIndex):
+        pass
+
+    def markOutputVariable(self, outputVar, outputIndex):
+        pass
+
+    def addEquation(self, eq):
         pass
 
 
