@@ -56,7 +56,7 @@ class Network:
         not covered in the paper).
         however, we do support adding the output bounds for the AcasNnet, which are hardcoded into this class.
         """
-        number_of_nodes_in_network = nnet_reader_object.get_number_of_nodes_in_network
+        number_of_nodes_in_network = nnet_reader_object.get_number_of_nodes_in_network()
         self.global_network_manager = GlobalNetworkManager(
             Network.MULTIPLICITY_OF_IDS * number_of_nodes_in_network)
 
@@ -123,7 +123,7 @@ class Network:
         self.layers.append(first_layer)
         # at this point we assert self.layers.index(first_layer) == Network.LOCATION_OF_FIRST_LAYER
 
-        for i in range(1, number_of_layers_in_network):
+        for i in range(1, number_of_layers_in_network + 1):
             self.layers.append(self.layers[i - 1].create_next_layer())
 
     def _initialize_nodes_in_all_layers(self, nnet_reader_object):
@@ -230,23 +230,25 @@ class Network:
         """
         last_layer = self.layers[-1]
         is_arnode = False
-        list_of_nodes = last_layer.get_list_of_all_nodes_for_table(is_arnode, Layer.INDEX_OF_UNPROCESSED_TABLE)
-        if len(list_of_nodes) != 5:
+        if last_layer.get_number_of_nodes_in_table(is_arnode, Layer.INDEX_OF_UNPROCESSED_TABLE) != 5:
             raise Exception("acas should have exactly 5 outputs")
 
         if which_acas_output not in range(1, 5):
             raise ValueError("there are only 4 possible acas outputs")
 
+        # y0 node would be y_nodes[0], y1 node would be y_nodes[1] and so on
+        y_nodes = [last_layer.get_unprocessed_node_by_key(last_layer_nodes_map[i]) for i in range(5)]
+
         if which_acas_output == 1:
             # we want to make sure that y0 < 3.9911256459
             # so we want to unsat y0 >= 3.9911256459
-            list_of_nodes[0].set_lower_and_upper_bound(3.9911256459, float('inf'))
+            y_nodes[0].set_lower_and_upper_bound(3.9911256459, float('inf'))
 
             # should bounds be set on all output nodes? if acas has 5 different output nodes then in this case we dont
             # care what happens to the rest in this case?
             self.output_bounds_were_set = True
 
-            return [list_of_nodes[0].get_global_incoming_id()]
+            return [y_nodes[i].get_global_incoming_id() for i in range(5)]
 
         """
         if which_acas_output == 2:
@@ -269,8 +271,6 @@ class Network:
             # - y0 + y3 >= 0
             # - y0 + y4 >= 0
         """
-        # y0 node would be y_nodes[0], y1 node would be y_nodes[1] and so on
-        y_nodes = [last_layer_nodes_map[i] for i in range(5)]
 
         # we want to create a new layer and input to it the differences between the nodes
         # first create the new output nodes
@@ -279,7 +279,9 @@ class Network:
         new_output_nodes = []
         bias_for_nodes = 0
         for i in range(4):
-            new_output_nodes.append(new_last_layer.create_new_node(bias_for_nodes))
+            new_node_key = new_last_layer.create_new_node(bias_for_nodes)
+            new_node = new_last_layer.get_unprocessed_node_by_key(new_node_key)
+            new_output_nodes.append(new_node)
 
         # now connect the new output nodes to the y_nodes
 

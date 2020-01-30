@@ -5,7 +5,11 @@ class mock_input_query:
 
 
 class mock_equation:
-    pass
+    def addAddend(self, weight, id):
+        pass
+
+    def setScalar(self, bias):
+        pass
 
 
 def InputQuery():

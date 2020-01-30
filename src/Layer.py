@@ -142,6 +142,13 @@ class Layer:
 
         return tables[table_number].get_list_of_all_nodes()
 
+    def get_number_of_nodes_in_table(self, is_arnode, table_number):
+        tables = self.regular_node_tables
+        if is_arnode:
+            tables = self.arnode_tables
+
+        return tables[table_number].get_number_of_nodes_in_table()
+
     def get_unprocessed_node_by_key(self, key_of_node_in_unprocessed_table):
         return self.regular_node_tables[Layer.INDEX_OF_UNPROCESSED_TABLE].get_node_by_key(
             key_of_node_in_unprocessed_table)

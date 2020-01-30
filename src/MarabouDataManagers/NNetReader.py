@@ -73,13 +73,16 @@ class NNetReader:
         """
         # if you ever want to get the bias from an acasNnet matrix (which would be necessary when the code
         # would be transferred to cpp)
-        # then use this code:
+        # then use this code (didnt test it, so it might be wrong up to a +-1 in the layer number):
         # LOCATION_OF_BIASES = 0
         #         if layer_number == Network.LOCATION_OF_FIRST_LAYER:
         #             return Node.NO_BIAS
         #         return matrix[layer_number - 1][LOCATION_OF_BIASES][index_in_layer_of_node][0]
 
-        return self.biases[layer_number][index_of_node_in_layer]
+        if layer_number == 0:
+            # input layer nodes have no bias
+            return 0
+        return self.biases[layer_number - 1][index_of_node_in_layer]
 
     def get_weight_of_connection(self, layer_number, index_of_node_in_layer, index_of_node_in_previous_layer):
         """
@@ -91,11 +94,11 @@ class NNetReader:
         """
         # if you ever want to get the weight from an acasNnet matrix (which would be necessary when the code
         # would be transferred to cpp)
-        # then use this code:
+        # then use this code (didnt test it, so it might be wrong up to a +-1 in the layer number):
         # LOCATION_OF_WEIGHTS = 0
         # return matrix[layer_number][LOCATION_OF_WEIGHTS][index_of_node_in_layer][index_of_node_in_previous_layer]
 
-        return self.weights[layer_number][index_of_node_in_layer][index_of_node_in_previous_layer]
+        return self.weights[layer_number - 1][index_of_node_in_layer][index_of_node_in_previous_layer]
 
     def get_number_of_nodes_in_network(self):
         return self.number_of_nodes_in_network

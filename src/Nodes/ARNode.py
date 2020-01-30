@@ -378,7 +378,7 @@ class ARNode(Node):
                 arnode_connected_to = node_connected_to.get_pointer_to_ar_node_nested_in()
                 if arnode_connected_to == Node.NO_REFERENCE:
                     # assumption (1) is violated, we can't find an arnode to link to
-                    raise AssertionError("can not activate arnode because an outgoing connection can not link into any"
+                    raise AssertionError("can not activate arnode because an outgoing connection can not link into any "
                                          "existent arnode")
 
                 # if an node is connected to us by an edge that is outgoing from us it means that for him we are
