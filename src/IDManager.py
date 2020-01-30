@@ -8,6 +8,10 @@ class IDManager:
         this class would give available ids in increasing order
         currently this class supports only infinite ids.
         it does not support limiting the number of ids given.
+
+        when implementing this in cpp
+        use
+        https://stackoverflow.com/questions/8690567/setting-an-int-to-infinity-in-c
         """
 
         """

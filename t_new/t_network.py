@@ -35,5 +35,12 @@ if printing:
     for i in range(len(att)):
         print(att_names[i], att[i])
 
+NAIVE = False
+if NAIVE:
+    ceagr_func = run_cegar_naive
+else:
+    number_of_layer_to_apply_cegar_to = 2
+    ceagr_func = lambda reader, which_acas_output: run_cegar_guy_way(reader, which_acas_output,
+                                                                     number_of_layer_to_apply_cegar_to)
 
-run_cegar_naive(reader, which_acas_output)
+ceagr_func(reader, which_acas_output)
