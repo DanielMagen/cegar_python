@@ -244,7 +244,8 @@ class ARNode(GlobalNode):
         # there could be no such nodes
         inner_nodes_that_still_have_global_variables = []
         for node in self.inner_nodes:
-            if node.get_global_incoming_id() == GlobalNode.NO_GLOBAL_ID or node.get_global_outgoing_id() == GlobalNode.NO_GLOBAL_ID:
+            if node.get_global_incoming_id() == GlobalNode.NO_GLOBAL_ID \
+                    or node.get_global_outgoing_id() == GlobalNode.NO_GLOBAL_ID:
                 inner_nodes_that_still_have_global_variables.append(node)
 
         lower_bounds = []
@@ -371,7 +372,6 @@ class ARNode(GlobalNode):
         if self.activation_status == ARNode.ONLY_FORWARD_ACTIVATED_STATUS:
             return True
 
-        our_location = self.get_location()
         direction_of_connection = GlobalNode.OUTGOING_EDGE_DIRECTION
         for node in self.inner_nodes:
             for edge_data in node.get_iterator_for_connections_data(direction_of_connection):
