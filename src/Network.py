@@ -1,5 +1,7 @@
-from src.Layer import *
-from src.MarabouDataManagers.GlobalNetworkManager import *
+from src.Layer import Layer
+from src.MarabouDataManagers.GlobalNetworkManager import GlobalNetworkManager
+from src.NodeEdges import NodeEdges
+from src.Nodes.GlobalNode import GlobalNode
 
 
 class Network:
@@ -295,7 +297,7 @@ class Network:
 
         # now connect each new output node to the previous y's
         for i in range(len(new_output_nodes)):
-            new_output_nodes[i].add_or_edit_neighbors_by_bulk(Node.INCOMING_EDGE_DIRECTION,
+            new_output_nodes[i].add_or_edit_neighbors_by_bulk(GlobalNode.INCOMING_EDGE_DIRECTION,
                                                               [connections_to_ys[0], connections_to_ys[i + 1]])
 
         # now set the bounds on the nodes
@@ -595,7 +597,7 @@ class Network:
                 for arnode in previous_layer.get_iterator_for_all_nodes_for_table(is_arnode, table_number):
                     # for each arnode find all the pairs of arnodes its connected to by an outgoing connection
                     for connection_data_pair in arnode.get_combinations_iterator_over_connections(
-                            Node.OUTGOING_EDGE_DIRECTION, 2):
+                            GlobalNode.OUTGOING_EDGE_DIRECTION, 2):
 
                         connection_data_1, connection_data_2 = connection_data_pair
                         weight_of_connection_1 = connection_data_1[NodeEdges.INDEX_OF_WEIGHT_IN_DATA]
@@ -709,7 +711,7 @@ class Network:
                             arnode_incoming_is_nested_in = incoming_node.get_pointer_to_ar_node_nested_in()
                             weight_of_connection_between_the_arnodes = \
                                 arnode_incoming_is_nested_in.get_weight_of_connection_to_neighbor(
-                                    Node.OUTGOING_EDGE_DIRECTION, current_arnode.get_location())
+                                    GlobalNode.OUTGOING_EDGE_DIRECTION, current_arnode.get_location())
 
                             diff = abs(
                                 weight_of_connection_between_the_arnodes - weight_of_connection_between_the_nodes)

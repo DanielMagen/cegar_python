@@ -1,9 +1,9 @@
 from src.NodeEdges import NodeEdges
-from src.Nodes.Node import Node
+from src.Nodes.GlobalNode import GlobalNode
 
 
 # use the decorator pattern
-class ARNode(Node):
+class ARNode(GlobalNode):
     """
     this class would represent a ARNode that would work under the assumptions detailed in
     the ASSUMPTIONS file
@@ -71,8 +71,8 @@ class ARNode(Node):
             number_of_tables_in_next_layer,
             layer_number,
             table_number, key_in_table,
-            Node.NO_BIAS,
-            Node.NO_GLOBAL_ID, Node.NO_GLOBAL_ID, Node.NO_REFERENCE)
+            GlobalNode.NO_BIAS,
+            GlobalNode.NO_GLOBAL_ID, GlobalNode.NO_GLOBAL_ID, GlobalNode.NO_REFERENCE)
 
         self.location_of_ar_node_nested_in = self.get_location()
 
@@ -244,7 +244,7 @@ class ARNode(Node):
         # there could be no such nodes
         inner_nodes_that_still_have_global_variables = []
         for node in self.inner_nodes:
-            if node.get_global_incoming_id() == Node.NO_GLOBAL_ID or node.get_global_outgoing_id() == Node.NO_GLOBAL_ID:
+            if node.get_global_incoming_id() == GlobalNode.NO_GLOBAL_ID or node.get_global_outgoing_id() == GlobalNode.NO_GLOBAL_ID:
                 inner_nodes_that_still_have_global_variables.append(node)
 
         lower_bounds = []
@@ -325,7 +325,7 @@ class ARNode(Node):
             for edge_data in node.get_iterator_for_connections_data(direction_of_connection):
                 _, _, weight, node_connected_to = edge_data
                 arnode_connected_to = node_connected_to.get_pointer_to_ar_node_nested_in()
-                if arnode_connected_to == Node.NO_REFERENCE:
+                if arnode_connected_to == GlobalNode.NO_REFERENCE:
                     # assumption (1) is violated, we can't find an arnode to link to
                     raise AssertionError("can not calculate edge because a connection can not link into any"
                                          "existent arnode")
@@ -372,12 +372,12 @@ class ARNode(Node):
             return True
 
         our_location = self.get_location()
-        direction_of_connection = Node.OUTGOING_EDGE_DIRECTION
+        direction_of_connection = GlobalNode.OUTGOING_EDGE_DIRECTION
         for node in self.inner_nodes:
             for edge_data in node.get_iterator_for_connections_data(direction_of_connection):
                 _, _, _, node_connected_to = edge_data
                 arnode_connected_to = node_connected_to.get_pointer_to_ar_node_nested_in()
-                if arnode_connected_to == Node.NO_REFERENCE:
+                if arnode_connected_to == GlobalNode.NO_REFERENCE:
                     # assumption (1) is violated, we can't find an arnode to link to
                     raise AssertionError("can not activate arnode because an outgoing connection can not link into any "
                                          "existent arnode")
@@ -410,7 +410,7 @@ class ARNode(Node):
         # and as such we need to take into account the fact that when this function is called
         # 1) this arnode might contain multiple nodes in its inner nodes list
         # 2) the arnodes we need to connect to might have merged
-        self._recalculate_edges_in_direction(Node.OUTGOING_EDGE_DIRECTION,
+        self._recalculate_edges_in_direction(GlobalNode.OUTGOING_EDGE_DIRECTION,
                                              function_to_calculate_merger_of_outgoing_edges)
 
         # finally, set the right activation status
@@ -440,12 +440,12 @@ class ARNode(Node):
 
         # now check that all needed assumptions hold
         our_location = self.get_location()
-        direction_of_connection = Node.INCOMING_EDGE_DIRECTION
+        direction_of_connection = GlobalNode.INCOMING_EDGE_DIRECTION
         for node in self.inner_nodes:
             for edge_data in node.get_iterator_for_connections_data(direction_of_connection):
                 _, _, _, node_connected_to = edge_data
                 arnode_connected_to = node_connected_to.get_pointer_to_ar_node_nested_in()
-                if arnode_connected_to == Node.NO_REFERENCE:
+                if arnode_connected_to == GlobalNode.NO_REFERENCE:
                     # assumption (1) is violated, we can't find an arnode to link to
                     raise AssertionError("can not activate arnode because an incoming connection can not link into any"
                                          "existent arnode")
@@ -461,7 +461,7 @@ class ARNode(Node):
                                          "forward activated")
 
         # check that all arnodes we are connected to by an outgoing connection are fully activated
-        for connections_data in self.get_iterator_for_connections_data(Node.OUTGOING_EDGE_DIRECTION):
+        for connections_data in self.get_iterator_for_connections_data(GlobalNode.OUTGOING_EDGE_DIRECTION):
             arnode_connected_to = connections_data[NodeEdges.INDEX_OF_REFERENCE_TO_NODE_CONNECTED_TO_IN_DATA]
             if arnode_connected_to.get_activation_status() != ARNode.FULLY_ACTIVATED_STATUS:
                 raise AssertionError("can not fully activate arnode since an outgoing connection is not "
@@ -563,7 +563,7 @@ class ARNode(Node):
         # when connecting incoming edges make sure that the nodes we are connected to are at least forward activated
         # to preserve assumption (5). using assumption (5) its enough to check that their
         # status is not ARNode.NOT_ACTIVATED_STATUS
-        self._recalculate_edges_in_direction(Node.INCOMING_EDGE_DIRECTION,
+        self._recalculate_edges_in_direction(GlobalNode.INCOMING_EDGE_DIRECTION,
                                              function_to_calculate_merger_of_incoming_edges,
                                              function_to_verify_arnode_neighbors_with=lambda node:
                                              node.get_activation_status() != ARNode.NOT_ACTIVATED_STATUS)

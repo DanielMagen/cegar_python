@@ -38,7 +38,7 @@ class InputQueryFacade:
             ipq.addEquation(eq)
 
         for r in self.reluList:
-            assert r[1] < number_of_nodes and r[0] < number_of_nodes
+            ################################################ assert r[1] < number_of_nodes and r[0] < number_of_nodes
             MarabouCore.addReluConstraint(ipq, r[0], r[1])
 
         for l in self.lowerBounds:

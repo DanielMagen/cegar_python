@@ -1,4 +1,4 @@
-from src.Nodes.Node import Node
+from src.Nodes.GlobalNode import GlobalNode
 
 
 class AbstractTable:
@@ -122,12 +122,12 @@ class AbstractTable:
         # if the table is in an inner layer the node needs 2 different ids otherwise it needs only 1
         global_incoming_id, global_outgoing_id = self._get_ids_for_new_node(global_data_manager)
 
-        new_node = Node(number_of_tables_in_previous_layer,
-                        number_of_tables_in_next_layer,
-                        self.layer_number,
-                        Node.NO_TABLE_NUMBER, Node.NO_KEY_IN_TABLE,
-                        bias_for_node,
-                        global_incoming_id, global_outgoing_id, global_data_manager)
+        new_node = GlobalNode(number_of_tables_in_previous_layer,
+                              number_of_tables_in_next_layer,
+                              self.layer_number,
+                              GlobalNode.NO_TABLE_NUMBER, GlobalNode.NO_KEY_IN_TABLE,
+                              bias_for_node,
+                              global_incoming_id, global_outgoing_id, global_data_manager)
 
         node_key = self._add_node_to_table_without_checking(new_node)
         # change the inserted node location_data so that its table number and index would correspond to its new location

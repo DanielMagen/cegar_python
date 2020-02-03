@@ -1,4 +1,4 @@
-from src.Nodes.Node import Node
+from src.Nodes.GlobalNode import GlobalNode
 from src.NodeEdges import NodeEdges
 from src.Tables.TableDoesntSupportsDeletion import TableDoesntSupportsDeletion
 from src.Tables.ARNodeTable import *
@@ -25,8 +25,8 @@ class Layer:
     INDEX_OF_UNPROCESSED_TABLE = NUMBER_OF_REGULAR_TABLES_THAT_DO_NOT_SUPPORT_DELETION
 
     # those must be multiple of -1 of one another
-    INCOMING_LAYER_DIRECTION = Node.INCOMING_EDGE_DIRECTION
-    OUTGOING_LAYER_DIRECTION = Node.OUTGOING_EDGE_DIRECTION
+    INCOMING_LAYER_DIRECTION = GlobalNode.INCOMING_EDGE_DIRECTION
+    OUTGOING_LAYER_DIRECTION = GlobalNode.OUTGOING_EDGE_DIRECTION
 
     def __init__(self, layer_number, global_data_manager, pointer_to_previous_layer=NO_POINTER_TO_ADJACENT_LAYER,
                  pointer_to_next_layer=NO_POINTER_TO_ADJACENT_LAYER):
@@ -248,7 +248,7 @@ class Layer:
         data_for_nodes_we_are_pos_linked_to = []
         data_for_nodes_we_are_neg_linked_to = []
 
-        for outgoing_edges_data in node.get_iterator_for_connections_data(Node.OUTGOING_EDGE_DIRECTION):
+        for outgoing_edges_data in node.get_iterator_for_connections_data(GlobalNode.OUTGOING_EDGE_DIRECTION):
             weight_of_connection = outgoing_edges_data[NodeEdges.INDEX_OF_WEIGHT_IN_DATA]
             if weight_of_connection >= 0:
                 data_for_nodes_we_are_pos_linked_to.append(outgoing_edges_data)
@@ -346,15 +346,15 @@ class Layer:
                 # now add all outgoing edges to the node
                 new_node_key = new_node.get_key_in_table()
                 current_table.add_or_edit_connection_to_node_by_bulk(new_node_key,
-                                                                     Node.OUTGOING_EDGE_DIRECTION,
+                                                                     GlobalNode.OUTGOING_EDGE_DIRECTION,
                                                                      edge_data_split_by_type[i])
         # now add all the incoming edges to all the nodes created
-        incoming_edges_data = node.get_a_list_of_all_connections_data(Node.INCOMING_EDGE_DIRECTION)
+        incoming_edges_data = node.get_a_list_of_all_connections_data(GlobalNode.INCOMING_EDGE_DIRECTION)
         for i in range(len(nodes_created)):
             if nodes_created[i] is not None:
                 current_table = self.regular_node_tables[i]
                 new_node_key = nodes_created[i].get_key_in_table()
-                current_table.add_or_edit_connection_to_node_by_bulk(new_node_key, Node.INCOMING_EDGE_DIRECTION,
+                current_table.add_or_edit_connection_to_node_by_bulk(new_node_key, GlobalNode.INCOMING_EDGE_DIRECTION,
                                                                      incoming_edges_data)
 
         # now delete the node from the unprocessed table
