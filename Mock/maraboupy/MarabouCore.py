@@ -27,6 +27,12 @@ class mock_input_query:
     def addEquation(self, eq):
         pass
 
+    def setLowerBound(self, id, lower_bound):
+        pass
+
+    def setUpperBound(self, id, lower_bound):
+        pass
+
 
 def InputQuery():
     return mock_input_query()
