@@ -240,8 +240,12 @@ class Network:
             # so we want to unsat y0 >= 3.9911256459
             y_nodes[0].set_lower_and_upper_bound(3.9911256459, float('inf'))
 
-            # should bounds be set on all output nodes? if acas has 5 different output nodes then in this case we dont
-            # care what happens to the rest in this case?
+            # bounds should be set on all output nodes
+            # acas has 5 different output nodes
+            # in this case we don't care what happens to all the output nodes other then y0
+            for k in range(1, 5):
+                y_nodes[k].set_lower_and_upper_bound(float('-inf'), float('inf'))
+
             self.output_bounds_were_set = True
 
             return [y_nodes[i].get_global_incoming_id() for i in range(5)]
