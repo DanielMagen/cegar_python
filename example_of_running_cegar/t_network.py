@@ -35,7 +35,7 @@ if printing:
     for i in range(len(att)):
         print(att_names[i], att[i])
 
-NAIVE = False
+NAIVE = True  # if false will run it guy's way
 if NAIVE:
     ceagr_func = run_cegar_naive
 else:

@@ -444,8 +444,8 @@ class Network:
     of the arnode edges based on their type and the network goal
     """
 
-    # TODO - for now the function is not commutative, ask guy and yithzak how to transform it into such
-    #  the problem is that there are at least 2^n ways to decide the weight of the merged edge
+    #  for now the function is not commutative
+    #  the problem how I see it is that there are at least 2^n ways to decide the weight of the merged edge
     #  for example
     #  sum of max of max of sum ...
     #  or

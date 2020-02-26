@@ -3,10 +3,11 @@ from Mock.maraboupy import MarabouCore
 import copy
 
 
-# TODO does a variable must have all bounds set?
-#  in the functions setLowerBound and setUpperBound in GlobalDataManager
-#  I didnt set any bounds if we were given infinities
 class InputQueryFacade:
+    REALLY_BIG_NUMBER = 2 ** 16 - 1
+    INFINITE_UPPER_BOUND = REALLY_BIG_NUMBER
+    INFINITE_LOWER_BOUND = -REALLY_BIG_NUMBER
+
     def __init__(self):
         self.equList = []
         self.reluList = []
@@ -67,6 +68,8 @@ class InputQueryFacade:
         """
         if lower_bound != float('-inf'):
             self.lowerBounds[node_global_incoming_id] = lower_bound
+        else:
+            self.lowerBounds[node_global_incoming_id] = InputQueryFacade.INFINITE_LOWER_BOUND
 
     def setUpperBound(self, node_global_incoming_id, upper_bound):
         """
@@ -77,6 +80,8 @@ class InputQueryFacade:
         """
         if upper_bound != float('inf'):
             self.upperBounds[node_global_incoming_id] = upper_bound
+        else:
+            self.upperBounds[node_global_incoming_id] = InputQueryFacade.INFINITE_UPPER_BOUND
 
     def getLowerBound(self, node_global_incoming_id):
         """
@@ -84,9 +89,12 @@ class InputQueryFacade:
         :param node_global_incoming_id:
         :return: if the lower bound does not exist it returns -infinity (do not change that, we rely on this fact)
         """
+        to_return = float('-inf')
         if node_global_incoming_id in self.lowerBounds:
-            return self.lowerBounds[node_global_incoming_id]
-        return float('-inf')
+            to_return = self.lowerBounds[node_global_incoming_id]
+            if to_return == InputQueryFacade.INFINITE_LOWER_BOUND:
+                to_return = float('-inf')
+        return to_return
 
     def getUpperBound(self, node_global_incoming_id):
         """
@@ -94,9 +102,12 @@ class InputQueryFacade:
         :param node_global_incoming_id:
         :return: if the upper bound does not exist it returns infinity (do not change that, we rely on this fact)
         """
+        to_return = float('-inf')
         if node_global_incoming_id in self.upperBounds:
-            return self.upperBounds[node_global_incoming_id]
-        return float('inf')
+            to_return = self.upperBounds[node_global_incoming_id]
+            if to_return == InputQueryFacade.INFINITE_UPPER_BOUND:
+                to_return = float('-inf')
+        return to_return
 
     def removeBounds(self, node_global_incoming_id):
         """
