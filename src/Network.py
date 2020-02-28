@@ -514,7 +514,6 @@ class Network:
         # for now it seems that the function is sum all the times
         return lambda node, lis: sum(lis)
 
-    # TODO ask Yithzak about how to calculate the node biases - his paper assumes that there are none
     def get_function_to_calc_bias_for_arnode(self,
                                              table_number_of_arnode):
         """
@@ -533,9 +532,7 @@ class Network:
         """
 
         def function_to_calc_bias_for_arnode(list_of_inner_nodes):
-            if len(list_of_inner_nodes) == 1:
-                return list_of_inner_nodes[0].get_node_bias()
-            return 0
+            return sum(list_of_inner_nodes)
 
         return function_to_calc_bias_for_arnode
 
