@@ -1,5 +1,7 @@
 # cegar_python
 first implementation of cegar in python 
+based on the paper "An Abstraction-Based Framework for Neural Network Verification" by Yizhak Yisrael Elboher, Justin Gottschlich, Guy Katz
+https://arxiv.org/abs/1910.14574
 
 cegar would first be implemented in python in full or close to full and then migrate to cpp before finally merging with marbou.
 as such the implementation here is cpp oriented and not python oriented, so I avoided as much as possible using python 
