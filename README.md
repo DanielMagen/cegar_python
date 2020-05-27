@@ -5,6 +5,7 @@ based on the paper "An Abstraction-Based Framework for Neural Network Verificati
 https://arxiv.org/abs/1910.14574
 
 this is the first implementation of cegar in python. the intent of this implementation is to provide a working cegar program that can easily be converted into CPP form before finally merging with Marabou https://github.com/guykatzz/Marabou
+
 as such the implementation of cegar is CPP oriented and not python oriented, i.e. I avoided (as much as possible) using python libraries and functions which can't be replicated easily in CPP, as the intent is to migrate the implementation to CPP.
 
 
